@@ -1,0 +1,536 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: rgba(255, 210, 170, 0.07);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body {
+    @apply bg-bg text-text-primary font-sans antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Scrollbar — warm tint */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(212, 149, 106, 0.18);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 149, 106, 0.32);
+  }
+
+  /* Leaflet — Carto Positron sits under warm dark UI */
+  .leaflet-container {
+    background: #e8e4df !important;
+    font-family: 'Inter', sans-serif;
+    height: 100%;
+    width: 100%;
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(15, 11, 8, 0.80) !important;
+    color: rgba(196, 168, 126, 0.75) !important;
+    backdrop-filter: blur(8px);
+    border-radius: 6px;
+    padding: 2px 8px !important;
+    font-size: 10px !important;
+    border: 1px solid rgba(255, 210, 170, 0.10) !important;
+  }
+
+  .leaflet-control-attribution a {
+    color: #d4956a !important;
+  }
+
+  .leaflet-control-zoom {
+    display: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Glass panel — warm dark frosted */
+  .glass {
+    background: rgba(22, 14, 8, 0.80);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 210, 170, 0.10);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.40), 0 1px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  .glass-strong {
+    background: rgba(26, 17, 10, 0.90);
+    backdrop-filter: blur(32px) saturate(170%);
+    -webkit-backdrop-filter: blur(32px) saturate(170%);
+    border: 1px solid rgba(255, 210, 170, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.30);
+  }
+
+  /* Double-Bezel (Doppelrand) — machined hardware card enclosure */
+  .bezel-outer {
+    background: rgba(255, 210, 170, 0.03);
+    border: 1px solid rgba(255, 210, 170, 0.08);
+    padding: 5px;
+    border-radius: 1.25rem;
+  }
+
+  .bezel-inner {
+    background: rgba(15, 11, 8, 0.65);
+    border-radius: calc(1.25rem - 5px);
+    box-shadow: inset 0 1px 1px rgba(255, 210, 170, 0.08), 0 2px 12px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 210, 170, 0.06);
+  }
+
+  /* Kinetic press feedback for buttons */
+  .btn-press {
+    transition: transform 150ms cubic-bezier(0.32, 0.72, 0, 1),
+                box-shadow 150ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .btn-press:active {
+    transform: scale(0.97);
+  }
+
+  /* Shimmer skeleton */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(212, 149, 106, 0.04) 0%,
+      rgba(212, 149, 106, 0.10) 50%,
+      rgba(212, 149, 106, 0.04) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Pulse dot */
+  .pulse-dot {
+    position: relative;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .pulse-dot::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.35;
+    animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  }
+
+  .data-num {
+    @apply font-mono font-medium tabular-nums tracking-tight;
+  }
+
+  .marker-glow {
+    filter: drop-shadow(0 0 8px rgba(212, 149, 106, 0.60))
+      drop-shadow(0 0 16px rgba(212, 149, 106, 0.28));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Markdown AI Report — warm dark theme ──────────────── */
+.prose-safe {
+  color: #c4a87e;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.prose-safe h1,
+.prose-safe h2,
+.prose-safe h3,
+.prose-safe h4 {
+  color: #f0e4cc;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+}
+
+.prose-safe h1 {
+  font-size: 1.45em;
+  border-bottom: 1px solid rgba(255, 210, 170, 0.10);
+  padding-bottom: 0.4em;
+}
+
+.prose-safe h2 {
+  font-size: 1.15em;
+  color: #d4956a;
+}
+
+.prose-safe h3 {
+  font-size: 1.02em;
+  color: #e0a87a;
+}
+
+.prose-safe p {
+  margin: 0 0 1em 0;
+}
+
+.prose-safe ul,
+.prose-safe ol {
+  margin: 0 0 1em 1.3em;
+  padding: 0;
+}
+
+.prose-safe li {
+  margin: 0.35em 0;
+}
+
+.prose-safe strong {
+  color: #f0e4cc;
+  font-weight: 700;
+}
+
+.prose-safe em {
+  color: #e0a87a;
+  font-style: italic;
+}
+
+.prose-safe code {
+  background: rgba(212, 149, 106, 0.12);
+  color: #d4956a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.85em;
+  border: 1px solid rgba(212, 149, 106, 0.22);
+}
+
+.prose-safe pre {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 18px;
+  border-radius: 10px;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 210, 170, 0.10);
+}
+
+.prose-safe pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.prose-safe blockquote {
+  border-left: 3px solid #d4956a;
+  margin: 1em 0;
+  color: #9a7c5a;
+  font-style: italic;
+  background: rgba(212, 149, 106, 0.05);
+  border-radius: 0 6px 6px 0;
+  padding: 0.5em 1em;
+}
+
+.prose-safe hr {
+  border: none;
+  border-top: 1px solid rgba(255, 210, 170, 0.10);
+  margin: 1.8em 0;
+}
+
+.prose-safe a {
+  color: #d4956a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-safe table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  font-size: 13px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 210, 170, 0.10);
+}
+
+.prose-safe th {
+  text-align: left;
+  font-weight: 700;
+  color: #f0e4cc;
+  background: rgba(255, 210, 170, 0.06);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 210, 170, 0.10);
+}
+
+.prose-safe td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 210, 170, 0.06);
+  color: #c4a87e;
+}
+
+.prose-safe tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Risk zone tooltip — dark glass ─────────────────────── */
+.risk-tooltip {
+  background: rgba(15, 11, 8, 0.92) !important;
+  border: 1px solid rgba(255, 210, 170, 0.16) !important;
+  border-radius: 10px !important;
+  color: #f0e4cc !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  padding: 6px 10px !important;
+}
+
+.risk-tooltip::before {
+  border-top-color: rgba(15, 11, 8, 0.92) !important;
+}
+
+/* ── Landing Page — SaaS Hero Redesign ─────── */
+html.landing-scroll,
+html.landing-scroll body,
+html.landing-scroll #root {
+  height: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.landing {
+  --background: 30 30% 5%;
+  --foreground: 36 58% 87%;
+  --primary: 36 58% 87%;
+  --primary-foreground: 30 30% 5%;
+  --secondary: 30 30% 8%;
+  --secondary-foreground: 36 58% 87%;
+  --muted: 32 40% 7%;
+  --muted-foreground: 36 20% 60%;
+  --accent: 25 57% 62%;
+  --accent-foreground: 30 30% 5%;
+  --border: 30 20% 12%;
+  --ring: 25 57% 62%;
+  --radius: 0.5rem;
+  --font-display: 'Instrument Serif', serif;
+  --font-body: 'Inter', sans-serif;
+  --shadow-dashboard: 0 25px 80px -12px rgba(0, 0, 0, 0.60), 0 0 0 1px rgba(212, 149, 106, 0.08);
+
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  height: auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing * { box-sizing: border-box; }
+
+@property --pulse-scale {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.8;
+}
+
+@keyframes seismic-pulse {
+  0% { --pulse-scale: 0.8; opacity: 0.6; }
+  100% { --pulse-scale: 2.2; opacity: 0; }
+}
+
+@keyframes seismic-pulse-delay {
+  0% { --pulse-scale: 0.8; opacity: 0.4; }
+  100% { --pulse-scale: 2.8; opacity: 0; }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.landing-enter {
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(8px);
+  transition: opacity 650ms cubic-bezier(0.32, 0.72, 0, 1),
+              transform 650ms cubic-bezier(0.32, 0.72, 0, 1),
+              filter 650ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.landing-enter.visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* Hero page-load entrance — staggered via animation-delay */
+@keyframes hero-fade-up {
+  from { opacity: 0; transform: translateY(20px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.hero-enter {
+  animation: hero-fade-up 700ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* Map pin radar pulse */
+@keyframes pin-pulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+}
+
+/* CTA + hero button hover glow */
+.cta-glow {
+  transition: box-shadow 200ms cubic-bezier(0.25, 0, 0, 1),
+              transform 150ms cubic-bezier(0.25, 0, 0, 1);
+}
+
+.cta-glow:hover {
+  box-shadow: 0 0 20px oklch(0.70 0.14 50 / 0.35),
+              0 0 48px oklch(0.70 0.14 50 / 0.15);
+}
+
+/* Nav button subtle hover */
+.nav-btn-hover {
+  transition: background 180ms cubic-bezier(0.25, 0, 0, 1),
+              border-color 180ms cubic-bezier(0.25, 0, 0, 1);
+}
+
+.nav-btn-hover:hover {
+  background: oklch(0.70 0.14 50 / 0.15) !important;
+  border-color: oklch(0.70 0.14 50 / 0.45) !important;
+}
+
+.landing { scroll-behavior: smooth; }
+
+/* Geological & Topographic background grid decorations */
+.landing-grid-decor {
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(212, 149, 106, 0.02) 1.5px, transparent 1.5px),
+    linear-gradient(to right, rgba(212, 149, 106, 0.005) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(212, 149, 106, 0.005) 1px, transparent 1px);
+  background-size: 32px 32px, 128px 128px, 128px 128px;
+}
+
+@keyframes slow-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-slow-rotate {
+  animation: slow-rotate 60s infinite linear;
+}
+
+@keyframes scanning-flow {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+.animate-scanning {
+  animation: scanning-flow 4s infinite ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-enter {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .hero-enter {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .seismic-pulse, .seismic-pulse-delay {
+    animation: none !important;
+  }
+  .landing { scroll-behavior: auto; }
+  .animate-slow-rotate, .animate-scanning {
+    animation: none !important;
+  }
+}
+
+/* ── Leaflet Animated Overlays ─────────────────────────── */
+@keyframes leaflet-pulse {
+  0% {
+    stroke-opacity: 0.35;
+    fill-opacity: 0.05;
+  }
+  50% {
+    stroke-opacity: 0.65;
+    fill-opacity: 0.12;
+  }
+  100% {
+    stroke-opacity: 0.35;
+    fill-opacity: 0.05;
+  }
+}
+
+@keyframes leaflet-dashoffset {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.map-pulse-ring {
+  animation: leaflet-pulse 4s infinite ease-in-out;
+}
+
+.map-scan-ring {
+  animation: leaflet-dashoffset 15s infinite linear;
+}
+
+.leaflet-safeOverlayPane-pane {
+  transition: filter 0.3s ease, mix-blend-mode 0.3s ease;
+}
+
