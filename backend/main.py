@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import db
 from models import HealthResult
+from routers import audit
 
 load_dotenv()
 
@@ -62,5 +63,7 @@ async def health() -> HealthResult:
     )
 
 
-# Router audit, geo, share, dan ai menyusul pada tahap 3 dan 6.
+app.include_router(audit.router)
+
+# Router geo, share, dan ai menyusul pada tahap 4 dan 6.
 # Lihat docs/superpowers/specs/2026-08-13-emergent-migration-design.md bagian 5.
