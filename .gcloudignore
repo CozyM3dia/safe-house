@@ -1,0 +1,46 @@
+# Ignore Git history
+.git/
+.gitignore
+
+# Ignore node_modules
+node_modules/
+**/node_modules/
+frontend/node_modules/
+backend/node_modules/
+freellmapi/node_modules/
+
+# Ignore local dev settings and cache
+.env
+**/.env
+**/.env.*
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore local builds
+dist/
+**/dist/
+build/
+**/build/
+
+# Ignore other services not needed for Cloud Run
+freellmapi/
+frontend-old/
+Bahan Video Demo/
+Bahan Video Demo
+scratch/
+
+# Ignore agent state directories
+.agents/
+.claude/
+.kiro/
+.superpowers/
+.gemini/
+
+# Ignore local test logs
+*.log
+logs/
+**/logs/

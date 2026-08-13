@@ -1,0 +1,254 @@
+/**
+ * Lightweight i18n — Indonesian + English only.
+ * Usage: t('key') returns translated string based on current language.
+ */
+
+const translations = {
+  // ─── TopBar ─────────────────────────────────────────────────────
+  'search.placeholder': {
+    id: 'Cari lokasi atau jalankan perintah…',
+    en: 'Search location or run command…',
+  },
+  'mode.audit': { id: 'Audit', en: 'Audit' },
+  'mode.battle': { id: 'Battle', en: 'Battle' },
+  'status.ready': { id: 'Siap', en: 'Ready' },
+  'status.active': { id: 'Aktif', en: 'Active' },
+  'status.analyzing': { id: 'Menganalisis', en: 'Analyzing' },
+  'status.aiProcessing': { id: 'AI Memproses', en: 'AI Processing' },
+
+  // ─── Left Panel — Empty State ───────────────────────────────────
+  'empty.badge': { id: 'Siap Audit', en: 'Ready to Audit' },
+  'empty.title': { id: 'Pilih lokasi target', en: 'Select a target' },
+  'empty.description': {
+    id: 'Klik di mana saja pada peta atau tekan',
+    en: 'Click anywhere on the map or press',
+  },
+  'empty.descriptionEnd': {
+    id: 'untuk menjalankan analisis geofisika S.A.F.E.',
+    en: 'to deploy S.A.F.E geophysics analysis.',
+  },
+  'empty.vs30': { id: 'Vs30 + PGA', en: 'Vs30 + PGA' },
+  'empty.flood': { id: 'Intel Banjir', en: 'Flood Intel' },
+  'empty.fault': { id: 'Jarak patahan', en: 'Fault distance' },
+  'empty.ai': { id: 'Audit AI', en: 'AI Audit' },
+
+  // ─── Left Panel — Populated State ──────────────────────────────
+  'panel.siteAnalysis': { id: 'Analisis Situs', en: 'Site Analysis' },
+  'panel.riskDashboard': { id: 'Dashboard Risiko', en: 'Risk Dashboard' },
+  'panel.viewReport': {
+    id: 'Lihat Laporan Audit AI',
+    en: 'View Full AI Audit Report',
+  },
+  'panel.reportLoading': {
+    id: 'Laporan AI Memuat…',
+    en: 'AI Report Loading…',
+  },
+  'panel.battleMode': { id: 'Mode Battle', en: 'Battle Mode' },
+  'panel.headToHead': { id: 'Head-to-Head', en: 'Head-to-Head' },
+  'panel.generateBattleReport': {
+    id: 'Buat Laporan Perbandingan AI',
+    en: 'Generate AI Battle Report',
+  },
+  'panel.viewBattleReport': {
+    id: 'Lihat Laporan Battle',
+    en: 'View Battle Report',
+  },
+  'panel.battleReportLoading': {
+    id: 'Membuat laporan…',
+    en: 'Generating report…',
+  },
+
+  // ─── Cards ──────────────────────────────────────────────────────
+  'card.safeScore': { id: 'Skor S.A.F.E', en: 'S.A.F.E Score' },
+  'card.riskRadar': { id: 'Radar Risiko (5-axis)', en: 'Risk Radar (5-axis)' },
+  'card.seismic': { id: 'Tanda Tangan Seismik', en: 'Seismic Signature' },
+  'card.probability': {
+    id: 'Distribusi Probabilitas',
+    en: 'Probability Distribution',
+  },
+  'card.siteCoords': { id: 'Koordinat Situs', en: 'Site Coordinates' },
+  'card.fault': { id: 'Patahan', en: 'Fault' },
+  'card.elevation': { id: 'Elevasi', en: 'Elevation' },
+  'card.peakAccel': { id: 'Akselerasi puncak', en: 'Peak acceleration' },
+  'card.highRisk': { id: 'Risiko tinggi', en: 'High risk' },
+  'card.stable': { id: 'Stabil', en: 'Stable' },
+  'card.lowFlood': { id: 'Rendah — rawan banjir', en: 'Low — flood prone' },
+  'card.standard': { id: 'Standar', en: 'Standard' },
+
+  // ─── Battle Card ────────────────────────────────────────────────
+  'battle.setup': { id: 'Pengaturan Battle', en: 'Battle Setup' },
+  'battle.selectB': {
+    id: 'Pilih lokasi kedua di peta untuk membandingkan dengan',
+    en: 'Select a second location on the map to compare against',
+  },
+  'battle.clickMap': {
+    id: 'Klik peta untuk Situs B…',
+    en: 'Click map for Site B…',
+  },
+  'battle.selectTarget': { id: 'Pilih Target B', en: 'Select Target B' },
+  'battle.verdict': { id: 'Hasil', en: 'Verdict' },
+
+  // ─── Chatbot ────────────────────────────────────────────────────
+  'chat.placeholder': { id: 'Tanya S.A.F.E AI…', en: 'Ask S.A.F.E AI…' },
+  'chat.greeting': {
+    id: 'Halo! Saya',
+    en: 'Hello! I am',
+  },
+  'chat.greetingEnd': {
+    id: '. Tanya saya apa saja tentang lokasi yang sedang diaudit.',
+    en: '. Ask me anything about the location being audited.',
+  },
+  'chat.suggestions': { id: 'Saran', en: 'Suggestions' },
+  'chat.thinking': { id: 'Berpikir…', en: 'Thinking…' },
+
+  // ─── Audit Drawer ──────────────────────────────────────────────
+  'drawer.title': { id: 'Laporan Audit S.A.F.E', en: 'S.A.F.E Audit Report' },
+  'drawer.copyLink': { id: 'Salin Link', en: 'Copy Link' },
+  'drawer.copied': { id: 'Tersalin!', en: 'Copied!' },
+  'drawer.exportPdf': { id: 'Ekspor PDF', en: 'Export PDF' },
+  'drawer.battleTitle': {
+    id: 'Laporan Battle S.A.F.E',
+    en: 'S.A.F.E Battle Report',
+  },
+  'drawer.streetView': { id: 'Street View', en: 'Street View' },
+  'drawer.visualAnalysis': {
+    id: 'Analisis Visual Street View',
+    en: 'Street View Visual Analysis',
+  },
+  'drawer.microAnalysis': {
+    id: 'Analisis Mikro Lingkungan',
+    en: 'Micro Environment Analysis',
+  },
+  'drawer.disclaimer': {
+    id: 'Analisis dihasilkan AI — konsultasikan dengan insinyur geoteknik berlisensi untuk penilaian akhir.',
+    en: 'AI-generated analysis — consult a licensed geotechnical engineer for final assessment.',
+  },
+  'drawer.geotechnical': { id: 'Geoteknik', en: 'Geotechnical' },
+  'drawer.seismicLabel': { id: 'Seismik', en: 'Seismic' },
+  'drawer.environment': { id: 'Lingkungan', en: 'Environment' },
+  'drawer.reportLoading': {
+    id: 'Laporan AI masih dimuat atau tidak tersedia.',
+    en: 'AI report is still loading or unavailable.',
+  },
+
+  // ─── Command Palette ───────────────────────────────────────────
+  'cmd.searchPlaceholder': {
+    id: 'Cari lokasi, alamat, atau koordinat…',
+    en: 'Search location, address, or coordinates…',
+  },
+  'cmd.favorites': { id: 'Favorit', en: 'Favorites' },
+  'cmd.recent': { id: 'Terakhir dikunjungi', en: 'Recent' },
+  'cmd.results': { id: 'Hasil pencarian', en: 'Search results' },
+  'cmd.noResults': { id: 'Tidak ada hasil untuk', en: 'No results for' },
+  'cmd.startTyping': {
+    id: 'Mulai ketik untuk mencari lokasi di Indonesia…',
+    en: 'Start typing to search locations in Indonesia…',
+  },
+  'cmd.navigate': { id: 'Navigasi', en: 'Navigate' },
+  'cmd.select': { id: 'Pilih', en: 'Select' },
+  'cmd.close': { id: 'Tutup', en: 'Close' },
+
+  // ─── Loading / Skeleton ─────────────────────────────────────────
+  'loading.fetching': {
+    id: 'Mengambil data geofisika…',
+    en: 'Fetching geophysical data…',
+  },
+
+  // ─── Onboarding Tour ────────────────────────────────────────────
+  'tour.welcome.title': {
+    id: 'Pusat Komando Geofisika',
+    en: 'Your Geophysics Command Center',
+  },
+  'tour.welcome.desc': {
+    id: 'Klik di mana saja pada peta untuk menganalisis risiko seismik, kondisi tanah, kerentanan banjir, dan lainnya secara instan untuk lokasi mana pun di Indonesia.',
+    en: 'Click anywhere on the map to instantly analyze seismic risk, soil conditions, flood vulnerability, and more for any location in Indonesia.',
+  },
+  'tour.search.title': {
+    id: 'Pencarian Lokasi Cerdas',
+    en: 'Smart Location Search',
+  },
+  'tour.search.desc': {
+    id: 'Tekan ⌘K untuk mencari alamat, jalan, atau koordinat mana pun di Indonesia. Hasil muncul langsung dengan geocoding.',
+    en: 'Press ⌘K to search any address, street, or coordinate in Indonesia. Results appear instantly with geocoding.',
+  },
+  'tour.mode.title': {
+    id: 'Mode Audit vs Battle',
+    en: 'Audit vs Battle Mode',
+  },
+  'tour.mode.desc': {
+    id: 'Mode AUDIT menganalisis satu lokasi secara mendalam. Mode BATTLE membandingkan dua lokasi head-to-head dengan laporan AI.',
+    en: 'AUDIT mode analyzes a single site in depth. BATTLE mode lets you compare two locations head-to-head with an AI-generated versus report.',
+  },
+  'tour.panel.title': {
+    id: 'Dashboard Risiko',
+    en: 'Risk Dashboard',
+  },
+  'tour.panel.desc': {
+    id: 'Setelah memilih lokasi, panel ini terisi dengan Skor S.A.F.E, tanda tangan seismik, radar risiko, kurva probabilitas, dan data situs — semua dihitung real-time.',
+    en: 'Once you select a location, this panel fills with the S.A.F.E Score, seismic signature, risk radar, probability curves, and site data — all computed in real-time.',
+  },
+  'tour.status.title': {
+    id: 'Status Langsung',
+    en: 'Live Status',
+  },
+  'tour.status.desc': {
+    id: 'Perhatikan badge ini berubah antara Siap, Menganalisis, dan AI Memproses saat sistem mengambil data geofisika dan menghasilkan laporan audit.',
+    en: 'Watch this badge shift between Ready, Analyzing, and AI Processing as the system fetches geophysical data and generates your audit report.',
+  },
+  'tour.chatbot.title': {
+    id: 'Konsultan GEO-AI',
+    en: 'GEO-AI Consultant',
+  },
+  'tour.chatbot.desc': {
+    id: 'Tanya AI apa saja tentang lokasi yang dipindai — rekomendasi pondasi, biaya mitigasi, standar bangunan, kesiapsiagaan gempa. AI memiliki konteks lengkap.',
+    en: 'Ask the AI anything about your scanned site — foundation recommendations, mitigation costs, building codes, earthquake preparedness. It has full context.',
+  },
+  'tour.finish.title': {
+    id: 'Siap Memindai',
+    en: 'Ready to Scan',
+  },
+  'tour.finish.desc': {
+    id: 'Klik titik mana pun pada peta untuk memulai audit geofisika pertama Anda. Seluruh analisis memakan waktu sekitar 10 detik.',
+    en: 'Click any point on the map to begin your first geophysics audit. The entire analysis takes about 10 seconds.',
+  },
+  'tour.skip': { id: 'Lewati', en: 'Skip' },
+  'tour.back': { id: 'Kembali', en: 'Back' },
+  'tour.next': { id: 'Lanjut', en: 'Next' },
+  'tour.getStarted': { id: 'Mulai', en: 'Get Started' },
+  'tour.stepOf': { id: 'dari', en: 'of' },
+  'tour.restart': {
+    id: 'Mulai Ulang Tur Onboarding',
+    en: 'Restart Onboarding Tour',
+  },
+
+  // ─── Toast Messages ─────────────────────────────────────────────
+  'toast.aiLoading': {
+    id: 'Menghasilkan laporan audit AI…',
+    en: 'Generating AI audit report…',
+  },
+  'toast.aiReady': { id: 'Laporan audit AI siap', en: 'AI audit report ready' },
+  'toast.aiFailed': {
+    id: 'Laporan AI gagal — menggunakan data offline',
+    en: 'AI report failed — using offline data',
+  },
+  'toast.pdfLoading': { id: 'Membuat PDF...', en: 'Generating PDF...' },
+  'toast.pdfDone': { id: 'PDF diunduh', en: 'PDF downloaded' },
+  'toast.pdfFailed': { id: 'Ekspor PDF gagal', en: 'PDF export failed' },
+  'toast.shareCopied': {
+    id: 'Link berbagi disalin ke clipboard',
+    en: 'Share link copied to clipboard',
+  },
+  'toast.shareFailed': { id: 'Gagal menyalin link', en: 'Failed to copy link' },
+};
+
+/**
+ * Get a translation function bound to the given language.
+ * Falls back to Indonesian if key is missing.
+ */
+export function createT(lang = 'id') {
+  return function t(key) {
+    const entry = translations[key];
+    if (!entry) return key;
+    return entry[lang] ?? entry.id ?? key;
+  };
+}

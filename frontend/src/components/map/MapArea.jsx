@@ -1,0 +1,82 @@
+import { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useAppStore } from '../../store/useAppStore';
+import { MAP_TILES, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/constants';
+import { MapMarker } from './MapMarker';
+import { MapControls } from './MapControls';
+import { RiskZoneOverlay } from './RiskZoneOverlay';
+import { NationwideOverlays } from './NationwideOverlays';
+
+function MapInteractionLayer() {
+  const processLocation = useAppStore((s) => s.processLocation);
+  const loading = useAppStore((s) => s.loading);
+  const mode = useAppStore((s) => s.mode);
+  const selectingBattlePin = useAppStore((s) => s.selectingBattlePin);
+
+  useMapEvents({
+    click(e) {
+      if (loading) return;
+      const isBattlePin = mode === 'battle' && selectingBattlePin;
+      processLocation(e.latlng.lat, e.latlng.lng, isBattlePin);
+    },
+  });
+  return null;
+}
+
+function MapFlyToProperty() {
+  const map = useMap();
+  const propertyA = useAppStore((s) => s.propertyA);
+  const propertyB = useAppStore((s) => s.propertyB);
+  const last = useRef(null);
+
+  useEffect(() => {
+    const target = propertyB || propertyA;
+    if (!target?.coords) return;
+    const key = `${target.coords.lat},${target.coords.lon}`;
+    if (last.current === key) return;
+    last.current = key;
+    map.flyTo([target.coords.lat, target.coords.lon], 15, {
+      duration: 1.2,
+      easeLinearity: 0.3,
+    });
+  }, [propertyA, propertyB, map]);
+
+  return null;
+}
+
+export function MapArea() {
+  const baseMapStyle = useAppStore((s) => s.baseMapStyle);
+  const activeTile = MAP_TILES[baseMapStyle] || MAP_TILES.street;
+
+  return (
+    <div className="absolute inset-0 z-0" data-tour="map-area">
+      <MapContainer
+        center={DEFAULT_CENTER}
+        zoom={DEFAULT_ZOOM}
+        minZoom={4}
+        maxZoom={19}
+        zoomControl={false}
+        attributionControl={true}
+        className="!h-full !w-full"
+        preferCanvas
+      >
+        <TileLayer
+          url={activeTile.url}
+          attribution={activeTile.attribution}
+          maxZoom={activeTile.maxZoom}
+        />
+
+        <NationwideOverlays />
+        <RiskZoneOverlay />
+        <MapMarker />
+        <MapInteractionLayer />
+        <MapFlyToProperty />
+        <MapControls />
+      </MapContainer>
+
+      {/* Subtle top gradient so TopBar reads cleanly */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-20 bg-gradient-to-b from-bg/50 to-transparent" />
+    </div>
+  );
+}
