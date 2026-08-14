@@ -63,3 +63,26 @@ export async function getAudit(id) {
     throw new Error(toReadableError(err));
   }
 }
+
+/**
+ * Buat tautan publik untuk sebuah audit.
+ * Mengembalikan { slug, url_path }. Perlu audit yang tersimpan (id).
+ */
+export async function createShare(auditId) {
+  try {
+    const { data } = await client.post('/api/share', { audit_id: auditId });
+    return data;
+  } catch (err) {
+    throw new Error(toReadableError(err));
+  }
+}
+
+/** Ambil audit publik lewat slug. Dipakai halaman /laporan/:slug. */
+export async function getSharedReport(slug) {
+  try {
+    const { data } = await client.get(`/api/share/${slug}`);
+    return data;
+  } catch (err) {
+    throw new Error(toReadableError(err));
+  }
+}
