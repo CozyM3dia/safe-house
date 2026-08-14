@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap } from 'lucide-react';
+import { toast } from 'sonner';
+import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Download } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
+import { exportPrintReadyPdf } from '../../lib/pdfExport';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -222,6 +225,23 @@ function SkeletonState() {
 
 function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
   const t = useT();
+  const lang = useAppStore((s) => s.lang);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    const id = toast.loading(lang === 'en' ? 'Building PDF…' : 'Menyusun PDF…');
+    try {
+      await exportPrintReadyPdf(propertyA, lang);
+      toast.success(lang === 'en' ? 'PDF downloaded' : 'PDF terunduh', { id });
+    } catch (e) {
+      console.error('PDF export failed', e);
+      toast.error(lang === 'en' ? 'PDF export failed' : 'Gagal membuat PDF', { id });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <motion.div
       variants={container}
@@ -276,29 +296,34 @@ function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
       {/* Action Buttons */}
       <motion.div variants={item} className="grid grid-cols-5 gap-2">
         <Button
-          onClick={onOpenDrawer}
+          onClick={handleExport}
           variant="default"
           size="lg"
           className="col-span-3 group text-xs py-2 px-3 flex items-center justify-center gap-1.5"
-          disabled={!propertyA.aiReport}
+          disabled={exporting}
         >
-          <FileText className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">
-            {propertyA.aiReport
-              ? t('panel.viewReport')
-              : t('panel.reportLoading')}
-          </span>
-          {propertyA.aiReport && (
-            <ChevronRight className="h-3 w-3 shrink-0 ml-auto opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+          {exporting ? (
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5 shrink-0" />
           )}
+          <span className="truncate">
+            {exporting
+              ? (lang === 'en' ? 'Building…' : 'Menyusun…')
+              : (lang === 'en' ? 'Download PDF' : 'Unduh PDF')}
+          </span>
         </Button>
+        {/* Lapis AI ditunda sampai kunci ditambahkan (spec bagian 13).
+            Tombol dinonaktifkan, bukan disembunyikan, supaya tata letak
+            tetap dan niatnya terbaca. */}
         <Button
-          onClick={onOpenChat}
+          disabled
           variant="accent"
           size="lg"
-          className="col-span-2 group text-xs py-2 px-3 border border-accent/20 flex items-center justify-center gap-1.5 hover:bg-accent/20 transition-all shadow-[0_0_12px_rgba(212,149,106,0.15)]"
+          title={lang === 'en' ? 'Coming with the AI layer' : 'Hadir bersama lapis AI'}
+          className="col-span-2 group text-xs py-2 px-3 border border-accent/20 flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed"
         >
-          <Sparkles className="h-3.5 w-3.5 shrink-0 text-accent animate-pulse" />
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-accent" />
           <span>Tanya AI</span>
         </Button>
       </motion.div>

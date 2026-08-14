@@ -12,9 +12,11 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 # --- CONFIGURATION ---
-GEMINI_API_KEY = "REDACTED_GEMINI_KEY" 
-OPENROUTER_API_KEY = "REDACTED_OPENROUTER_KEY" 
-MAPS_API_KEY = "REDACTED_MAPS_KEY"
+# Kunci diambil dari environment. Jangan pernah menaruh nilai kunci di sini.
+import os
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+MAPS_API_KEY = os.getenv("MAPS_API_KEY", "")
 USE_GEMMA_ONLY = False 
 current_or_model = "" # Inisialisasi variabel global agar terbaca oleh linter
 

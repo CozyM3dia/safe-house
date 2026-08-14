@@ -5,8 +5,15 @@ import { ShieldCheck, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { riskHex, riskLabel } from '../../lib/utils';
 
 function computeScore(p) {
+  // Backend adalah sumber kebenaran. Skor sudah dihitung deterministik di
+  // sana (services/scoring.py) — kartu hanya menampilkannya, tidak
+  // menghitung ulang, supaya angka di gauge sama dengan laporan.
+  if (typeof p?.safeScore === 'number') return p.safeScore;
+
+  // Cadangan lama untuk data yang belum lewat backend (mis. mode Battle
+  // yang state-nya belum tentu punya safeScore).
   if (!p?.radarData) return 50;
-  if (p.isOcean) return 0; // Lautan tidak bisa dibangun, skor otomatis 0
+  if (p.isOcean) return 0;
   const { flood = 0, soil = 0, seismic = 0, air = 0 } = p.radarData;
   const elevationRisk = (p.elevasi ?? 50) < 10 ? 70 : 25;
   const avgRisk = (flood + soil + seismic + air + elevationRisk) / 5;
