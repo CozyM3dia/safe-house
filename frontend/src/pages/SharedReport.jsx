@@ -24,6 +24,10 @@ export default function SharedReport() {
     getSharedReport(slug)
       .then((data) => {
         if (!alive) return;
+        // Judul dinamis untuk berbagi sosial dan tab peramban.
+        if (data?.address) {
+          document.title = `Audit Risiko ${data.address.split(',')[0]} — S.A.F.E House`;
+        }
         setState({ status: 'ready', data, error: null });
       })
       .catch((err) => {

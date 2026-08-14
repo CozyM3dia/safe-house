@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+# Halaman aplikasi tidak punya nilai pencarian
+Disallow: /app
+
+Sitemap: https://safehouse.web.id/sitemap.xml
