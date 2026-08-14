@@ -62,7 +62,7 @@ export default function AboutSection({ t }) {
 
           {/* Body Narrative */}
           <p className="mt-6 text-sm md:text-base text-muted-foreground leading-relaxed font-body font-normal max-w-[55ch]">
-            {t('aboutText', 'S.A.F.E House (Seismic Analysis for Foundation Evaluation) adalah platform analisis risiko geologi properti terintegrasi pertama di Indonesia. Menggabungkan data spasial nasional dengan AI kognitif untuk memberikan penilaian risiko instan sebelum Anda membangun, membeli, atau menyewa properti.')}
+            {t('aboutText', 'S.A.F.E House menyatukan data InaRISK BNPB, USGS, dan parameter PuSGeN menjadi satu desk study geoteknik. Untuk konsultan perizinan, developer, dan konsultan geoteknik yang harus menyiapkan parameter SNI 1726:2019 sebelum PBG — tanpa membuka lima portal pemerintah satu per satu.')}
           </p>
 
           {/* New Custom Geological strata image */}

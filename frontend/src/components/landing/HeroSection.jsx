@@ -29,7 +29,7 @@ export default function HeroSection({ t }) {
         transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
         className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 backdrop-blur-md px-4 py-1.5 text-xs text-muted-foreground font-body mb-6 cursor-default hover:border-accent/30 transition-colors"
       >
-        <span>{t('heroBadge', 'Sekarang dengan data InaRISK BNPB 2026 ✨')}</span>
+        <span>{t('heroBadge', 'Desk study geoteknik — InaRISK BNPB · USGS · PuSGeN')}</span>
       </motion.div>
 
       {/* 2. Headline - Made larger (text-5xl md:text-6xl lg:text-7xl+) for stronger visual weight */}
@@ -39,9 +39,9 @@ export default function HeroSection({ t }) {
         transition={{ duration: 0.9, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
         className="font-display text-[3.2rem] md:text-6xl lg:text-[5.2rem] leading-[0.95] tracking-tight text-foreground max-w-4xl text-balance"
       >
-        {t('heroTitlePrefix', 'Investasi Properti Lebih ')}
+        {t('heroTitlePrefix', 'Parameter Teknis PBG, ')}
         <span className="font-display italic text-accent pr-1">
-          {t('heroTitleItalic', 'Aman')}
+          {t('heroTitleItalic', 'Otomatis')}
         </span>
       </motion.h1>
 
@@ -52,7 +52,7 @@ export default function HeroSection({ t }) {
         transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
         className="mt-5 text-sm md:text-base text-muted-foreground max-w-[660px] leading-relaxed font-body text-balance"
       >
-        {t('heroSub', 'Evaluasi kerentanan sesar aktif, potensi likuifaksi, bahaya banjir, dan risiko geoteknik di Indonesia secara instan berbasis AI.')}
+        {t('heroSub', 'Kelas situs SNI 1726:2019, PGA desain, FS likuefaksi, dan bahaya banjir — dari satu titik koordinat, dalam dua menit. Untuk konsultan perizinan, developer, dan konsultan geoteknik.')}
       </motion.p>
 
       {/* 4. CTA Buttons */}
@@ -66,7 +66,7 @@ export default function HeroSection({ t }) {
           onClick={() => navigate('/app')}
           className="rounded-full px-6 py-2.5 text-sm font-semibold font-body bg-primary text-primary-foreground hover:bg-primary/90 transition-all btn-press shadow-glow/10 active:scale-[0.97]"
         >
-          {t('heroCTA', 'Analisis Sekarang')}
+          {t('heroCTA', 'Coba Gratis')}
         </button>
         <button
           onClick={() => navigate('/app')}

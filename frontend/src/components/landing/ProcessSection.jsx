@@ -162,7 +162,7 @@ export default function ProcessSection({ t }) {
                 {t('processStep2Title', '2. Penarikan Data Geospasial')}
               </h3>
               <p className="mt-4 text-xs md:text-sm text-muted-foreground leading-relaxed font-body font-normal">
-                {t('processStep2Desc', 'Dalam 3 detik, sistem kami menarik data spasial mikro dari server InaRISK BNPB, Open-Meteo, PVMBG, BMKG, dan data gempa USGS.')}
+                {t('processStep2Desc', 'Sistem menarik data spasial secara paralel dari InaRISK BNPB, Open-Meteo, gempa USGS, dan objek lingkungan OpenStreetMap — dengan parameter PGA mengacu PuSGeN.')}
               </p>
               
               {/* Timeline dot step connection */}
@@ -251,10 +251,10 @@ export default function ProcessSection({ t }) {
             >
               <span className="text-[11px] font-mono text-accent/60 uppercase tracking-widest mb-2 font-bold">TAHAP 03 / DIAGNOSTIC</span>
               <h3 className="font-display text-3xl md:text-4xl text-foreground font-medium leading-snug">
-                {t('processStep3Title', '3. Laporan Audit & AI Recommendations')}
+                {t('processStep3Title', '3. Laporan Parameter SNI')}
               </h3>
               <p className="mt-4 text-xs md:text-sm text-muted-foreground leading-relaxed font-body font-normal">
-                {t('processStep3Desc', 'AI memproses gambar Google Street View untuk memeriksa drainase mikro dan retakan dinding, lalu menghasilkan laporan komprehensif berstandar SNI.')}
+                {t('processStep3Desc', 'Sistem menghitung kelas situs Vs30, FS likuefaksi, PGA desain, dan bahaya banjir, lalu menyusun laporan siap lampir dengan sumber data tercantum — mengacu SNI 1726:2019.')}
               </p>
               
               {/* Timeline dot step connection */}
