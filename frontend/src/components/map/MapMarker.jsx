@@ -4,9 +4,11 @@ import { useAppStore } from '../../store/useAppStore';
 import { riskHex } from '../../lib/utils';
 
 function computeScore(property) {
-  if (!property?.radarData) return 50;
-  if (property.isOcean) return 0; // Lautan tidak bisa dibangun, skor otomatis 0
-  const r = property.radarData;
+  // Skor backend adalah sumber kebenaran.
+  if (typeof property?.safe_score === 'number') return property.safe_score;
+  const r = property?.hazard?.radar;
+  if (!r) return 50;
+  if (property?.hazard?.is_water) return 0;
   const avg = (r.flood + r.soil + r.seismic + r.landslide) / 4;
   return Math.round(Math.max(0, Math.min(100, 100 - avg)));
 }
@@ -50,17 +52,17 @@ export function MapMarker() {
 
   return (
     <>
-      {propertyA?.coords && (
+      {propertyA?.lat != null && (
         <Marker
-          key={`A-${propertyA.coords.lat}`}
-          position={[propertyA.coords.lat, propertyA.coords.lon]}
+          key={`A-${propertyA.lat}`}
+          position={[propertyA.lat, propertyA.lon]}
           icon={buildIcon(riskHex(computeScore(propertyA)), 'A')}
         />
       )}
-      {propertyB?.coords && (
+      {propertyB?.lat != null && (
         <Marker
-          key={`B-${propertyB.coords.lat}`}
-          position={[propertyB.coords.lat, propertyB.coords.lon]}
+          key={`B-${propertyB.lat}`}
+          position={[propertyB.lat, propertyB.lon]}
           icon={buildIcon(riskHex(computeScore(propertyB)), 'B')}
         />
       )}

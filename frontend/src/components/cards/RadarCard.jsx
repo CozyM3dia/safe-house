@@ -11,16 +11,20 @@ import { Radar as RadarIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 
 export function RadarCard({ propertyA, propertyB }) {
-  if (!propertyA?.radarData) return null;
+  if (!propertyA?.hazard?.radar) return null;
 
-  // Correct field names: soil (not liquefaction)
-  const buildData = (p) => ({
-    flood: p?.radarData?.flood ?? 0,
-    soil: p?.radarData?.soil ?? 0,
-    air: p?.radarData?.air ?? 0,
-    seismic: p?.radarData?.seismic ?? 0,
-    elevation: (p?.elevasi ?? 50) < 10 ? 80 : 20,
-  });
+  // Membaca hazard.radar dari AuditResult langsung.
+  const buildData = (p) => {
+    const r = p?.hazard?.radar || {};
+    const elevation = p?.elevation ?? p?.geotech?.elevation_m ?? 50;
+    return {
+      flood: r.flood ?? 0,
+      soil: r.soil ?? 0,
+      air: r.air ?? 0,
+      seismic: r.seismic ?? 0,
+      elevation: elevation < 10 ? 80 : 20,
+    };
+  };
 
   const a = buildData(propertyA);
   const b = propertyB ? buildData(propertyB) : null;

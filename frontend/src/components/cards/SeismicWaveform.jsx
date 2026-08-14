@@ -33,7 +33,8 @@ function buildPath(points) {
 
 export function SeismicWaveform({ property }) {
   if (!property) return null;
-  const pga = property?.seismic?.pgaBase ?? 0.3;
+  const fault = property?.geotech?.nearest_fault;
+  const pga = property?.geotech?.pga ?? 0.3;
   const color = pga > 0.5 ? '#ef4444' : pga > 0.3 ? '#f59e0b' : '#10b981';
   const wave = generateWave(pga);
   const path = buildPath(wave);
@@ -105,8 +106,8 @@ export function SeismicWaveform({ property }) {
       </div>
 
       <div className="mt-2 flex items-center justify-between text-[9px] font-mono tracking-wider text-text-muted">
-        <span>Fault: {property?.seismic?.faultName ?? '—'}</span>
-        <span>{property?.seismic?.faultDist != null ? `${Number(property.seismic.faultDist).toFixed(0)} km` : ''}</span>
+        <span>Fault: {fault?.name ?? '—'}</span>
+        <span>{fault?.distance_km != null ? `${Number(fault.distance_km).toFixed(0)} km` : ''}</span>
       </div>
     </Card>
   );

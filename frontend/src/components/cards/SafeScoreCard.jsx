@@ -6,16 +6,17 @@ import { riskHex, riskLabel } from '../../lib/utils';
 
 function computeScore(p) {
   // Backend adalah sumber kebenaran. Skor sudah dihitung deterministik di
-  // sana (services/scoring.py) — kartu hanya menampilkannya, tidak
-  // menghitung ulang, supaya angka di gauge sama dengan laporan.
-  if (typeof p?.safeScore === 'number') return p.safeScore;
+  // services/scoring.py — kartu hanya menampilkannya, tidak menghitung
+  // ulang, supaya angka di gauge sama dengan laporan.
+  if (typeof p?.safe_score === 'number') return p.safe_score;
 
-  // Cadangan lama untuk data yang belum lewat backend (mis. mode Battle
-  // yang state-nya belum tentu punya safeScore).
-  if (!p?.radarData) return 50;
-  if (p.isOcean) return 0;
-  const { flood = 0, soil = 0, seismic = 0, air = 0 } = p.radarData;
-  const elevationRisk = (p.elevasi ?? 50) < 10 ? 70 : 25;
+  // Cadangan bila skor tidak tersedia (mis. state tanpa audit).
+  const radar = p?.hazard?.radar;
+  if (!radar) return 50;
+  if (p?.hazard?.is_water) return 0;
+  const { flood = 0, soil = 0, seismic = 0, air = 0 } = radar;
+  const elevation = p?.elevation ?? p?.geotech?.elevation_m ?? 50;
+  const elevationRisk = elevation < 10 ? 70 : 25;
   const avgRisk = (flood + soil + seismic + air + elevationRisk) / 5;
   return Math.max(0, Math.min(100, Math.round(100 - avgRisk)));
 }
@@ -204,9 +205,9 @@ export function SafeScoreCard({ property }) {
 
           {/* Mini risk breakdown */}
           <div className="space-y-1.5">
-            <MiniBar label="Seismic" value={property?.radarData?.seismic ?? 0} />
-            <MiniBar label="Flood" value={property?.radarData?.flood ?? 0} />
-            <MiniBar label="Soil" value={property?.radarData?.soil ?? 0} />
+            <MiniBar label="Seismic" value={property?.hazard?.radar?.seismic ?? 0} />
+            <MiniBar label="Flood" value={property?.hazard?.radar?.flood ?? 0} />
+            <MiniBar label="Soil" value={property?.hazard?.radar?.soil ?? 0} />
           </div>
         </div>
       </div>

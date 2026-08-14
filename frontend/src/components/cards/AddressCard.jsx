@@ -5,20 +5,26 @@ import { Card, CardHeader, CardTitle } from '../ui/card';
 import { formatCoord, formatElevation } from '../../lib/formatters';
 
 export function AddressCard({ property }) {
-  if (!property) return null;
-
   const [copied, setCopied] = useState(false);
 
+  // Membaca AuditResult langsung: lat/lon di akar, sesar di geotech.
+  const lat = property?.lat;
+  const lon = property?.lon;
+  const elevation = property?.elevation ?? property?.geotech?.elevation_m;
+  const fault = property?.geotech?.nearest_fault;
+  const faultName = fault?.name;
+  const faultDist = fault?.distance_km;
+
   const handleCopy = useCallback(async () => {
-    const text = `${property.coords?.lat}, ${property.coords?.lon}`;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(`${lat}, ${lon}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {}
-  }, [property.coords]);
+  }, [lat, lon]);
 
-  const faultDist = property.seismic?.faultDist;
+  if (!property) return null;
+
   const faultColor = faultDist < 10 ? '#ef4444' : faultDist < 30 ? '#f59e0b' : '#10b981';
 
   return (
@@ -48,22 +54,22 @@ export function AddressCard({ property }) {
         <CoordCell
           icon={<Navigation className="h-2.5 w-2.5 text-accent/60" />}
           label="Lat"
-          value={formatCoord(property.coords?.lat)}
+          value={formatCoord(lat)}
         />
         <CoordCell
           icon={<Navigation className="h-2.5 w-2.5 text-accent/60 rotate-90" />}
           label="Lon"
-          value={formatCoord(property.coords?.lon)}
+          value={formatCoord(lon)}
         />
         <CoordCell
           icon={<Mountain className="h-2.5 w-2.5 text-accent/60" />}
           label="Elev"
-          value={formatElevation(property.elevasi)}
+          value={formatElevation(elevation)}
         />
       </div>
 
       {/* Fault line indicator */}
-      {property.seismic?.faultName && (
+      {faultName && (
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -81,7 +87,7 @@ export function AddressCard({ property }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="truncate text-[11px] font-semibold text-text-primary">
-              {property.seismic.faultName}
+              {faultName}
             </p>
             <p className="text-[9px] font-mono" style={{ color: faultColor }}>
               {faultDist < 1 ? `${(faultDist * 1000).toFixed(0)}m away` : `${faultDist.toFixed(1)}km away`}

@@ -5,6 +5,7 @@ import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Downloa
 
 import { useAppStore } from '../../store/useAppStore';
 import { createShare } from '../../services/api';
+import { adaptAuditResult } from '../../services/auditAdapter';
 import { exportPrintReadyPdf } from '../../lib/pdfExport';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
@@ -235,7 +236,9 @@ function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
     setExporting(true);
     const id = toast.loading(lang === 'en' ? 'Building PDF…' : 'Menyusun PDF…');
     try {
-      await exportPrintReadyPdf(propertyA, lang);
+      // pdfExport masih memakai bentuk lama; adapter dipakai hanya di sini
+      // sampai generator PDF ditulis ulang untuk membaca AuditResult.
+      await exportPrintReadyPdf(adaptAuditResult(propertyA), lang);
       toast.success(lang === 'en' ? 'PDF downloaded' : 'PDF terunduh', { id });
     } catch (e) {
       console.error('PDF export failed', e);

@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { runAudit } from '../services/api';
-import { adaptAuditResult } from '../services/auditAdapter';
 
 export const useAppStore = create(
   persist(
@@ -155,8 +154,8 @@ export const useAppStore = create(
         );
 
         try {
-          const raw = await runAudit(lat, lng, lang);
-          const data = adaptAuditResult(raw);
+          // Simpan AuditResult apa adanya — kartu membacanya langsung.
+          const data = await runAudit(lat, lng, lang);
 
           // Klik yang lebih baru sudah menggantikan permintaan ini.
           if (get().currentAiAbortController !== abortController) {
@@ -173,7 +172,7 @@ export const useAppStore = create(
           get().addRecentSearch({ label: data.address, lat, lng, timestamp: Date.now() });
 
           // Beri tahu jujur kalau ada sumber data yang gagal.
-          if (data.sourcesFailed.length > 0) {
+          if ((data.sources_failed || []).length > 0) {
             toast.warning(
               lang === 'en'
                 ? 'Audit ready — some data sources were unavailable.'
