@@ -1,13 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-import {
-  fetchGeospatialData,
-  generateSummaryCards,
-  generateDetailedReport,
-  generateBattleReport,
-  runStreetViewAnalysis,
-} from '../services/engine';
+import { runAudit } from '../services/api';
+import { adaptAuditResult } from '../services/auditAdapter';
 
 export const useAppStore = create(
   persist(
@@ -146,189 +141,69 @@ export const useAppStore = create(
           return;
         }
 
-        const { mode, currentAiAbortController } = get();
+        const { mode, currentAiAbortController, lang } = get();
         const battleTarget = isBattle || mode === 'battle';
 
-        if (currentAiAbortController) {
-          currentAiAbortController.abort();
-        }
+        // Token pembatal sederhana: klik baru membatalkan hasil klik lama.
+        // Backend tidak dibatalkan, tapi hasil basi diabaikan saat tiba.
+        if (currentAiAbortController) currentAiAbortController.abort();
         const abortController = new AbortController();
         set({ loading: true, currentAiAbortController: abortController });
+
+        const toastId = toast.loading(
+          lang === 'en' ? 'Running audit…' : 'Menjalankan audit…'
+        );
+
         try {
-          const data = await fetchGeospatialData(lat, lng);
+          const raw = await runAudit(lat, lng, lang);
+          const data = adaptAuditResult(raw);
 
-          // Bail out if user already clicked a newer location
-          if (get().currentAiAbortController !== abortController) return;
-
-          // Show data immediately — don't block on AI
-          if (battleTarget) {
-            set({
-              propertyB: data,
-              loading: false,
-              selectingBattlePin: false,
-            });
-          } else {
-            set({
-              propertyA: data,
-              propertyB: null,
-              loading: false,
-              leftPanelOpen: true,
-            });
+          // Klik yang lebih baru sudah menggantikan permintaan ini.
+          if (get().currentAiAbortController !== abortController) {
+            toast.dismiss(toastId);
+            return;
           }
 
-          // Save to recent searches
-          get().addRecentSearch({
-            label: data.address,
-            lat,
-            lng,
-            timestamp: Date.now(),
-          });
+          if (battleTarget) {
+            set({ propertyB: data, loading: false, selectingBattlePin: false });
+          } else {
+            set({ propertyA: data, propertyB: null, loading: false, leftPanelOpen: true });
+          }
 
-          // ── Two-phase AI: Summary first, then Detailed (staggered to avoid rate-limiting) ──
-          const { lang } = get();
-          set({ aiLoading: true });
-          const toastId = toast.loading(lang === 'en' ? 'Analyzing location…' : 'Menganalisis lokasi…');
+          get().addRecentSearch({ label: data.address, lat, lng, timestamp: Date.now() });
 
-          const summaryPromise = generateSummaryCards(data, lang, abortController.signal);
-          // Stagger: wait for summary to finish before firing detailed report
-          // This prevents simultaneous Gemini API calls that trigger 429 rate limits
-          const detailedReportPromise = summaryPromise
-            .catch(() => null) // Don't let summary failure block detailed report
-            .then(() => {
-              if (abortController.signal.aborted) return null;
-              return generateDetailedReport(data, lang, abortController.signal);
+          // Beri tahu jujur kalau ada sumber data yang gagal.
+          if (data.sourcesFailed.length > 0) {
+            toast.warning(
+              lang === 'en'
+                ? 'Audit ready — some data sources were unavailable.'
+                : 'Audit siap — sebagian sumber data tidak tersedia.',
+              { id: toastId, duration: 4000 }
+            );
+          } else {
+            toast.success(lang === 'en' ? 'Audit ready' : 'Audit siap', {
+              id: toastId,
+              duration: 2500,
             });
-
-          // Handle Summary Cards (Phase 1)
-          summaryPromise
-            .then((summary) => {
-              if (abortController.signal.aborted) { toast.dismiss(toastId); return; }
-
-              if (summary?.aiError) {
-                set({ aiLoading: false });
-                if (summary.offline) {
-                  toast.error('Tidak ada koneksi internet. Periksa jaringan Anda.', { id: toastId, duration: 8000 });
-                } else {
-                  toast.warning('AI gagal merespons. Data geospasial tetap tersedia.', { id: toastId, duration: 5000 });
-                }
-                return;
-              }
-
-              // Show cards immediately — merging with whatever state is currently present
-              if (battleTarget) {
-                set((s) => {
-                  const existingReport = s.propertyB?.aiReport || {};
-                  return {
-                    propertyB: s.propertyB
-                      ? {
-                          ...s.propertyB,
-                          aiReport: { reportLoading: true, ...existingReport, ...summary },
-                        }
-                      : s.propertyB,
-                  };
-                });
-              } else {
-                set((s) => {
-                  const existingReport = s.propertyA?.aiReport || {};
-                  return {
-                    propertyA: s.propertyA
-                      ? {
-                          ...s.propertyA,
-                          aiReport: { reportLoading: true, ...existingReport, ...summary },
-                        }
-                      : s.propertyA,
-                  };
-                });
-              }
-              toast.success(lang === 'en' ? 'Summary ready — full report loading…' : 'Ringkasan siap — laporan lengkap sedang dibuat…', { id: toastId, duration: 3000 });
-            })
-            .catch((err) => {
-              if (err.name === 'CanceledError' || err.message === 'canceled' || abortController.signal.aborted) {
-                toast.dismiss(toastId); set({ aiLoading: false }); return;
-              }
-              set({ aiLoading: false });
-              toast.error('AI report failed', { id: toastId });
-            });
-
-          // Handle Detailed Report (Phase 2)
-          detailedReportPromise
-            .then((detailedReport) => {
-              if (abortController.signal.aborted) return;
-              
-              if (battleTarget) {
-                set((s) => {
-                  const existingReport = s.propertyB?.aiReport || {};
-                  return {
-                    propertyB: s.propertyB
-                      ? {
-                          ...s.propertyB,
-                          aiReport: { ...existingReport, detailedReport, reportLoading: false },
-                        }
-                      : s.propertyB,
-                    aiLoading: false,
-                  };
-                });
-              } else {
-                set((s) => {
-                  const existingReport = s.propertyA?.aiReport || {};
-                  return {
-                    propertyA: s.propertyA
-                      ? {
-                          ...s.propertyA,
-                          aiReport: { ...existingReport, detailedReport, reportLoading: false },
-                        }
-                      : s.propertyA,
-                    aiLoading: false,
-                  };
-                });
-              }
-              if (detailedReport) toast.success(lang === 'en' ? 'Full report ready' : 'Laporan lengkap siap', { duration: 3000 });
-
-              // ── Street View: fire-and-forget (only audit mode) ──
-              if (!battleTarget) {
-                runStreetViewAnalysis(data.coords.lat, data.coords.lon, data.address)
-                  .then((svAnalysis) => {
-                    if (!svAnalysis || abortController.signal.aborted) return;
-                    set((s) => {
-                      if (!s.propertyA?.aiReport) return {};
-                      return { propertyA: { ...s.propertyA, aiReport: { ...s.propertyA.aiReport, microAnalysis: svAnalysis, streetViewUsed: true } } };
-                    });
-                    toast.success('📸 Street View updated', { duration: 3000 });
-                  })
-                  .catch(() => {});
-              }
-            })
-            .catch((err) => {
-              if (err.name === 'CanceledError' || abortController.signal.aborted) return;
-              set({ aiLoading: false });
-            });
+          }
         } catch (e) {
+          if (get().currentAiAbortController !== abortController) {
+            toast.dismiss(toastId);
+            return;
+          }
           console.error('processLocation failed', e);
-          toast.error(`Failed to process location: ${e.message}`);
-          set({ loading: false, aiLoading: false });
+          toast.error(e.message || 'Gagal memproses lokasi', { id: toastId });
+          set({ loading: false });
         }
       },
 
       // ─── Battle report ─────────────────────────────────────────
-      runBattleReport: async () => {
-        const { propertyA, propertyB } = get();
-        if (!propertyA || !propertyB) return null;
-        return generateBattleReport(propertyA, propertyB);
-      },
+      // Mode Battle memerlukan lapis AI, yang ditunda sampai tahap 6.
+      // Lihat spec bagian 13 — sengaja tidak dikerjakan dulu.
+      runBattleReport: async () => null,
 
       runBattleReportAction: async () => {
-        const { propertyA, propertyB, lang } = get();
-        if (!propertyA || !propertyB) return;
-        set({ battleReportLoading: true });
-        try {
-          const report = await generateBattleReport(propertyA, propertyB, lang);
-          set({ battleReportContent: report, battleReportLoading: false });
-          toast.success('Battle report ready!');
-        } catch (e) {
-          console.error('Battle report failed', e);
-          set({ battleReportLoading: false });
-          toast.error('Battle report generation failed');
-        }
+        toast.info('Mode perbandingan akan hadir setelah lapis AI aktif.');
       },
 
       // ─── Reset ─────────────────────────────────────────────────

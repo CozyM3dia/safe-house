@@ -65,6 +65,7 @@ export function MapArea() {
           url={activeTile.url}
           attribution={activeTile.attribution}
           maxZoom={activeTile.maxZoom}
+          subdomains={activeTile.subdomains || 'abc'}
         />
 
         <NationwideOverlays />

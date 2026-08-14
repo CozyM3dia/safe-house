@@ -1,14 +1,17 @@
-// Google Maps XYZ URLs
+// Tile sources — gratis, tanpa kunci, dan boleh dipakai komersial.
+// Google Maps XYZ dihapus: pemakaian tanpa kunci resmi melanggar ketentuan
+// layanan Google. Lihat spec bagian 6.
 export const MAP_TILES = {
   street: {
-    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
     maxZoom: 20,
+    subdomains: 'abcd',
   },
   satellite: {
-    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', // y = Hybrid (Satellite + Labels)
-    attribution: '&copy; Google Maps',
-    maxZoom: 20,
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
   },
 };
 
