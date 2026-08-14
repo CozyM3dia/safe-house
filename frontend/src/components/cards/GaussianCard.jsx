@@ -32,7 +32,8 @@ function generateSpectrum(pga) {
 }
 
 export function GaussianCard({ property }) {
-  const pga = property?.seismic?.pgaSurface ?? property?.seismic?.pgaBase ?? 0.35;
+  const g = property?.geotech || {};
+  const pga = g.pga_surface ?? g.pga ?? 0.35;
   const sds = 2.5 * pga;
 
   const data = useMemo(() => generateSpectrum(pga), [pga]);

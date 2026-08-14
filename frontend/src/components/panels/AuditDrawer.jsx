@@ -16,10 +16,13 @@ import { locationToUrl, riskHex, riskLabel } from '../../lib/utils';
 
 // ─── Local Helpers ──────────────────────────────────────────────────
 function computeScore(p) {
-  if (!p?.radarData) return 50;
-  if (p.isOcean) return 0;
-  const { flood = 0, soil = 0, seismic = 0, air = 0 } = p.radarData;
-  const elevationRisk = (p.elevasi ?? 50) < 10 ? 70 : 25;
+  if (typeof p?.safe_score === 'number') return p.safe_score;
+  const radar = p?.hazard?.radar;
+  if (!radar) return 50;
+  if (p?.hazard?.is_water) return 0;
+  const { flood = 0, soil = 0, seismic = 0, air = 0 } = radar;
+  const elevation = p?.elevation ?? p?.geotech?.elevation_m ?? 50;
+  const elevationRisk = elevation < 10 ? 70 : 25;
   const avgRisk = (flood + soil + seismic + air + elevationRisk) / 5;
   return Math.max(0, Math.min(100, Math.round(100 - avgRisk)));
 }
@@ -27,9 +30,9 @@ function computeScore(p) {
 // ─── Visualizations for Report Sections ──────────────────────────────
 
 function SoilVisual({ property }) {
-  const vs30 = property?.vs30 ?? 180;
-  const siteClass = property?.siteClass ?? 'SD';
-  const fs = property?.compressedPayload?.liquefaction_analysis?.fs_score ?? 1.2;
+  const vs30 = property?.geotech?.vs30 ?? 180;
+  const siteClass = property?.geotech?.site_class ?? 'SD';
+  const fs = property?.geotech?.fs ?? 1.2;
   
   const classes = [
     { name: 'SE', label: 'Lunak', range: '<180', color: '#ef4444' },
@@ -165,8 +168,8 @@ function SeismicVisual({ property }) {
 }
 
 function EnvironmentVisual({ property }) {
-  const elevasi = property?.elevasi ?? 0;
-  const aqi = property?.compressedPayload?.env_extras?.aqi ?? 20;
+  const elevasi = property?.elevation ?? property?.geotech?.elevation_m ?? 0;
+  const aqi = property?.environment?.aqi ?? 20;
   
   return (
     <div className="mt-4 p-4.5 rounded-2xl border border-white/6 bg-white/[0.01] space-y-4">
@@ -710,8 +713,8 @@ export function AuditDrawer() {
   };
 
   const handleCopy = async () => {
-    if (!propertyA?.coords) return;
-    const url = locationToUrl(propertyA.coords.lat, propertyA.coords.lon);
+    if (propertyA?.lat == null) return;
+    const url = locationToUrl(propertyA.lat, propertyA.lon);
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -812,9 +815,9 @@ export function AuditDrawer() {
                       {propertyA.address}
                     </h1>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-text-muted font-mono">
-                      <span>LAT: {propertyA.coords.lat.toFixed(6)}</span>
-                      <span>LON: {propertyA.coords.lon.toFixed(6)}</span>
-                      <span>ELEV: {propertyA.elevasi}m</span>
+                      <span>LAT: {propertyA.lat?.toFixed(6)}</span>
+                      <span>LON: {propertyA.lon?.toFixed(6)}</span>
+                      <span>ELEV: {propertyA.elevation ?? propertyA.geotech?.elevation_m}m</span>
                     </div>
                   </div>
                   <div className="relative z-10 shrink-0 flex items-center gap-4 bg-black/35 border border-white/8 rounded-2xl px-4.5 py-3.5">

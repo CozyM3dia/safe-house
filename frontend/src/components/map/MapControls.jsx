@@ -20,8 +20,8 @@ function ControlsInner() {
   const propertyA = useAppStore((s) => s.propertyA);
 
   const recenter = () => {
-    if (propertyA?.coords) {
-      map.flyTo([propertyA.coords.lat, propertyA.coords.lon], 15);
+    if (propertyA?.lat != null) {
+      map.flyTo([propertyA.lat, propertyA.lon], 15);
     } else {
       map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM);
     }

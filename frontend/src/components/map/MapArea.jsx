@@ -32,11 +32,11 @@ function MapFlyToProperty() {
 
   useEffect(() => {
     const target = propertyB || propertyA;
-    if (!target?.coords) return;
-    const key = `${target.coords.lat},${target.coords.lon}`;
+    if (target?.lat == null || target?.lon == null) return;
+    const key = `${target.lat},${target.lon}`;
     if (last.current === key) return;
     last.current = key;
-    map.flyTo([target.coords.lat, target.coords.lon], 15, {
+    map.flyTo([target.lat, target.lon], 15, {
       duration: 1.2,
       easeLinearity: 0.3,
     });

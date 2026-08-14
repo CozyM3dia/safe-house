@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, ShieldCheck, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 
 import { getSharedReport } from '../services/api';
-import { adaptAuditResult } from '../services/auditAdapter';
 import { SafeScoreCard } from '../components/cards/SafeScoreCard';
 import { RadarCard } from '../components/cards/RadarCard';
 import { AddressCard } from '../components/cards/AddressCard';
@@ -23,9 +22,13 @@ export default function SharedReport() {
     let alive = true;
     setState({ status: 'loading', data: null, error: null });
     getSharedReport(slug)
-      .then((raw) => {
+      .then((data) => {
         if (!alive) return;
-        setState({ status: 'ready', data: adaptAuditResult(raw), error: null });
+        // Judul dinamis untuk berbagi sosial dan tab peramban.
+        if (data?.address) {
+          document.title = `Audit Risiko ${data.address.split(',')[0]} — S.A.F.E House`;
+        }
+        setState({ status: 'ready', data, error: null });
       })
       .catch((err) => {
         if (!alive) return;
@@ -84,8 +87,9 @@ export default function SharedReport() {
 }
 
 function ReportBody({ property }) {
-  const g = property.compressedPayload?.liquefaction_analysis || {};
-  const seis = property.compressedPayload?.seismotectonic || {};
+  const g = property.geotech || {};
+  const h = property.hazard || {};
+  const fault = g.nearest_fault || {};
 
   return (
     <div className="flex flex-col gap-5">
@@ -98,7 +102,7 @@ function ReportBody({ property }) {
           </h1>
           <p className="text-sm text-text-secondary">{property.address}</p>
           <p className="mt-0.5 font-data text-xs text-text-muted">
-            {property.coords.lat.toFixed(5)}, {property.coords.lon.toFixed(5)}
+            {property.lat.toFixed(5)}, {property.lon.toFixed(5)}
           </p>
         </div>
       </div>
@@ -114,21 +118,21 @@ function ReportBody({ property }) {
       <div>
         <SectionLabel>Ringkasan Geoteknik</SectionLabel>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Stat label="FS Likuefaksi" value={g.fs_score} sub={g.status} />
-          <Stat label="Kelas Situs" value={g.site_class} sub={g.vs30_est} />
-          <Stat label="PGA Desain" value={g.pga_design_base} sub={`Fa ${g.amplification_fa ?? '—'}`} />
+          <Stat label="FS Likuefaksi" value={g.fs} sub={g.status} />
+          <Stat label="Kelas Situs" value={g.site_class} sub={g.vs30 ? `${g.vs30} m/s` : '—'} />
+          <Stat label="PGA Desain" value={g.pga} sub={`Fa ${g.fa ?? '—'}`} />
           <Stat
             label="Sesar Terdekat"
-            value={seis.nearest_fault?.dist_km != null ? `${seis.nearest_fault.dist_km} km` : '—'}
-            sub={seis.nearest_fault?.name}
+            value={fault.distance_km != null ? `${fault.distance_km} km` : '—'}
+            sub={fault.name}
           />
           <Stat
             label="Banjir"
-            value={property.compressedPayload?.flood_hazard?.split(' ')[0] || '—'}
+            value={h.flood_label?.split(' ')[0] || '—'}
           />
           <Stat
             label="Tsunami"
-            value={property.compressedPayload?.tsunami_analysis?.risk_level || '—'}
+            value={h.tsunami || '—'}
           />
         </div>
       </div>
@@ -139,10 +143,10 @@ function ReportBody({ property }) {
       </div>
 
       {/* Honest note when data was missing */}
-      {property.sourcesFailed?.length > 0 && (
+      {property.sources_failed?.length > 0 && (
         <p className="rounded-lg border border-[rgba(255,210,170,0.1)] bg-[rgba(255,210,170,0.03)] px-3 py-2 text-xs text-text-muted">
           Sebagian sumber data tidak tersedia saat audit ini dibuat
-          ({property.sourcesFailed.join(', ')}). Angka terkait ditandai sebagai
+          ({property.sources_failed.join(', ')}). Angka terkait ditandai sebagai
           tidak diketahui, bukan aman.
         </p>
       )}

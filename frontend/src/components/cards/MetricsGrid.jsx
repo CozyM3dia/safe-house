@@ -3,51 +3,60 @@ import { motion } from 'framer-motion';
 import { Mountain, Activity, Droplets, Waves } from 'lucide-react';
 import { siteClass } from '../../lib/formatters';
 
-const metrics = (p) => [
-  {
-    label: 'Vs30',
-    value: p?.vs30 ?? 0,
-    suffix: ' m/s',
-    decimals: 0,
-    sub: siteClass(p?.vs30),
-    icon: Mountain,
-    color: '#d4956a',
-    // Normalize to 0-100 for indicator (180-760 range)
-    indicator: Math.min(100, Math.max(0, ((p?.vs30 ?? 250) - 100) / 6)),
-  },
-  {
-    label: 'PGA',
-    value: p?.seismic?.pgaBase ?? 0,
-    suffix: 'g',
-    decimals: 2,
-    sub: (p?.seismic?.pgaBase ?? 0) >= 0.5 ? 'High shaking' : 'Peak accel.',
-    icon: Activity,
-    color: '#f59e0b',
-    indicator: Math.min(100, (p?.seismic?.pgaBase ?? 0) * 100),
-  },
-  {
-    label: 'Liq. FS',
-    value: p?.radarData
-      ? Math.max(0, (100 - (p.radarData.soil || 0)) / 100)
-      : 0,
-    suffix: '',
-    decimals: 2,
-    sub: p?.radarData?.soil > 60 ? 'High risk' : 'Stable',
-    icon: Waves,
-    color: p?.radarData?.soil > 60 ? '#ef4444' : '#10b981',
-    indicator: p?.radarData ? Math.max(0, 100 - (p.radarData.soil || 0)) : 50,
-  },
-  {
-    label: 'Elevation',
-    value: p?.elevasi ?? 0,
-    suffix: ' m',
-    decimals: 0,
-    sub: (p?.elevasi ?? 99) < 10 ? 'Flood prone' : 'Standard',
-    icon: Droplets,
-    color: (p?.elevasi ?? 99) < 10 ? '#ef4444' : '#a78bfa',
-    indicator: Math.min(100, ((p?.elevasi ?? 0) / 200) * 100),
-  },
-];
+// Membaca AuditResult langsung: geotech + hazard.radar + elevation.
+const metrics = (p) => {
+  const g = p?.geotech || {};
+  const soil = p?.hazard?.radar?.soil ?? 0;
+  const vs30 = g.vs30 ?? 0;
+  const pga = g.pga ?? 0;
+  const elevation = p?.elevation ?? g.elevation_m ?? 0;
+  const fs = g.fs ?? 0;
+
+  return [
+    {
+      label: 'Vs30',
+      value: vs30,
+      suffix: ' m/s',
+      decimals: 0,
+      sub: siteClass(vs30),
+      icon: Mountain,
+      color: '#d4956a',
+      // Normalisasi ke 0-100 untuk indikator (rentang 180-760)
+      indicator: Math.min(100, Math.max(0, ((vs30 || 250) - 100) / 6)),
+    },
+    {
+      label: 'PGA',
+      value: pga,
+      suffix: 'g',
+      decimals: 2,
+      sub: pga >= 0.5 ? 'High shaking' : 'Peak accel.',
+      icon: Activity,
+      color: '#f59e0b',
+      indicator: Math.min(100, pga * 100),
+    },
+    {
+      label: 'Liq. FS',
+      // FS likuefaksi langsung dari engine, bukan diturunkan dari skor.
+      value: fs,
+      suffix: '',
+      decimals: 2,
+      sub: soil > 60 ? 'High risk' : 'Stable',
+      icon: Waves,
+      color: soil > 60 ? '#ef4444' : '#10b981',
+      indicator: Math.max(0, 100 - soil),
+    },
+    {
+      label: 'Elevation',
+      value: elevation,
+      suffix: ' m',
+      decimals: 0,
+      sub: elevation < 10 ? 'Flood prone' : 'Standard',
+      icon: Droplets,
+      color: elevation < 10 ? '#ef4444' : '#a78bfa',
+      indicator: Math.min(100, (elevation / 200) * 100),
+    },
+  ];
+};
 
 function useCountUp(end, duration = 1200, decimals = 0) {
   const [current, setCurrent] = useState(0);

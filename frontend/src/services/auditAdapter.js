@@ -1,12 +1,10 @@
 /**
- * Adapter: AuditResult (backend) → bentuk propertyA (frontend lama).
+ * Adapter: AuditResult (backend) → bentuk lama engine.js.
  *
- * Kartu-kartu yang ada (SafeScoreCard, RadarCard, MetricsGrid) dibangun
- * terhadap bentuk keluaran lama engine.js. Daripada menulis ulang setiap
- * kartu, adapter ini menerjemahkan respons backend ke bentuk itu.
- *
- * Ini lapisan sementara selama migrasi. Setelah kartu ditulis ulang untuk
- * membaca AuditResult langsung, adapter ini dihapus.
+ * Kartu dashboard sudah membaca AuditResult langsung. Adapter ini sekarang
+ * dipakai HANYA oleh generator PDF (lib/pdfExport.js), yang masih terikat
+ * bentuk lama. Hapus setelah pdfExport ditulis ulang untuk membaca
+ * AuditResult.
  */
 
 /** @param {object} r AuditResult dari POST /api/audit */
