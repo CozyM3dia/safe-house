@@ -19,6 +19,7 @@ import { useAppStore } from './store/useAppStore';
 import { OnboardingTour } from './components/onboarding/OnboardingTour';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const SharedReport = lazy(() => import('./pages/SharedReport'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,6 +126,18 @@ export default function App() {
           }
         />
         <Route path="/app" element={<AppPage />} />
+        <Route
+          path="/laporan/:slug"
+          element={
+            <Suspense fallback={
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0f0b08' }}>
+                <div style={{ fontFamily: '"Syne", sans-serif', fontSize: 14, color: '#d4956a', letterSpacing: '0.2em', fontWeight: 700 }}>LOADING…</div>
+              </div>
+            }>
+              <SharedReport />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -14,18 +14,18 @@ import { LanguageSelectorDropdown } from '../components/ui/language-selector-dro
 
 const COPY = {
   id: {
-    heroNavBtn: 'Mulai Analisis',
-    heroBadge: 'Sekarang dengan data InaRISK BNPB 2026 ✨',
-    heroTitlePrefix: 'Investasi Properti Lebih ',
-    heroTitleItalic: 'Aman',
-    heroSub: 'Evaluasi kerentanan sesar aktif, potensi likuifaksi, bahaya banjir, dan risiko geoteknik di Indonesia secara instan berbasis AI.',
-    heroCTA: 'Analisis Sekarang',
-    demoLoc: 'Cibubur, Jakarta',
+    heroNavBtn: 'Coba Gratis',
+    heroBadge: 'Desk study geoteknik — InaRISK BNPB · USGS · PuSGeN',
+    heroTitlePrefix: 'Parameter Teknis PBG, ',
+    heroTitleItalic: 'Otomatis',
+    heroSub: 'Kelas situs SNI 1726:2019, PGA desain, FS likuifaksi, dan bahaya banjir — dari satu titik koordinat, dalam dua menit. Untuk konsultan perizinan, developer, dan konsultan geoteknik.',
+    heroCTA: 'Coba Gratis',
+    demoLoc: 'Bandar Lampung',
     demoRisk: 'Risiko Sedang',
-    
+
     aboutTitleLabel: 'TENTANG S.A.F.E HOUSE',
-    aboutHeading: 'Membangun dengan Kepastian, Bukan Spekulasi',
-    aboutText: 'S.A.F.E House (Seismic Analysis for Foundation Evaluation) adalah platform analisis risiko geologi properti terintegrasi pertama di Indonesia. Menggabungkan data spasial nasional dengan AI kognitif untuk memberikan penilaian risiko instan sebelum Anda membangun, membeli, atau menyewa properti.',
+    aboutHeading: 'Parameter Teknis, Bukan Tebakan',
+    aboutText: 'S.A.F.E House menyatukan data InaRISK BNPB, USGS, dan parameter PuSGeN menjadi satu desk study geoteknik. Untuk konsultan perizinan, developer, dan konsultan geoteknik yang harus menyiapkan parameter SNI 1726:2019 sebelum PBG — tanpa membuka lima portal pemerintah satu per satu.',
     
     aboutFactorSeismic: 'Risiko Seismik',
     aboutFactorSeismicDesc: 'Menganalisis kedekatan dengan sesar/patahan aktif regional, Peak Ground Acceleration (PGA) PuSGeN, dan potensi megathrust.',
@@ -41,9 +41,9 @@ const COPY = {
     processStep1Title: '1. Pilih Titik Properti',
     processStep1Desc: 'Klik koordinat mana saja pada peta Leaflet interaktif Indonesia, masukkan koordinat GPS secara manual, atau tempelkan tautan Google Maps.',
     processStep2Title: '2. Penarikan Data Geospasial',
-    processStep2Desc: 'Dalam 3 detik, sistem kami menarik data spasial mikro dari server InaRISK BNPB, Open-Meteo, PVMBG, BMKG, dan data gempa USGS.',
-    processStep3Title: '3. Audit Geoteknik & AI Report',
-    processStep3Desc: 'AI memproses gambar Google Street View untuk memeriksa drainase mikro dan retakan dinding, lalu menghasilkan laporan komprehensif berstandar SNI.',
+    processStep2Desc: 'Sistem menarik data spasial secara paralel dari InaRISK BNPB, Open-Meteo, gempa USGS, dan objek lingkungan OpenStreetMap — dengan parameter PGA mengacu PuSGeN.',
+    processStep3Title: '3. Laporan Parameter SNI',
+    processStep3Desc: 'Sistem menghitung kelas situs Vs30, FS likuifaksi, PGA desain, dan bahaya banjir, lalu menyusun laporan siap lampir dengan sumber data tercantum — mengacu SNI 1726:2019.',
 
     disclaimerTitleLabel: 'TRANSPARANSI DATA',
     disclaimerHeading: 'Sumber Data & Disclaimer Hukum',
@@ -62,9 +62,9 @@ const COPY = {
     faqQ5: 'Apakah riwayat pencarian lokasi saya aman?',
     faqA5: 'Ya. Semua koordinat dan histori pencarian properti disimpan secara lokal di dalam local storage peramban Anda. Kami tidak menyimpan histori pencarian Anda di server kami untuk menjamin kerahasiaan kepemilikan aset properti Anda.',
 
-    ctaHeading: 'Jangan beli properti\nterpejam mata.',
-    ctaSub: 'Cek risiko geologis dan lindungi investasi properti Anda sebelum terlambat.',
-    ctaBtn: 'Mulai Audit Properti Kamu',
+    ctaHeading: 'Siapkan parameter PBG\ntanpa buka lima portal.',
+    ctaSub: 'Satu koordinat, parameter SNI 1726:2019 dan bahaya banjir siap lampir dalam dua menit.',
+    ctaBtn: 'Coba Audit Gratis',
   },
   en: {
     heroNavBtn: 'Start Analysis',

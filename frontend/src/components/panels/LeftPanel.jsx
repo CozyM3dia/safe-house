@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap } from 'lucide-react';
+import { toast } from 'sonner';
+import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Download, Share2 } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
+import { createShare } from '../../services/api';
+import { exportPrintReadyPdf } from '../../lib/pdfExport';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -222,6 +226,51 @@ function SkeletonState() {
 
 function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
   const t = useT();
+  const lang = useAppStore((s) => s.lang);
+  const [exporting, setExporting] = useState(false);
+
+  const [sharing, setSharing] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    const id = toast.loading(lang === 'en' ? 'Building PDF…' : 'Menyusun PDF…');
+    try {
+      await exportPrintReadyPdf(propertyA, lang);
+      toast.success(lang === 'en' ? 'PDF downloaded' : 'PDF terunduh', { id });
+    } catch (e) {
+      console.error('PDF export failed', e);
+      toast.error(lang === 'en' ? 'PDF export failed' : 'Gagal membuat PDF', { id });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleShare = async () => {
+    // Tautan publik butuh audit yang tersimpan. Tanpa database, audit tidak
+    // punya id — beri tahu jujur alih-alih gagal diam-diam.
+    if (!propertyA.id) {
+      toast.info(
+        lang === 'en'
+          ? 'Sharing needs the database — available once deployed.'
+          : 'Berbagi butuh database — tersedia setelah aplikasi ter-deploy.'
+      );
+      return;
+    }
+    setSharing(true);
+    const id = toast.loading(lang === 'en' ? 'Creating link…' : 'Membuat tautan…');
+    try {
+      const { url_path } = await createShare(propertyA.id);
+      const url = `${window.location.origin}${url_path}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success(lang === 'en' ? 'Link copied' : 'Tautan disalin', { id });
+    } catch (e) {
+      console.error('Share failed', e);
+      toast.error(e.message || (lang === 'en' ? 'Share failed' : 'Gagal berbagi'), { id });
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <motion.div
       variants={container}
@@ -276,30 +325,36 @@ function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
       {/* Action Buttons */}
       <motion.div variants={item} className="grid grid-cols-5 gap-2">
         <Button
-          onClick={onOpenDrawer}
+          onClick={handleExport}
           variant="default"
           size="lg"
           className="col-span-3 group text-xs py-2 px-3 flex items-center justify-center gap-1.5"
-          disabled={!propertyA.aiReport}
+          disabled={exporting}
         >
-          <FileText className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">
-            {propertyA.aiReport
-              ? t('panel.viewReport')
-              : t('panel.reportLoading')}
-          </span>
-          {propertyA.aiReport && (
-            <ChevronRight className="h-3 w-3 shrink-0 ml-auto opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+          {exporting ? (
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5 shrink-0" />
           )}
+          <span className="truncate">
+            {exporting
+              ? (lang === 'en' ? 'Building…' : 'Menyusun…')
+              : (lang === 'en' ? 'Download PDF' : 'Unduh PDF')}
+          </span>
         </Button>
         <Button
-          onClick={onOpenChat}
+          onClick={handleShare}
+          disabled={sharing}
           variant="accent"
           size="lg"
-          className="col-span-2 group text-xs py-2 px-3 border border-accent/20 flex items-center justify-center gap-1.5 hover:bg-accent/20 transition-all shadow-[0_0_12px_rgba(212,149,106,0.15)]"
+          className="col-span-2 group text-xs py-2 px-3 border border-accent/20 flex items-center justify-center gap-1.5 hover:bg-accent/20 transition-all"
         >
-          <Sparkles className="h-3.5 w-3.5 shrink-0 text-accent animate-pulse" />
-          <span>Tanya AI</span>
+          {sharing ? (
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
+          ) : (
+            <Share2 className="h-3.5 w-3.5 shrink-0 text-accent" />
+          )}
+          <span>{lang === 'en' ? 'Share' : 'Bagikan'}</span>
         </Button>
       </motion.div>
     </motion.div>

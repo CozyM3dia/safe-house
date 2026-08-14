@@ -106,7 +106,7 @@ export function SeismicWaveform({ property }) {
 
       <div className="mt-2 flex items-center justify-between text-[9px] font-mono tracking-wider text-text-muted">
         <span>Fault: {property?.seismic?.faultName ?? '—'}</span>
-        <span>{property?.seismic?.faultDistance ? `${Number(property.seismic.faultDistance).toFixed(0)} km` : ''}</span>
+        <span>{property?.seismic?.faultDist != null ? `${Number(property.seismic.faultDist).toFixed(0)} km` : ''}</span>
       </div>
     </Card>
   );
