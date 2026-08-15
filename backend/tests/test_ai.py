@@ -170,6 +170,25 @@ class GroundingTests(unittest.TestCase):
         summary = ai.deterministic_summary(audit, "id")
         self.assertIn("65", ai.verified_snapshot_markdown(audit, "id"))
 
+    def test_model_chain_orders_and_dedupes(self):
+        env = {
+            "GEMINI_MODEL": "gemini-3.1-flash-lite",
+            "GEMINI_FALLBACK_MODEL": "gemini-3.7-flash",
+            "GEMINI_FALLBACK_MODELS": "gemini-2.5-flash, gemini-3.7-flash , ,gemini-2.0-flash",
+        }
+        with patch.dict(os.environ, env):
+            chain = ai.model_chain()
+        # primary first, duplicate 3.7-flash and blanks dropped, order preserved
+        self.assertEqual(
+            [
+                "gemini-3.1-flash-lite",
+                "gemini-3.7-flash",
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+            ],
+            chain,
+        )
+
     # T15: Band skor tidak terbalik
     def test_score_band_not_inverted(self):
         for score, expected in [(78, "AMAN"), (65, "SEDANG"), (30, "WASPADA")]:
@@ -251,6 +270,34 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
             )
         await client.aclose()
         self.assertEqual(2, call_count)
+        self.assertEqual(result.metadata.delivery_mode, "fallback")
+
+    # Chain: primary 503 + fallback 503 + third 200 -> uses third
+    async def test_three_model_chain_walks_to_third(self):
+        call_models = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            url = str(request.url)
+            if "gemini-3.7-flash" in url:
+                call_models.append("primary")
+                return httpx.Response(503, json={"error": "down"})
+            if "gemini-3.1-flash-lite" in url:
+                call_models.append("fallback1")
+                return httpx.Response(503, json={"error": "down"})
+            if "gemini-2.5-flash" in url:
+                call_models.append("fallback2")
+                return gemini_response(VALID_NARRATIVE_RAW)
+            return httpx.Response(404)
+
+        client = _mock_client(handler)
+        env = {**ENV_PRIMARY, "GEMINI_FALLBACK_MODELS": "gemini-2.5-flash"}
+        with patch.dict(os.environ, env):
+            result = await ai.generate_narrative(
+                sample_audit(), client=client, db_module=_mock_db()
+            )
+        await client.aclose()
+        self.assertEqual(["primary", "fallback1", "fallback2"], call_models)
+        self.assertEqual("Gemini (gemini-2.5-flash)", result.generated_by)
         self.assertEqual(result.metadata.delivery_mode, "fallback")
 
     # T5: Timeout primary triggers fallback

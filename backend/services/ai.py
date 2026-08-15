@@ -430,6 +430,27 @@ def _parse_gemini_json(response: dict[str, Any]) -> dict[str, Any]:
         ) from exc
 
 
+def model_chain() -> list[str]:
+    """Ordered, de-duplicated list of models to try.
+
+    [GEMINI_MODEL, GEMINI_FALLBACK_MODEL, *GEMINI_FALLBACK_MODELS]. The first
+    entry is the primary ("live"); every entry after it is a fallback tier.
+    Empty entries and duplicates are dropped so the chain stays clean.
+    """
+    primary = os.getenv("GEMINI_MODEL", PRIMARY_MODEL).strip() or PRIMARY_MODEL
+    fallback = os.getenv("GEMINI_FALLBACK_MODEL", FALLBACK_MODEL).strip() or FALLBACK_MODEL
+    extras = os.getenv("GEMINI_FALLBACK_MODELS", "").split(",")
+
+    ordered = [primary, fallback, *(e.strip() for e in extras)]
+    seen: set[str] = set()
+    chain: list[str] = []
+    for model in ordered:
+        if model and model not in seen:
+            seen.add(model)
+            chain.append(model)
+    return chain
+
+
 async def generate_with_fallback(
     *,
     system_instruction: str,
@@ -439,10 +460,9 @@ async def generate_with_fallback(
     temperature: float = 0.2,
     client: Optional[httpx.AsyncClient] = None,
 ) -> tuple[dict, AIMetadata]:
-    """Try primary model, fall back to secondary on retryable errors."""
+    """Try the primary model, then walk the fallback chain on retryable errors."""
 
-    primary = os.getenv("GEMINI_MODEL", PRIMARY_MODEL).strip() or PRIMARY_MODEL
-    fallback = os.getenv("GEMINI_FALLBACK_MODEL", FALLBACK_MODEL).strip() or FALLBACK_MODEL
+    chain = model_chain()
 
     gemini_payload = {
         "systemInstruction": {"parts": [{"text": system_instruction}]},
@@ -457,10 +477,13 @@ async def generate_with_fallback(
         },
     }
 
-    models_to_try = [(primary, "live"), (fallback, "fallback")]
+    models_to_try = [
+        (model, "live" if index == 0 else "fallback")
+        for index, model in enumerate(chain)
+    ]
     last_error: Optional[AIServiceError] = None
 
-    for model, delivery_mode in models_to_try:
+    for index, (model, delivery_mode) in enumerate(models_to_try):
         if last_error is not None and not last_error.retryable:
             raise last_error
 
@@ -474,25 +497,19 @@ async def generate_with_fallback(
                 prompt_version=PROMPT_VERSION,
                 generated_at=datetime.now(timezone.utc),
             )
-            log.info(
-                "AI response ok model=%s delivery=%s",
-                model, delivery_mode,
-            )
+            log.info("AI response ok model=%s delivery=%s", model, delivery_mode)
             return parsed, meta
 
         except AIServiceError as exc:
             last_error = exc
-            if delivery_mode == "live":
-                if exc.retryable:
-                    log.warning(
-                        "Primary %s failed (%s), trying fallback %s",
-                        model, exc.status_code, fallback,
-                    )
-                else:
-                    log.warning(
-                        "Primary %s failed (%s), not retryable",
-                        model, exc.status_code,
-                    )
+            has_next = index + 1 < len(models_to_try)
+            if exc.retryable and has_next:
+                log.warning(
+                    "Model %s failed (%s), trying next: %s",
+                    model, exc.status_code, models_to_try[index + 1][0],
+                )
+            else:
+                log.warning("Model %s failed (%s)", model, exc.status_code)
             continue
 
     raise last_error  # type: ignore[misc]
