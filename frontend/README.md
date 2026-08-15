@@ -1,16 +1,40 @@
-# React + Vite
+# S.A.F.E House Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend for the S.A.F.E House property-risk intelligence experience.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+The frontend expects the FastAPI backend URL in `VITE_API_URL`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Basemap providers
 
-## Expanding the ESLint configuration
+CARTO Positron remains the verified default. The map also includes Esri World Imagery and an opt-in Stadia Maps Alidade Smooth analysis basemap.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```env
+VITE_STADIA_MAPS_ENABLED=false
+VITE_STADIA_MAPS_API_KEY=
+```
+
+Only set `VITE_STADIA_MAPS_ENABLED=true` after Stadia tile delivery has been verified on the deployed domain. If the analysis basemap produces repeated tile errors, the application automatically returns to CARTO.
+
+For browser deployments, prefer Stadia domain authentication. If an API key is used, restrict it to the deployed domain and never commit the local `.env` file.
+
+## Licensing guardrail
+
+The Stadia Free plan is limited to non-commercial use. S.A.F.E House must not claim commercial Stadia usage while using the Free plan. Review the current Stadia license and move to an appropriate commercial plan before a commercial deployment.
+
+The existing Esri source remains responsible for satellite mode; this integration does not enable Stadia satellite imagery.
+
+## Validation
+
+```bash
+npm run lint
+npm run build
+```
+
+The basemap integration does not change risk scoring, audit logic, battle calculations, hazard values, or backend APIs.
