@@ -242,13 +242,15 @@ const parseSections = (markdown) => {
   const sections = [];
   let currentSection = null;
 
+  // Accept level-2 or level-3 ATX headers ("## Judul" or "### Judul").
+  const headerRe = /^#{2,3}\s+/;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line.startsWith('###')) {
+    if (headerRe.test(line)) {
       if (currentSection) {
         sections.push(currentSection);
       }
-      const title = line.replace(/^###\s+/, '').replace(/\*/g, '').trim();
+      const title = line.replace(headerRe, '').replace(/\*/g, '').trim();
       currentSection = { title, contentLines: [] };
     } else {
       if (currentSection) {

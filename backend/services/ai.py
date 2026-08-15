@@ -722,10 +722,23 @@ async def generate_narrative(
     prompt = {
         "task": (
             "Jelaskan hasil audit tanpa mengubah angka. Buat tiga ringkasan singkat, "
-            "analisis konteks lokasi, dan laporan markdown dengan bagian: Ringkasan Eksekutif, "
-            "Faktor Risiko Dominan, Penjelasan Geoteknik, Gempa dan Kondisi Seismik, "
-            "Banjir Longsor dan Lingkungan, Prioritas Tindakan, Sumber Data yang Digunakan, "
-            "dan Keterbatasan."
+            "analisis konteks lokasi, dan sebuah 'detailed_report' dalam format Markdown."
+        ),
+        "detailed_report_format": (
+            "WAJIB Markdown. Setiap bagian DIAWALI judul '## ' pada barisnya sendiri, "
+            "diikuti satu baris kosong lalu isi. Pisahkan antar bagian dengan baris kosong. "
+            "JANGAN menulis judul sebagai teks inline seperti 'Ringkasan Eksekutif:'. "
+            "Gunakan karakter newline (\\n) sungguhan di dalam string JSON. "
+            "Urutan bagian WAJIB persis: "
+            "'## Ringkasan Eksekutif', '## Faktor Risiko Dominan', '## Penjelasan Geoteknik', "
+            "'## Gempa dan Kondisi Seismik', '## Banjir, Longsor, dan Lingkungan', "
+            "'## Prioritas Tindakan' (maksimal 3 poin bernomor), "
+            "'## Sumber Data yang Digunakan', '## Keterbatasan'. "
+            "Jangan menambahkan bagian '## Ringkasan Data Terverifikasi' — bagian itu ditambahkan backend."
+        ),
+        "detailed_report_example": (
+            "## Ringkasan Eksekutif\n\nLokasi memperoleh skor ... .\n\n"
+            "## Faktor Risiko Dominan\n\n- Faktor A\n- Faktor B\n\n## Penjelasan Geoteknik\n\n..."
         ),
         "output_language": language,
         "audit": compact_audit_for_ai(audit),
