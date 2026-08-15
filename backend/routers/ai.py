@@ -5,8 +5,10 @@ The browser sends audit data, never an API key or a free-form system prompt.
 
 from __future__ import annotations
 
+import os
 import time
 from collections import defaultdict, deque
+from datetime import datetime, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -15,6 +17,7 @@ from pydantic import ValidationError
 
 import db
 from models import (
+    AIMetadata,
     AuditResult,
     ChatRequest,
     ChatResult,
@@ -25,8 +28,10 @@ from services import ai
 
 router = APIRouter(prefix="/api", tags=["ai"])
 
+# In-memory rate limiter — sufficient for competition.
+# Distributed deployment would require Redis or a shared limiter.
 _requests_by_client: dict[str, deque[float]] = defaultdict(deque)
-_RATE_LIMIT = 15
+_RATE_LIMIT = int(os.getenv("AI_RATE_LIMIT_PER_MINUTE", "15"))
 _RATE_WINDOW_SECONDS = 60.0
 
 
@@ -50,6 +55,27 @@ def _enforce_rate_limit(request: Request) -> None:
 
 def _raise_public_error(exc: ai.AIServiceError) -> None:
     raise HTTPException(status_code=exc.status_code, detail=exc.public_message) from exc
+
+
+@router.get("/ai/status")
+async def ai_status() -> dict:
+    """Health-like endpoint for AI layer. Never returns the key."""
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    key_configured = bool(api_key)
+
+    database = db.get_db()
+    cache_available = database is not None and ai.CACHE_ENABLED
+
+    return {
+        "status": "ready" if key_configured else "unconfigured",
+        "provider": "gemini",
+        "primary_model": os.getenv("GEMINI_MODEL", ai.PRIMARY_MODEL),
+        "fallback_model": os.getenv("GEMINI_FALLBACK_MODEL", ai.FALLBACK_MODEL),
+        "api_key_configured": key_configured,
+        "cache_enabled": ai.CACHE_ENABLED,
+        "cache_available": cache_available,
+        "prompt_version": ai.PROMPT_VERSION,
+    }
 
 
 @router.post("/narrative", response_model=NarrativeResult)
@@ -96,7 +122,6 @@ async def create_saved_narrative(
         try:
             return NarrativeResult.model_validate(document["narrative"])
         except ValidationError:
-            # A legacy narrative is not trusted; regenerate it below.
             pass
 
     document["id"] = str(document.pop("_id"))

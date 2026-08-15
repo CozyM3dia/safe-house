@@ -95,6 +95,16 @@ class NarrativeRequest(BaseModel):
     lang: Literal["id", "en"] = "id"
 
 
+class AIMetadata(BaseModel):
+    """Server-side metadata — not requested from the model."""
+
+    model: str
+    delivery_mode: Literal["live", "fallback", "cached"]
+    prompt_version: str
+    generated_at: datetime
+    cache_age_seconds: Optional[int] = None
+
+
 class NarrativeResult(BaseModel):
     """Laporan AI terstruktur; seluruh angka tetap berasal dari AuditResult."""
 
@@ -107,6 +117,7 @@ class NarrativeResult(BaseModel):
     data_limitations: list[str] = Field(default_factory=list, max_length=8)
     generated_by: str = Field(..., min_length=1, max_length=100)
     street_view_used: bool = False
+    metadata: Optional[AIMetadata] = None
 
 
 class ChatMessage(BaseModel):

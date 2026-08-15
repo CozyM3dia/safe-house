@@ -756,8 +756,21 @@ export function AuditDrawer() {
                 <h2 className="font-display text-base font-semibold text-text-primary">
                   {drawerTitle}
                 </h2>
-                <p className="text-[10px] text-text-muted font-mono tracking-wider">
-                  {aiReport?.generatedBy || 'Audit deterministik'} · {drawerSubtitle}
+                <p className="text-[10px] text-text-muted font-mono tracking-wider flex items-center gap-1.5">
+                  {aiReport?.generatedBy || 'Audit deterministik'}
+                  {aiReport?.deliveryMode && (
+                    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-bold tracking-widest uppercase ${
+                      aiReport.deliveryMode === 'live' ? 'bg-risk-safe/10 text-risk-safe border border-risk-safe/20' :
+                      aiReport.deliveryMode === 'fallback' ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/20' :
+                      'bg-accent/10 text-accent border border-accent/20'
+                    }`}>
+                      {aiReport.deliveryMode === 'live' ? `LIVE · ${aiReport.aiModel || ''}` :
+                       aiReport.deliveryMode === 'fallback' ? `FALLBACK · ${aiReport.aiModel || ''}` :
+                       'CACHED · dibuat sebelumnya'}
+                    </span>
+                  )}
+                  <span className="text-text-muted/60">·</span>
+                  {drawerSubtitle}
                 </p>
               </div>
             </div>
@@ -917,7 +930,9 @@ export function AuditDrawer() {
                           AI belum dapat membuat penjelasan
                         </p>
                         <p className="text-xs text-text-muted leading-relaxed">
-                          {aiReport.errorMessage || 'Layanan AI backend tidak tersedia. Angka audit di atas tetap valid dan tidak dipengaruhi kegagalan AI.'}
+                          {lang === 'en'
+                            ? 'The AI explanation could not be generated. The scores and classifications above remain valid — they are calculated by the S.A.F.E House deterministic engine.'
+                            : 'AI belum dapat membuat penjelasan. Angka dan klasifikasi audit di atas tetap valid karena dihitung oleh mesin audit S.A.F.E House.'}
                         </p>
                       </div>
                     </div>

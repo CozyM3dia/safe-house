@@ -55,6 +55,7 @@ export async function runAudit(lat, lon, lang = 'id', signal = undefined) {
 }
 
 function adaptNarrative(data) {
+  const meta = data.metadata;
   return {
     geoStabilityExplanation: data.geo_stability_explanation,
     seismicExplanation: data.seismic_explanation,
@@ -66,7 +67,15 @@ function adaptNarrative(data) {
     generatedBy: data.generated_by,
     streetViewUsed: data.street_view_used === true,
     reportLoading: false,
+    deliveryMode: meta?.delivery_mode || 'live',
+    aiModel: meta?.model || '',
+    cacheAgeSeconds: meta?.cache_age_seconds ?? null,
   };
+}
+
+export async function checkAIStatus() {
+  const { data } = await client.get('/api/ai/status');
+  return data;
 }
 
 /**
