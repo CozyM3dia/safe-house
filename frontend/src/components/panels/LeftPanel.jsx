@@ -228,6 +228,7 @@ function SkeletonState() {
 function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
+  const aiLoading = useAppStore((s) => s.aiLoading);
   const [exporting, setExporting] = useState(false);
 
   const [sharing, setSharing] = useState(false);
@@ -323,6 +324,28 @@ function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
       <motion.div variants={item}>
         <SectionLabel>Location</SectionLabel>
         <AddressCard property={propertyA} />
+      </motion.div>
+
+      {/* AI Report — opens the full narrative drawer */}
+      <motion.div variants={item}>
+        <Button
+          onClick={onOpenDrawer}
+          variant="accent"
+          size="lg"
+          className="w-full group text-xs py-2.5 flex items-center justify-center gap-2 border border-accent/25 hover:bg-accent/20 transition-all"
+        >
+          {aiLoading ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent" />
+          ) : (
+            <Sparkles className="h-4 w-4 shrink-0 text-accent" />
+          )}
+          <span className="font-semibold">
+            {aiLoading
+              ? (lang === 'en' ? 'Generating AI report…' : 'Menyusun laporan AI…')
+              : (lang === 'en' ? 'View Full AI Report' : 'Lihat Laporan Lengkap AI')}
+          </span>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+        </Button>
       </motion.div>
 
       {/* Action Buttons */}
