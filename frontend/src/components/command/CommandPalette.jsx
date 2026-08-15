@@ -5,6 +5,7 @@ import { Search, Clock, Star, MapPin, Loader2, X, Sparkles } from 'lucide-react'
 import axios from 'axios';
 
 import { useAppStore } from '../../store/useAppStore';
+import { buildPhotonParams } from '../../lib/geocode';
 
 const PHOTON = 'https://photon.komoot.io/api/';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
@@ -15,7 +16,7 @@ async function geocode(q) {
   // 1. Try Photon (extremely fast, doesn't block cloud or client IPs)
   try {
     const res = await axios.get(PHOTON, {
-      params: { q: q.trim(), limit: 12, lang: 'id' },
+      params: buildPhotonParams(q),
       timeout: 4000,
     });
     const features = res.data?.features || [];

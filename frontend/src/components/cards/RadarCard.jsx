@@ -48,7 +48,13 @@ export function RadarCard({ propertyA, propertyB }) {
       </CardHeader>
 
       <div className="h-52 w-full -ml-2 -mt-2">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          minHeight={0}
+          initialDimension={{ width: 320, height: 208 }}
+        >
           <RadarChart data={data} outerRadius="72%">
             <PolarGrid
               stroke="rgba(255,210,170,0.10)"

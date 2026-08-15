@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { runAudit } from '../services/api';
+import { isCompactViewport } from '../lib/responsive';
+
+const defaultLeftPanelOpen =
+  typeof window === 'undefined' || !isCompactViewport(window.innerWidth);
 
 export const useAppStore = create(
   persist(
@@ -19,7 +23,9 @@ export const useAppStore = create(
       mode: 'audit', // 'audit' | 'battle'
       selectingBattlePin: false,
       auditDrawerOpen: false,
-      leftPanelOpen: true,
+      // Keep the map tappable on phone-sized screens; users can still open
+      // the panel from the top-left toggle when they need the details.
+      leftPanelOpen: defaultLeftPanelOpen,
       cmdPaletteOpen: false,
       chatExpanded: false,
       simulatedPga: null,

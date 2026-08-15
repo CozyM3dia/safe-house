@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import 'leaflet/dist/leaflet.css';
 import { useAppStore } from '../../store/useAppStore';
 import { MAP_TILES, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/constants';
+import { getLeafletTileLayerOptions } from '../../lib/mapLayerOptions';
 import { MapMarker } from './MapMarker';
 import { MapControls } from './MapControls';
 import { RiskZoneOverlay } from './RiskZoneOverlay';
@@ -55,6 +56,7 @@ function BasemapLayer() {
 
   const preferredTile = MAP_TILES[baseMapStyle] || MAP_TILES.street;
   const activeTile = preferredTile.enabled === false ? MAP_TILES.street : preferredTile;
+  const tileLayerOptions = getLeafletTileLayerOptions(activeTile);
 
   useEffect(() => {
     tileErrors.current = 0;
@@ -84,12 +86,7 @@ function BasemapLayer() {
   return (
     <TileLayer
       key={activeTile.id}
-      url={activeTile.url}
-      attribution={activeTile.attribution}
-      maxZoom={activeTile.maxZoom}
-      subdomains={activeTile.subdomains}
-      keepBuffer={4}
-      updateWhenIdle
+      {...tileLayerOptions}
       eventHandlers={{ tileerror: handleTileError }}
     />
   );

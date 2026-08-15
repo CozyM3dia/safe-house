@@ -65,7 +65,13 @@ export function GaussianCard({ property }) {
 
       {/* Clean, Simple Chart */}
       <div className="h-20 w-full px-1.5 pb-2">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          minHeight={0}
+          initialDimension={{ width: 320, height: 80 }}
+        >
           <AreaChart data={data} margin={{ top: 2, right: 2, left: -32, bottom: -5 }}>
             <defs>
               <linearGradient id="simple-spectrum-grad" x1="0" y1="0" x2="0" y2="1">
