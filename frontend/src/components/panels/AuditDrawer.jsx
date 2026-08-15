@@ -104,9 +104,9 @@ function SoilVisual({ property }) {
 }
 
 function SeismicVisual({ property }) {
-  const pga = property?.seismic?.pgaSurface ?? 0.35;
-  const faultName = property?.seismic?.faultName ?? 'N/A';
-  const faultDist = property?.seismic?.faultDist ?? 999;
+  const pga = property?.geotech?.pga_surface ?? property?.seismic?.pgaSurface ?? 0.35;
+  const faultName = property?.geotech?.nearest_fault?.name ?? 'N/A';
+  const faultDist = property?.geotech?.nearest_fault?.distance_km ?? 999;
   
   return (
     <div className="mt-4 p-4.5 rounded-2xl border border-white/6 bg-white/[0.01] space-y-4">
@@ -848,7 +848,7 @@ export function AuditDrawer() {
                     </div>
                     <div className="h-9 w-px bg-white/10" />
                     <div>
-                      <span className="text-[8px] font-bold text-text-muted tracking-wider block mb-1">TINGKAT RISIKO</span>
+                      <span className="text-[8px] font-bold text-text-muted tracking-wider block mb-1">KATEGORI SKOR</span>
                       <span className="text-[11px] font-extrabold block tracking-wider uppercase" style={{ color: riskHex(computeScore(propertyA)) }}>
                         {riskLabel(computeScore(propertyA))}
                       </span>

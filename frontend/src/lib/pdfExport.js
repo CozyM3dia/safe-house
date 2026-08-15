@@ -23,9 +23,9 @@ function riskHex(score) {
 }
 
 function riskLabel(score) {
-  if (score >= 70) return 'SAFE';
-  if (score >= 40) return 'MODERATE';
-  return 'DANGER';
+  if (score >= 70) return 'AMAN';
+  if (score >= 40) return 'SEDANG';
+  return 'WASPADA';
 }
 
 function computeScore(p) {

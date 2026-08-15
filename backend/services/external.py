@@ -17,6 +17,7 @@ Tidak ada satu pun yang membutuhkan kunci API.
 
 import asyncio
 import logging
+import re
 from typing import Any, Optional
 
 import httpx
@@ -267,11 +268,14 @@ def is_water_body(
     if geocode.get("error"):
         return True
 
+    # Cocokkan sebagai kata utuh, bukan substring: "selat" TIDAK boleh cocok
+    # dengan "Selatan" (arah, sangat umum: "Lampung Selatan", "Jakarta
+    # Selatan"), dan "laut" tidak cocok dengan "lautan"/"pelautan".
     water_words = (
         "ocean", "sea", "laut", "selat", "strait", "bay", "teluk", "samudra",
     )
     lowered = address.lower()
-    if any(f" {w}" in f" {lowered}" for w in water_words):
+    if any(re.search(rf"\b{re.escape(w)}\b", lowered) for w in water_words):
         return True
 
     return address == "Lokasi tidak terdeteksi" and elevation <= 0
