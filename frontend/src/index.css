@@ -48,7 +48,7 @@
     background: rgba(212, 149, 106, 0.32);
   }
 
-  /* Leaflet — Carto Positron sits under warm dark UI */
+  /* Leaflet basemap system — muted data-first cartography under warm UI. */
   .leaflet-container {
     background: #e8e4df !important;
     font-family: 'Inter', sans-serif;
@@ -56,14 +56,41 @@
     width: 100%;
   }
 
+  .safe-map .leaflet-tile-pane {
+    transition: filter 240ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .safe-map .leaflet-tile {
+    transition: opacity 220ms ease-out;
+  }
+
+  .map-theme-analysis .leaflet-tile-pane {
+    filter: saturate(0.76) contrast(0.97) sepia(0.06) brightness(1.02);
+  }
+
+  .map-theme-street .leaflet-tile-pane {
+    filter: saturate(0.82) contrast(0.98) sepia(0.035);
+  }
+
+  .map-theme-satellite .leaflet-tile-pane {
+    filter: saturate(0.88) contrast(1.05) brightness(0.88);
+  }
+
   .leaflet-control-attribution {
-    background: rgba(15, 11, 8, 0.80) !important;
-    color: rgba(196, 168, 126, 0.75) !important;
-    backdrop-filter: blur(8px);
-    border-radius: 6px;
-    padding: 2px 8px !important;
-    font-size: 10px !important;
+    max-width: min(68vw, 620px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: rgba(15, 11, 8, 0.84) !important;
+    color: rgba(196, 168, 126, 0.78) !important;
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border-radius: 8px 0 0 0;
+    padding: 3px 8px !important;
+    font-size: 9px !important;
     border: 1px solid rgba(255, 210, 170, 0.10) !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
   }
 
   .leaflet-control-attribution a {
@@ -72,6 +99,13 @@
 
   .leaflet-control-zoom {
     display: none !important;
+  }
+
+  @media (max-width: 640px) {
+    .leaflet-control-attribution {
+      max-width: 74vw;
+      font-size: 8px !important;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
