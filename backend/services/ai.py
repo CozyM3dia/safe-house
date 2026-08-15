@@ -320,8 +320,19 @@ def _chat_schema(allowed_titles: list[str]) -> dict[str, Any]:
 
 # ── Audit fingerprint for caching ──────────────────────────────────
 
+# Environment keys that drift on every audit (live weather / air quality) and
+# must NOT enter the fingerprint — otherwise the same location keys differently
+# minute to minute and the resilience cache never hits.
+_VOLATILE_ENV_KEYS = frozenset({"aqi", "pm25", "temperature_c", "humidity_pct"})
+
+
 def audit_fingerprint(audit: AuditResult, lang: str) -> str:
-    """Deterministic hash of fields that influence the narrative."""
+    """Deterministic hash of the STABLE fields that shape the narrative.
+
+    Only deterministic geotechnical and hazard-class signals are hashed. Live
+    weather/AQI is excluded so a location keys the same across time, letting the
+    competition cache serve a pre-warmed narrative when Gemini is unavailable.
+    """
     geo = audit.geotech
     hazard = audit.hazard or {}
     environment = audit.environment or {}
@@ -340,7 +351,7 @@ def audit_fingerprint(audit: AuditResult, lang: str) -> str:
         ),
         "env_summary": sorted(
             f"{k}:{v}" for k, v in environment.items()
-            if isinstance(v, (str, int, float))
+            if isinstance(v, (str, int, float)) and k not in _VOLATILE_ENV_KEYS
         ),
         "sources_failed": sorted(audit.sources_failed),
         "lang": lang,

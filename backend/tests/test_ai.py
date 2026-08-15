@@ -449,6 +449,12 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
             ai.audit_fingerprint(audit, "id"),
         )
 
+    def test_fingerprint_ignores_volatile_weather(self):
+        # Same geotech, different live weather/AQI -> same fingerprint.
+        a = sample_audit(environment={"aqi": 34, "pm25": 10, "temperature_c": 30, "humidity_pct": 70})
+        b = sample_audit(environment={"aqi": 88, "pm25": 55, "temperature_c": 24, "humidity_pct": 90})
+        self.assertEqual(ai.audit_fingerprint(a, "id"), ai.audit_fingerprint(b, "id"))
+
     # T13: Cache tidak menyimpan output invalid — tested via store only if valid
 
     # T16: Data risiko wilayah tidak disamakan dengan score
