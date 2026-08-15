@@ -4,11 +4,10 @@ Satu koordinat masuk, satu laporan risiko lengkap keluar.
 """
 
 import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from bson import ObjectId
-from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException
 
 import db
@@ -154,12 +153,17 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         created_at=datetime.now(timezone.utc),
     )
 
-    database = db.get_db()
-    if database is not None:
+    pool = db.get_pool()
+    if pool is not None:
         try:
-            document = result.model_dump(exclude={"id", "persisted"})
-            inserted = await database.audits.insert_one(document)
-            result.id = str(inserted.inserted_id)
+            document = result.model_dump(mode="json", exclude={"id", "persisted"})
+            row = await pool.fetchrow(
+                "INSERT INTO audits (lat, lon, data) VALUES ($1, $2, $3) RETURNING id",
+                result.lat,
+                result.lon,
+                document,
+            )
+            result.id = str(row["id"])
             result.persisted = True
         except Exception as exc:  # noqa: BLE001 — gagal simpan tidak boleh menggagalkan audit
             log.warning("Audit tidak tersimpan: %s", exc)
@@ -169,19 +173,20 @@ async def create_audit(req: AuditRequest) -> AuditResult:
 
 @router.get("/audit/{audit_id}", response_model=AuditResult)
 async def get_audit(audit_id: str) -> AuditResult:
-    database = db.get_db()
-    if database is None:
+    pool = db.get_pool()
+    if pool is None:
         raise HTTPException(status_code=503, detail="Penyimpanan tidak tersedia")
 
     try:
-        oid = ObjectId(audit_id)
-    except (InvalidId, TypeError) as exc:
+        uid = uuid.UUID(audit_id)
+    except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=422, detail="ID audit tidak valid") from exc
 
-    document = await database.audits.find_one({"_id": oid})
-    if document is None:
+    row = await pool.fetchrow("SELECT id, data FROM audits WHERE id = $1", uid)
+    if row is None:
         raise HTTPException(status_code=404, detail="Audit tidak ditemukan")
 
-    document["id"] = str(document.pop("_id"))
-    document["persisted"] = True
-    return AuditResult(**document)
+    data = dict(row["data"])
+    data["id"] = str(row["id"])
+    data["persisted"] = True
+    return AuditResult(**data)

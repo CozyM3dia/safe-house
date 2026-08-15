@@ -610,19 +610,20 @@ async def _get_cached_narrative(
     if not CACHE_ENABLED:
         return None
     try:
-        database = db_module.get_db()
-        if database is None:
+        pool = db_module.get_pool()
+        if pool is None:
             return None
-        doc = await database.ai_narratives.find_one(
-            {"audit_fingerprint": fingerprint},
-            sort=[("generated_at", -1)],
+        row = await pool.fetchrow(
+            "SELECT narrative, model, prompt_version, generated_at, expires_at "
+            "FROM ai_narratives WHERE audit_fingerprint = $1",
+            fingerprint,
         )
-        if doc is None:
+        if row is None:
             return None
-        expires = doc.get("expires_at")
+        expires = row["expires_at"]
         if expires and isinstance(expires, datetime) and expires < datetime.now(timezone.utc):
             return None
-        return doc
+        return dict(row)
     except Exception:
         log.debug("Cache lookup failed", exc_info=True)
         return None
@@ -634,28 +635,35 @@ async def _store_cached_narrative(
     model: str,
     db_module: Any,
 ) -> None:
-    """Persist a validated narrative to the cache collection."""
+    """Persist a validated narrative to the cache table."""
     if not CACHE_ENABLED:
         return
     try:
-        database = db_module.get_db()
-        if database is None:
+        pool = db_module.get_pool()
+        if pool is None:
             return
-        now = datetime.now(timezone.utc)
         from datetime import timedelta
-        doc = {
-            "audit_fingerprint": fingerprint,
-            "lang": "id",
-            "narrative": narrative_data,
-            "model": model,
-            "prompt_version": PROMPT_VERSION,
-            "generated_at": now,
-            "expires_at": now + timedelta(seconds=CACHE_TTL),
-        }
-        await database.ai_narratives.replace_one(
-            {"audit_fingerprint": fingerprint},
-            doc,
-            upsert=True,
+        now = datetime.now(timezone.utc)
+        await pool.execute(
+            """
+            INSERT INTO ai_narratives
+                (audit_fingerprint, lang, narrative, model, prompt_version,
+                 generated_at, expires_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (audit_fingerprint) DO UPDATE SET
+                narrative = EXCLUDED.narrative,
+                model = EXCLUDED.model,
+                prompt_version = EXCLUDED.prompt_version,
+                generated_at = EXCLUDED.generated_at,
+                expires_at = EXCLUDED.expires_at
+            """,
+            fingerprint,
+            "id",
+            narrative_data,
+            model,
+            PROMPT_VERSION,
+            now,
+            now + timedelta(seconds=CACHE_TTL),
         )
     except Exception:
         log.debug("Cache store failed", exc_info=True)

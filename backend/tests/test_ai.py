@@ -113,12 +113,13 @@ def _mock_client(handler):
     return httpx.AsyncClient(transport=httpx.MockTransport(handler))
 
 
-def _mock_db(narratives_collection=None):
-    """Minimal db module mock with a get_db that returns a mock database."""
+def _mock_db(cached_row=None):
+    """Minimal db module mock exposing get_pool() -> asyncpg-like pool."""
     mock = MagicMock()
-    database = MagicMock()
-    database.ai_narratives = narratives_collection or MagicMock()
-    mock.get_db.return_value = database
+    pool = MagicMock()
+    pool.fetchrow = AsyncMock(return_value=cached_row)
+    pool.execute = AsyncMock(return_value=None)
+    mock.get_pool.return_value = pool
     return mock
 
 
@@ -358,19 +359,18 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
             "generated_by": "Gemini (gemini-3.7-flash)",
             "street_view_used": False,
         }
-        mock_coll = MagicMock()
-        mock_coll.find_one = AsyncMock(return_value={
-            "audit_fingerprint": "abc",
+        cached_row = {
             "narrative": cached_narrative,
             "model": "gemini-3.7-flash",
             "prompt_version": "competition-v1",
             "generated_at": datetime.now(timezone.utc),
-        })
+            "expires_at": None,
+        }
 
         client = _mock_client(handler)
         with patch.dict(os.environ, ENV_PRIMARY):
             result = await ai.generate_narrative(
-                sample_audit(), client=client, db_module=_mock_db(mock_coll)
+                sample_audit(), client=client, db_module=_mock_db(cached_row)
             )
         await client.aclose()
         self.assertEqual(result.metadata.delivery_mode, "cached")  # T26
@@ -381,14 +381,11 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(500, json={"error": "down"})
 
-        mock_coll = MagicMock()
-        mock_coll.find_one = AsyncMock(return_value=None)
-
         client = _mock_client(handler)
         with patch.dict(os.environ, ENV_PRIMARY):
             with self.assertRaises(ai.AIServiceError):
                 await ai.generate_narrative(
-                    sample_audit(), client=client, db_module=_mock_db(mock_coll)
+                    sample_audit(), client=client, db_module=_mock_db(None)
                 )
         await client.aclose()
 

@@ -3,7 +3,7 @@
 # di bawah adalah yang terverifikasi jalan.
 fastapi>=0.141.1
 uvicorn[standard]>=0.52.2
-motor>=3.7.1
+asyncpg>=0.30.0
 pydantic>=2.13.4
 python-dotenv>=1.2.2
 httpx>=0.28.1

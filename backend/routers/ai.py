@@ -7,11 +7,9 @@ from __future__ import annotations
 
 import os
 import time
+import uuid
 from collections import defaultdict, deque
-from datetime import datetime, timezone
 
-from bson import ObjectId
-from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import ValidationError
 
@@ -63,8 +61,7 @@ async def ai_status() -> dict:
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     key_configured = bool(api_key)
 
-    database = db.get_db()
-    cache_available = database is not None and ai.CACHE_ENABLED
+    cache_available = db.get_pool() is not None and ai.CACHE_ENABLED
 
     return {
         "status": "ready" if key_configured else "unconfigured",
@@ -105,38 +102,39 @@ async def create_saved_narrative(
     if lang not in {"id", "en"}:
         raise HTTPException(status_code=422, detail="Bahasa tidak didukung")
 
-    database = db.get_db()
-    if database is None:
+    pool = db.get_pool()
+    if pool is None:
         raise HTTPException(status_code=503, detail="Penyimpanan tidak tersedia")
 
     try:
-        oid = ObjectId(audit_id)
-    except (InvalidId, TypeError) as exc:
+        uid = uuid.UUID(audit_id)
+    except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=422, detail="ID audit tidak valid") from exc
 
-    document = await database.audits.find_one({"_id": oid})
-    if document is None:
+    row = await pool.fetchrow("SELECT id, data FROM audits WHERE id = $1", uid)
+    if row is None:
         raise HTTPException(status_code=404, detail="Audit tidak ditemukan")
 
-    if document.get("narrative") and not force:
+    data = dict(row["data"])
+    if data.get("narrative") and not force:
         try:
-            return NarrativeResult.model_validate(document["narrative"])
+            return NarrativeResult.model_validate(data["narrative"])
         except ValidationError:
             pass
 
-    document["id"] = str(document.pop("_id"))
-    document["persisted"] = True
-    audit = AuditResult.model_validate(document)
+    data["id"] = str(row["id"])
+    data["persisted"] = True
+    audit = AuditResult.model_validate(data)
 
     try:
         result = await ai.generate_narrative(audit, lang)
     except ai.AIServiceError as exc:
         _raise_public_error(exc)
 
-    await database.audits.update_one(
-        {"_id": oid},
-        {"$set": {"narrative": result.model_dump()}},
-    )
+    # Simpan narrative ke dalam kolom JSONB audit (tanpa id/persisted).
+    store = audit.model_dump(mode="json", exclude={"id", "persisted"})
+    store["narrative"] = result.model_dump(mode="json")
+    await pool.execute("UPDATE audits SET data = $2 WHERE id = $1", uid, store)
     return result
 
 
