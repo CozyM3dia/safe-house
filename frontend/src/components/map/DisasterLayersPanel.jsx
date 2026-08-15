@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, Eye, EyeOff, Info, Droplets, Flame, Activity, Waves, CloudRain, Shield, TrendingUp, Map, Globe, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Layers, Eye, EyeOff, Droplets, Flame, Activity, Waves, CloudRain, Shield, TrendingUp, Map, Globe, Users, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { cn } from '../../lib/utils';
+import { MAP_TILES } from '../../lib/constants';
+
+const BASEMAP_OPTIONS = [
+  { id: 'analysis', label: 'Analisis', provider: 'Stadia', icon: Layers },
+  { id: 'street', label: 'Jalan', provider: 'CARTO', icon: Map },
+  { id: 'satellite', label: 'Satelit', provider: 'Esri', icon: Globe },
+];
 
 const OVERLAY_ITEMS = [
   {
@@ -109,6 +116,7 @@ export function DisasterLayersPanel() {
   } = useAppStore();
 
   const activeCount = Object.values(overlays).filter(Boolean).length;
+  const activeBasemap = MAP_TILES[baseMapStyle] || MAP_TILES.street;
 
   // Auto-collapse when chatbot is opened
   useEffect(() => {
@@ -142,30 +150,59 @@ export function DisasterLayersPanel() {
               )}
             </div>
 
-            {/* Base Map Style Picker */}
-            <div className="flex rounded-lg bg-white/[0.03] p-0.5 border border-white/6 mb-3">
-              {[
-                { id: 'street', label: 'Biasa' },
-                { id: 'satellite', label: 'Satelit' },
-              ].map((style) => {
-                const isActive = baseMapStyle === style.id;
-                return (
-                  <button
-                    key={style.id}
-                    type="button"
-                    onClick={() => setBaseMapStyle(style.id)}
-                    className={cn(
-                      "flex-1 py-1 text-[9px] font-bold rounded-md transition-all text-center",
-                      isActive
-                        ? "bg-accent/15 text-accent shadow-sm border border-accent/20"
-                        : "text-text-muted hover:text-text-primary border border-transparent"
-                    )}
-                  >
-                    {style.label}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Basemap picker — CARTO remains the verified default. */}
+            <section className="mb-3 rounded-xl border border-white/7 bg-black/10 p-2.5" aria-label="Peta dasar">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-text-muted">
+                  Peta dasar
+                </span>
+                <span className="text-[9px] font-mono text-accent">
+                  {activeBasemap.provider}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1">
+                {BASEMAP_OPTIONS.map((style) => {
+                  const mapConfig = MAP_TILES[style.id];
+                  const isActive = baseMapStyle === style.id;
+                  const isAvailable = mapConfig?.enabled !== false;
+                  const IconComponent = style.icon;
+
+                  return (
+                    <button
+                      key={style.id}
+                      type="button"
+                      disabled={!isAvailable}
+                      aria-pressed={isActive}
+                      onClick={() => isAvailable && setBaseMapStyle(style.id)}
+                      title={
+                        isAvailable
+                          ? 'Gunakan peta ' + style.label
+                          : 'Aktifkan hanya setelah Stadia terverifikasi di deployment'
+                      }
+                      className={cn(
+                        "btn-press flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-2 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40",
+                        isActive
+                          ? "border-accent/35 bg-accent/12 text-accent shadow-sm"
+                          : "border-transparent text-text-muted hover:border-white/8 hover:bg-white/[0.035] hover:text-text-primary"
+                      )}
+                    >
+                      <IconComponent className="h-3.5 w-3.5" />
+                      <span className="text-[9px] font-bold leading-none">{style.label}</span>
+                      <span className="text-[7px] font-mono leading-none opacity-70">
+                        {isAvailable ? style.provider : 'SETUP'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {MAP_TILES.analysis.enabled === false && (
+                <p className="mt-2 text-[8px] leading-relaxed text-text-muted">
+                  Analisis tetap terkunci sampai domain Stadia dan fallback tile terverifikasi.
+                </p>
+              )}
+            </section>
 
             {/* List */}
             <motion.div className="space-y-2.5" initial="hidden" animate="show" variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}>
