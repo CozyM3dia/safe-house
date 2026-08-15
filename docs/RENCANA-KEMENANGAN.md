@@ -36,7 +36,7 @@ tinggal dieksekusi & didokumentasikan.
 
 ---
 
-## 2. KEADAAN SEKARANG (per 14 Agu)
+## 2. KEADAAN SEKARANG (per 15 Agu)
 
 **Sudah jadi & terverifikasi:**
 - Backend FastAPI + engine geoteknik Python (paritas 10/10 dgn engine.js)
@@ -46,14 +46,13 @@ tinggal dieksekusi & didokumentasikan.
 - Landing B2B konsultan PBG
 - Kartu native + SEO (meta, JSON-LD, robots, sitemap)
 - Repo `CozyM3dia/safe-house` public, bersih dari API key
+- ✅ **Deploy Emergent NEMBUS & LIVE** (15 Agu) — blocker infra GCS beres.
+  App ter-deploy. URL: _(diisi)_. Re-deploy manual tiap ada improvement.
 
-**Blocker aktif:**
-- ⚠️ **Deploy Emergent macet** — error infra GCS (`Dockerfile.cloudbuild`),
-  bukan bug kode. Workaround: app baru / retry / rollback. Kalau mentok →
-  email support@emergent.sh (respons 24-48 jam — jalankan SEKARANG paralel)
+**Blocker aktif:** tidak ada. Fokus geser ke improvement.
 
 **Belum dikonfirmasi:**
-- LeftPanel visual populate (dugaan artefak HMR dev; cek saat deploy)
+- LeftPanel visual populate — cek langsung di build ter-deploy sekarang
 
 **Lapis AI:** ditunda, tinggal colok kunci (tahap 6)
 
@@ -96,7 +95,7 @@ Prinsip (lanskap Indonesia): tidak ada pesaing langsung.
 ### 3C. Upvotes (20%) — GERBANG 200
 
 **Aksi:**
-1. SUBMIT begitu deploy nembus. Jangan tunggu rapi.
+1. ✅ Deploy live → SUBMIT SEKARANG. Jangan tunggu rapi.
 2. Sebar via jaringan SEG UNILA + HMTG/IAGI/SEG kampus lain.
 3. Loop share: /laporan/[slug] publik → hasil mengagetkan → share WA → upvote.
 4. Jangan bot/beli vote.
@@ -142,16 +141,17 @@ Nada target: **data-first kredibel (FEMA/First Street)**, bukan command-center.
 
 | Hari | Fokus |
 |---|---|
-| **14-15 Agu** | Beresin deploy Emergent (app baru/retry) + email support paralel. Mulai kontak konsultan |
-| **16-17 Agu** | Deploy nembus → **SUBMIT** (walau belum rapi). Perbaikan UI hierarki skor |
-| **18-19 Agu** | Konsultan pakai app, kumpulkan bukti before/after. Poles UI |
+| **15 Agu** | ✅ Deploy NEMBUS & LIVE. → **SUBMIT SEKARANG** (walau belum rapi). Mulai kontak konsultan. Cek LeftPanel di build live |
+| **16-17 Agu** | Perbaikan UI hierarki skor (hero score + rating + plain-language). Re-deploy |
+| **18-19 Agu** | Konsultan pakai app, kumpulkan bukti before/after. Poles UI. Basemap Stadia (opsional) |
 | **20-21 Agu** | Tulis deskripsi submisi (narasi + kedalaman Emergent + bukti). Sebar upvote gelombang 1 |
-| **22-23 Agu** | Sebar upvote gelombang 2 (jaringan kampus). Perbaikan dari feedback |
+| **22-23 Agu** | Sebar upvote gelombang 2 (jaringan kampus). Perbaikan dari feedback. Re-deploy |
 | **24 Agu** | Cek status Submitted + email konfirmasi. Buffer masalah |
 | **25 Agu** | Pastikan submit final sebelum 23:59 WIB. JANGAN mepet |
 
-**Aturan emas:** submit paling lambat 17 Agu. Deadline 25 = batas akhir upvote,
-bukan target submit. Makin lama live, makin banyak upvote.
+**Aturan emas:** deploy sudah live → **SUBMIT SEKARANG**. Deadline 25 = batas
+akhir upvote, bukan target submit. Makin lama live, makin banyak upvote.
+Tiap improvement → re-deploy manual, submisi kebaca versi terbaru otomatis.
 
 ---
 
@@ -159,7 +159,8 @@ bukan target submit. Makin lama live, makin banyak upvote.
 
 | Risiko | Dampak | Mitigasi |
 |---|---|---|
-| Deploy Emergent tetap macet | Tak bisa submit | Email support SEKARANG; coba app baru; deadline buffer |
+| ~~Deploy Emergent macet~~ | ~~Tak bisa submit~~ | ✅ RESOLVED 15 Agu — deploy live |
+| Re-deploy improvement gagal/regres | Versi live rusak | Test build lokal dulu; deploy dari branch stabil; simpan commit terakhir yang live |
 | Tak dapat konsultan nyata | Business Impact lemah | Fallback agen properti; minimal 1 user nyata apa pun |
 | InaRISK banjir sering down | Data banjir kosong | Sudah ditandai jujur "TIDAK DIKETAHUI"; longsor jalan |
 | LeftPanel tak populate | UI rusak saat demo | Cek segera saat deploy; kemungkinan artefak HMR |
@@ -194,10 +195,10 @@ bukan target submit. Makin lama live, makin banyak upvote.
 
 ## 8. KEPUTUSAN YANG DIBUTUHKAN DARI TIM
 
+- [x] ~~Deploy nembus~~ — ✅ LIVE 15 Agu. Langkah berikut: SUBMIT.
+- [ ] Isi URL deploy live ke dokumen ini + submisi.
 - [ ] Siapa kontak konsultan PBG pertama? (target 3 hari)
-- [ ] Bayar Emergent Standard $20 sekarang? (deploy wajib; tanya support ada
-      jatah peserta)
-- [ ] Prioritas UI: implement hierarki skor sekarang, atau tunggu deploy dulu?
+- [ ] Prioritas improvement: hierarki skor dulu (rekomendasi), lalu basemap Stadia.
 - [ ] Pembagian tugas tim bertiga: siapa konsultan, siapa UI, siapa upvote?
 
 ---
