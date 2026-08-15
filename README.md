@@ -8,7 +8,7 @@ Satu koordinat masuk, satu laporan keluar: risiko banjir, potensi likuefaksi, st
 
 ## Kenapa ada
 
-Data risiko bencana Indonesia tersebar di portal yang terpisah — InaRISK BNPB, BMKG, USGS, peta geologi regional — dan sebagian besar hanya bisa dibaca orang yang paham geofisika. Akibatnya orang membeli, membangun, atau mengurus izin di atas lahan yang risikonya tidak pernah mereka lihat.
+Data risiko bencana Indonesia tersebar di portal yang terpisah — InaRISK BNPB, USGS, Open-Meteo, OpenStreetMap, dan referensi geologi regional — dan sebagian besar hanya bisa dibaca orang yang paham geofisika. Akibatnya orang membeli, membangun, atau mengurus izin di atas lahan yang risikonya tidak pernah mereka lihat.
 
 S.A.F.E House menyatukan sumber-sumber itu jadi satu audit yang bisa dibaca dalam hitungan menit.
 
@@ -31,18 +31,18 @@ Skor akhir dirangkum sebagai **S.A.F.E Score**: **S**ecure, **A**ssured, **F**ir
 
 ```
 frontend/         React 19 + Vite + Tailwind + Leaflet + Zustand
-backend/          Express API proxy — menjaga API key tetap di server
-knowledge/        Basis pengetahuan geologi Indonesia untuk RAG
+backend/          FastAPI — audit deterministik, penyimpanan, dan lapis AI
+knowledge/        Referensi geologi prototipe (bukan sumber skor produksi)
 motion-graphics/  Aset motion untuk video demo
 ```
 
-Backend ada supaya API key (Gemini, Google Maps, OpenRouter) tidak pernah sampai ke browser. Frontend tidak boleh memanggil layanan berbayar secara langsung.
+Backend ada supaya perhitungan dan API key Gemini tidak pernah sampai ke browser. Gemini hanya menarasikan `AuditResult`; model tidak menghitung atau mengubah S.A.F.E Score, FS, Vs30, PGA, maupun kelas bahaya.
 
 ---
 
 ## Menjalankan secara lokal
 
-**Prasyarat:** Node.js 20+
+**Prasyarat:** Node.js 20+ dan Python 3.12+
 
 ```bash
 git clone https://github.com/CozyM3dia/safe-house.git
@@ -52,13 +52,18 @@ cd safe-house
 Backend:
 
 ```bash
-cd backend && npm install && cp .env.example .env
+cd backend
+python -m venv .venv
+# Linux/macOS: source .venv/bin/activate
+# Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
 ```
 
 Isi `backend/.env` dengan kunci milikmu sendiri, lalu:
 
 ```bash
-npm run dev
+uvicorn main:app --reload --port 8000
 ```
 
 Frontend, di terminal terpisah:
@@ -67,11 +72,11 @@ Frontend, di terminal terpisah:
 cd frontend && npm install && cp .env.example .env && npm run dev
 ```
 
-Frontend jalan di `http://localhost:5173`, backend di `http://localhost:3001`.
+Frontend jalan di `http://localhost:5173`, backend di `http://localhost:8000`.
 
 ### Variabel lingkungan
 
-`backend/.env` — `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `MAPS_API_KEY`, `PORT`
+`backend/.env` — `GEMINI_API_KEY`, `GEMINI_MODEL`, `MONGO_URL`, `CORS_ORIGINS`
 `frontend/.env` — `VITE_API_URL`
 
 Setiap orang memakai kunci masing-masing. **Jangan pernah commit file `.env`** — hanya `.env.example` yang masuk repo. Lihat [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -93,8 +98,8 @@ Baca [CONTRIBUTING.md](CONTRIBUTING.md) sebelum push pertama. Ringkasnya: `main`
 
 ## Sumber data
 
-InaRISK BNPB · Open-Meteo · USGS · Overpass API · Google Gemini
+InaRISK BNPB · Open-Meteo · USGS · OpenStreetMap/Nominatim/Overpass · Google Gemini (penjelasan saja)
 
 ## Lisensi
 
-Belum ditentukan. Sampai ada keputusan, seluruh hak dipegang penulis dan repo bersifat privat.
+Belum ditentukan. Sampai ada keputusan, seluruh hak dipegang penulis meskipun repositori dapat diakses publik.

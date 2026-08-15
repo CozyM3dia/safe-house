@@ -86,3 +86,49 @@ class ShareResult(BaseModel):
 class HealthResult(BaseModel):
     status: Literal["ok"]
     database: Literal["connected", "unavailable"]
+
+
+class NarrativeRequest(BaseModel):
+    """Audit inline untuk instalasi yang berjalan tanpa MongoDB."""
+
+    audit: AuditResult
+    lang: Literal["id", "en"] = "id"
+
+
+class NarrativeResult(BaseModel):
+    """Laporan AI terstruktur; seluruh angka tetap berasal dari AuditResult."""
+
+    geo_stability_explanation: str = Field(..., min_length=1, max_length=1200)
+    seismic_explanation: str = Field(..., min_length=1, max_length=1200)
+    flood_env_explanation: str = Field(..., min_length=1, max_length=1200)
+    micro_analysis: str = Field(..., min_length=1, max_length=1600)
+    detailed_report: str = Field(..., min_length=1, max_length=9000)
+    sources: list[str] = Field(default_factory=list, max_length=8)
+    data_limitations: list[str] = Field(default_factory=list, max_length=8)
+    generated_by: str = Field(..., min_length=1, max_length=100)
+    street_view_used: bool = False
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(..., min_length=1, max_length=4000)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=10)
+    audit: Optional[AuditResult] = None
+    comparison: Optional[AuditResult] = None
+    mode: Literal["audit", "battle"] = "audit"
+    lang: Literal["id", "en"] = "id"
+
+
+class ChatCitation(BaseModel):
+    title: str
+    category: str
+
+
+class ChatResult(BaseModel):
+    answer: str = Field(..., min_length=1, max_length=5000)
+    citations: list[ChatCitation] = Field(default_factory=list, max_length=8)
+    follow_ups: list[str] = Field(default_factory=list, max_length=3)
