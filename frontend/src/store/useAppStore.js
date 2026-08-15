@@ -27,7 +27,7 @@ export const useAppStore = create(
       battleReportLoading: false,
 
       // ─── Map Overlays & RAG Documents ──────────────────────────
-      baseMapStyle: 'street', // 'street' | 'satellite' | 'terrain'
+      baseMapStyle: 'street', // CARTO default; 'analysis' is opt-in after deployment verification
       overlays: {
         flood: false,
         landslide: false,
