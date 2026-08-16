@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-import { runAudit } from '../services/api';
+import { generateNarrative, runAudit } from '../services/api';
 
 export const useAppStore = create(
   persist(
@@ -155,7 +155,7 @@ export const useAppStore = create(
 
         try {
           // Simpan AuditResult apa adanya — kartu membacanya langsung.
-          const data = await runAudit(lat, lng, lang);
+          const data = await runAudit(lat, lng, lang, abortController.signal);
 
           // Klik yang lebih baru sudah menggantikan permintaan ini.
           if (get().currentAiAbortController !== abortController) {
@@ -166,13 +166,29 @@ export const useAppStore = create(
           if (battleTarget) {
             set({ propertyB: data, loading: false, selectingBattlePin: false });
           } else {
-            set({ propertyA: data, propertyB: null, loading: false, leftPanelOpen: true });
+            set({
+              propertyA: {
+                ...data,
+                aiReport: { reportLoading: true },
+              },
+              propertyB: null,
+              loading: false,
+              aiLoading: true,
+              leftPanelOpen: true,
+            });
           }
 
           get().addRecentSearch({ label: data.address, lat, lng, timestamp: Date.now() });
 
-          // Beri tahu jujur kalau ada sumber data yang gagal.
-          if ((data.sources_failed || []).length > 0) {
+          // Beri tahu jujur kalau audit belum layak dianggap final.
+          if (data.audit_status && data.audit_status !== 'valid') {
+            toast.warning(
+              lang === 'en'
+                ? `Audit is ${data.audit_status}; confidence ${data.confidence ?? 0}%.`
+                : `Audit masih ${data.audit_status}; confidence ${data.confidence ?? 0}%.`,
+              { id: toastId, duration: 5500 }
+            );
+          } else if ((data.sources_failed || []).length > 0) {
             toast.warning(
               lang === 'en'
                 ? 'Audit ready — some data sources were unavailable.'
@@ -184,6 +200,38 @@ export const useAppStore = create(
               id: toastId,
               duration: 2500,
             });
+          }
+
+          // The score is already visible. Generate the explanatory layer in
+          // the background so an AI outage can never invalidate the audit.
+          if (!battleTarget) {
+            void generateNarrative(data, lang, abortController.signal)
+              .then((aiReport) => {
+                if (get().currentAiAbortController !== abortController) return;
+                set((state) => ({
+                  propertyA: state.propertyA
+                    ? { ...state.propertyA, aiReport, narrative: aiReport }
+                    : state.propertyA,
+                  aiLoading: false,
+                }));
+              })
+              .catch((error) => {
+                if (abortController.signal.aborted) return;
+                if (get().currentAiAbortController !== abortController) return;
+                set((state) => ({
+                  propertyA: state.propertyA
+                    ? {
+                        ...state.propertyA,
+                        aiReport: {
+                          aiError: true,
+                          reportLoading: false,
+                          errorMessage: error.message,
+                        },
+                      }
+                    : state.propertyA,
+                  aiLoading: false,
+                }));
+              });
           }
         } catch (e) {
           if (get().currentAiAbortController !== abortController) {

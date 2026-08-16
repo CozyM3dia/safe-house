@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "../../lib/utils";
-import { ChevronDown, Check, Languages } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,38 +23,43 @@ export function LanguageSelector() {
         setOpen(false);
       }
     }
+
+    function handleEscape(e) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       {/* Trigger Button */}
       <motion.button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         whileHover="hover"
         whileTap={{ scale: 0.95 }}
+        aria-label="Select language"
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={cn(
-          "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider uppercase transition-all duration-300",
+          "flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition-all duration-200",
           open 
-            ? "border-accent/40 bg-white/10 text-text-primary" 
-            : "border-white/10 bg-white/5 text-text-secondary hover:text-text-primary hover:border-accent/40 hover:bg-white/10"
+            ? "border-accent/45 bg-white/10 text-text-primary shadow-[0_0_0_3px_rgba(212,149,106,0.08)]"
+            : "border-white/10 bg-bg-elevated/80 text-text-secondary hover:border-accent/35 hover:bg-white/10 hover:text-text-primary"
         )}
       >
-        <motion.span
-          variants={{
-            hover: { rotate: 20 }
-          }}
-          transition={{ type: "spring", stiffness: 300, damping: 15 }}
-          className="flex items-center"
-        >
-          <Languages size={12} className="text-accent" />
-        </motion.span>
-        <span>{selected.flag}</span>
+        <span aria-hidden="true" className="text-sm leading-none">{selected.flag}</span>
         <span className="hidden sm:inline">{selected.label}</span>
         <ChevronDown 
-          size={12} 
-          className={cn("transition-transform duration-200 opacity-60", open && "rotate-180")} 
+          size={14}
+          aria-hidden="true"
+          className={cn("text-text-muted transition-transform duration-200", open && "rotate-180")}
         />
       </motion.button>
 
@@ -66,29 +71,34 @@ export function LanguageSelector() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
+            role="menu"
+            aria-label="Language options"
             className={cn(
-              "absolute right-0 mt-2 w-48 rounded-xl overflow-hidden z-50 max-h-[300px] overflow-y-auto scrollbar-none",
-              "glass-strong animate-fade-in-dropdown"
+              "absolute right-0 mt-2 z-50 w-48 overflow-hidden rounded-xl border border-white/10",
+              "bg-bg-elevated/95 shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl"
             )}
           >
             {languages.map((item) => (
               <button
                 key={item.code}
+                type="button"
+                role="menuitemradio"
+                aria-checked={selected.code === item.code}
                 onClick={() => {
                   setLang(item.code);
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex items-center gap-2.5 w-full px-4 py-2.5 text-xs text-left transition-colors duration-200 font-mono",
+                  "flex w-full items-center gap-3 px-4 py-3 text-left text-xs transition-colors duration-200",
                   selected.code === item.code
-                    ? "text-accent font-semibold bg-accent/10"
+                    ? "bg-accent/10 font-semibold text-accent"
                     : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
                 )}
               >
-                <span>{item.flag}</span>
+                <span aria-hidden="true" className="text-sm leading-none">{item.flag}</span>
                 <span className="flex-1">{item.label}</span>
                 {selected.code === item.code && (
-                  <Check size={12} className="text-accent" />
+                  <Check size={14} aria-hidden="true" className="text-accent" />
                 )}
               </button>
             ))}

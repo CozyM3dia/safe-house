@@ -1,16 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Sparkles, ChevronDown, Upload, FileText, X, BookOpen } from 'lucide-react';
+import { Send, Sparkles, ChevronDown, FileText, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
-import { callAI } from '../../services/engine';
+import { chatWithAudit } from '../../services/api';
 import { SUGGESTED_PROMPTS_ID, SUGGESTED_PROMPTS_EN } from '../../lib/constants';
 import { cn } from '../../lib/utils';
-import { SAFE_AI_SYSTEM_PROMPT } from '../../lib/aiPrompts';
-import { queryRAG } from '../../lib/ragEngine';
 
 // ─── Auto-resize textarea hook ──────────────────────────────────────
 const MIN_HEIGHT = 44;
@@ -98,9 +96,6 @@ export function ChatbotFab() {
   const lang = useAppStore((s) => s.lang);
   const hasMessages = messages.length > 0;
 
-  // Build base system prompt with site data + conversation context
-  const sysPrompt = SAFE_AI_SYSTEM_PROMPT(propertyA, propertyB, mode, lang, messages);
-
   const scrollToBottom = () => {
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   };
@@ -118,31 +113,31 @@ export function ChatbotFab() {
     setLoading(true);
     scrollToBottom();
 
-    // ── RAG Step: Query main static knowledge base ──
-    const { contextString, citations } = queryRAG(userMsg, [], 2);
-
-    let finalPrompt = sysPrompt;
-    if (contextString) {
-      finalPrompt += `\n\n══ DOKUMEN PENDUKUNG (RAG CONTEXT) ══\nBerikut adalah kutipan dokumen geologi & rekayasa sipil yang relevan dengan pertanyaan user. Gunakan fakta di bawah ini untuk merumuskan jawaban audit & rekomendasi mitigasi yang akurat:\n\n${contextString}\n\nInstruksi RAG: Sebutkan rincian biaya atau standar teknis yang dikutip dari dokumen di atas jika relevan dengan keluhan/pertanyaan user. Jawab dengan menyakinkan.`;
-    }
-
     try {
-      const reply = await callAI(finalPrompt, userMsg);
-      let cleanReply = reply;
-      let followUps = [];
-      const followUpIndex = reply.indexOf('[PERTANYAAN LANJUTAN]');
-      if (followUpIndex !== -1) {
-        cleanReply = reply.substring(0, followUpIndex).trim();
-        const followUpText = reply.substring(followUpIndex + '[PERTANYAAN LANJUTAN]'.length).trim();
-        followUps = followUpText
-          .split('\n')
-          .map(line => line.replace(/^\d+[\.\s]*/, '').trim())
-          .filter(line => line.length > 0)
-          .slice(0, 3);
-      }
-      setMessages((m) => [...m, { role: 'assistant', content: cleanReply, citations, followUps }]);
-    } catch {
-      setMessages((m) => [...m, { role: 'assistant', content: lang === 'en' ? '❌ AI unavailable — please retry.' : '❌ Layanan AI tidak tersedia — silakan coba kembali.' }]);
+      const result = await chatWithAudit({
+        message: userMsg,
+        history: messages,
+        audit: propertyA,
+        comparison: propertyB,
+        mode,
+        lang,
+      });
+      setMessages((m) => [
+        ...m,
+        {
+          role: 'assistant',
+          content: result.answer,
+          citations: result.citations,
+          followUps: result.followUps,
+        },
+      ]);
+    } catch (error) {
+      setMessages((m) => [...m, {
+        role: 'assistant',
+        content: error.message || (lang === 'en'
+          ? '❌ AI unavailable — please retry.'
+          : '❌ Layanan AI tidak tersedia — silakan coba kembali.'),
+      }]);
     }
     setLoading(false);
     scrollToBottom();
@@ -247,7 +242,7 @@ export function ChatbotFab() {
           <div className="leading-none">
             <p className="text-sm font-bold bg-gradient-to-r from-accent via-[#f0e4cc] to-accent bg-clip-text text-transparent flex items-center gap-1.5 font-display tracking-tight">
               <span>Geo-AI Consult</span>
-              <span className="bg-accent/10 border border-accent/25 rounded-md px-1.5 py-0.5 text-[8px] font-mono font-bold text-accent tracking-wider">RAG ACTIVE</span>
+              <span className="bg-accent/10 border border-accent/25 rounded-md px-1.5 py-0.5 text-[8px] font-mono font-bold text-accent tracking-wider">AUDIT-GROUNDED</span>
             </p>
             <p className="mt-1 text-[8px] font-mono tracking-widest text-text-muted">
               S.A.F.E HOUSE
@@ -274,12 +269,12 @@ export function ChatbotFab() {
               <BookOpen className="h-5.5 w-5.5" />
             </div>
             <h4 className="text-xs font-bold text-text-primary tracking-wider uppercase relative z-10">
-              {lang === 'en' ? 'Retrieval-Augmented Chatbot (RAG)' : 'Chatbot Berbasis RAG Kebencanaan'}
+              {lang === 'en' ? 'Audit-Grounded Risk Assistant' : 'Asisten Berbasis Data Audit'}
             </h4>
             <p className="text-[11px] text-text-secondary leading-relaxed max-w-[280px] mx-auto relative z-10">
               {lang === 'en' 
-                ? 'Ask about geological hazards (SNI, liquefaction, landslides, floods) or compare risks between two properties in Battle Mode!' 
-                : 'Tanyakan risiko geologi (SNI, likuifaksi, longsor, banjir) properti yang sedang Anda lihat, atau bandingkan dua properti langsung di Mode Bandingkan!'}
+                ? 'Ask about the active audit data, its limitations, or compare two audited properties in Battle Mode.'
+                : 'Tanyakan arti skor, FS, Vs30, PGA, banjir, atau keterbatasan data pada lokasi yang sedang diaudit.'}
             </p>
           </div>
         )}
@@ -307,7 +302,7 @@ export function ChatbotFab() {
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{ animationDelay: '240ms' }} />
             </span>
             <span className="font-mono text-[9px] tracking-wider uppercase text-accent/80">
-              {lang === 'en' ? "🔍 RAG: CITING GEOHAZARD DB..." : "🔍 RAG: MENSITASI DATABASE KEBENCANAAN..."}
+              {lang === 'en' ? 'CHECKING AUDIT DATA...' : 'MEMERIKSA DATA AUDIT...'}
             </span>
           </div>
         )}
@@ -432,11 +427,11 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
                 {content}
               </ReactMarkdown>
 
-              {/* Citations list for RAG */}
+              {/* Sources actually available in the current audit */}
               {citations && citations.length > 0 && (
                 <div className="mt-3 border-t border-white/8 pt-2.5 flex flex-col gap-1.5">
                   <span className="text-[8px] font-bold text-accent tracking-[0.15em] uppercase select-none">
-                    SITASI DOKUMEN RAG ({citations.length}):
+                    SUMBER DATA ({citations.length}):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {citations.map((c, idx) => (

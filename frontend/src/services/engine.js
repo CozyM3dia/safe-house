@@ -1,12 +1,13 @@
 import axios from 'axios';
 
-// ─── Direct API keys (no backend needed) ───────────────────────────
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
-export const MAPS_API_KEY = import.meta.env.VITE_MAPS_API_KEY || '';
+// Legacy engine kept only for migration fixtures. Secrets and provider calls
+// belong in the backend; never read VITE_* API keys in browser code.
+const GEMINI_API_KEY = '';
+const OPENROUTER_API_KEY = '';
+export const MAPS_API_KEY = '';
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -387,7 +388,7 @@ const getRegionalPga = (lat, lon) => {
 
 const calcLiquefaction = (lat, lon, elevasi) => {
     const vs30 = calculateVs30(elevasi);
-    const siteClass = vs30 < 180 ? "SE" : (vs30 < 360 ? "SD" : "SC");
+    const siteClass = vs30 < 180 ? "SE" : (vs30 < 360 ? "SD" : (vs30 >= 760 ? "SB" : "SC"));
 
     const regional = getRegionalPga(lat, lon);
     const pga = regional.pga;

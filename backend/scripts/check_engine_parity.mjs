@@ -105,7 +105,7 @@ const calculateVs30 = (elevasi) => {
 
 const calcLiquefaction = (lat, lon, elevasi) => {
     const vs30 = calculateVs30(elevasi);
-    const siteClass = vs30 < 180 ? "SE" : (vs30 < 360 ? "SD" : "SC");
+    const siteClass = vs30 < 180 ? "SE" : (vs30 < 360 ? "SD" : (vs30 >= 760 ? "SB" : "SC"));
 
     const regional = getRegionalPga(lat, lon);
     const pga = regional.pga;

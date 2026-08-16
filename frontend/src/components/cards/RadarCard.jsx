@@ -16,13 +16,12 @@ export function RadarCard({ propertyA, propertyB }) {
   // Membaca hazard.radar dari AuditResult langsung.
   const buildData = (p) => {
     const r = p?.hazard?.radar || {};
-    const elevation = p?.elevation ?? p?.geotech?.elevation_m ?? 50;
     return {
       flood: r.flood ?? 0,
       soil: r.soil ?? 0,
-      air: r.air ?? 0,
       seismic: r.seismic ?? 0,
-      elevation: elevation < 10 ? 80 : 20,
+      landslide: r.landslide ?? 0,
+      subsidence: r.subsidence ?? 50,
     };
   };
 
@@ -32,9 +31,9 @@ export function RadarCard({ propertyA, propertyB }) {
   const data = [
     { axis: 'Flood', A: a.flood, B: b?.flood ?? 0 },
     { axis: 'Soil', A: a.soil, B: b?.soil ?? 0 },
-    { axis: 'Air', A: a.air, B: b?.air ?? 0 },
     { axis: 'Seismic', A: a.seismic, B: b?.seismic ?? 0 },
-    { axis: 'Elevation', A: a.elevation, B: b?.elevation ?? 0 },
+    { axis: 'Landslide', A: a.landslide, B: b?.landslide ?? 0 },
+    { axis: 'Subsidence', A: a.subsidence, B: b?.subsidence ?? 50 },
   ];
 
   return (

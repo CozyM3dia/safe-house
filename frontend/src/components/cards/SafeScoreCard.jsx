@@ -9,16 +9,7 @@ function computeScore(p) {
   // services/scoring.py — kartu hanya menampilkannya, tidak menghitung
   // ulang, supaya angka di gauge sama dengan laporan.
   if (typeof p?.safe_score === 'number') return p.safe_score;
-
-  // Cadangan bila skor tidak tersedia (mis. state tanpa audit).
-  const radar = p?.hazard?.radar;
-  if (!radar) return 50;
-  if (p?.hazard?.is_water) return 0;
-  const { flood = 0, soil = 0, seismic = 0, air = 0 } = radar;
-  const elevation = p?.elevation ?? p?.geotech?.elevation_m ?? 50;
-  const elevationRisk = elevation < 10 ? 70 : 25;
-  const avgRisk = (flood + soil + seismic + air + elevationRisk) / 5;
-  return Math.max(0, Math.min(100, Math.round(100 - avgRisk)));
+  return null;
 }
 
 function useCountUp(end, duration = 1500) {
@@ -131,16 +122,19 @@ function ArcGauge({ score, hex, size = 140 }) {
 }
 
 export function SafeScoreCard({ property }) {
-  const score = useMemo(() => computeScore(property), [property]);
+  const rawScore = useMemo(() => computeScore(property), [property]);
+  const hasScore = Number.isFinite(rawScore);
+  const score = hasScore ? rawScore : 0;
   const animatedScore = useCountUp(score, 1500);
   const hex = riskHex(score);
-  const label = riskLabel(score);
+  const label = hasScore ? riskLabel(score) : 'DATA TIDAK CUKUP';
+  const isProvisional = property?.audit_status === 'provisional';
   const firedConfetti = useRef(false);
 
   const TrendIcon = score >= 70 ? TrendingUp : score >= 40 ? Minus : TrendingDown;
 
   useEffect(() => {
-    if (animatedScore >= 80 && animatedScore === score && !firedConfetti.current) {
+    if (property?.audit_status === 'valid' && animatedScore >= 80 && animatedScore === score && !firedConfetti.current) {
       firedConfetti.current = true;
       confetti({
         particleCount: 80, spread: 70,
@@ -149,7 +143,7 @@ export function SafeScoreCard({ property }) {
         scalar: 0.7,
       });
     }
-  }, [animatedScore, score]);
+  }, [animatedScore, score, property?.audit_status]);
 
   return (
     <div className="bezel-outer">
@@ -174,9 +168,9 @@ export function SafeScoreCard({ property }) {
           {/* Score text centered in gauge */}
           <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingTop: '8px' }}>
             <span className="data-num text-[32px] leading-none text-text-primary font-bold">
-              {animatedScore}
+              {hasScore ? animatedScore : 'N/A'}
             </span>
-            <span className="data-num text-[10px] text-text-muted mt-0.5">/100</span>
+            <span className="data-num text-[10px] text-text-muted mt-0.5">{hasScore ? '/100' : ''}</span>
           </div>
         </div>
 
@@ -201,6 +195,11 @@ export function SafeScoreCard({ property }) {
               <TrendIcon className="h-3 w-3" />
               {label}
             </span>
+            {isProvisional && (
+              <span className="rounded-md border border-amber-400/25 bg-amber-400/8 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300">
+                Provisional
+              </span>
+            )}
           </div>
 
           {/* Mini risk breakdown */}
@@ -208,6 +207,8 @@ export function SafeScoreCard({ property }) {
             <MiniBar label="Seismic" value={property?.hazard?.radar?.seismic ?? 0} />
             <MiniBar label="Flood" value={property?.hazard?.radar?.flood ?? 0} />
             <MiniBar label="Soil" value={property?.hazard?.radar?.soil ?? 0} />
+            <MiniBar label="Landslide" value={property?.hazard?.radar?.landslide ?? 0} />
+            <MiniBar label="Subsidence" value={property?.hazard?.radar?.subsidence ?? 50} />
           </div>
         </div>
       </div>

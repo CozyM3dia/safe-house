@@ -17,6 +17,7 @@ Tidak ada satu pun yang membutuhkan kunci API.
 
 import asyncio
 import logging
+import re
 from typing import Any, Optional
 
 import httpx
@@ -62,7 +63,12 @@ async def _weather(client: httpx.AsyncClient, lat: float, lon: float) -> dict:
         params={
             "latitude": lat,
             "longitude": lon,
-            "current": "relative_humidity_2m,temperature_2m",
+            "current": "relative_humidity_2m,temperature_2m,precipitation,rain,showers",
+            "hourly": "soil_moisture_0_to_1cm,soil_moisture_1_to_3cm",
+            "daily": "precipitation_sum,precipitation_hours",
+            "forecast_days": 1,
+            "past_hours": 24,
+            "timezone": "auto",
         },
     )
     r.raise_for_status()
@@ -267,11 +273,14 @@ def is_water_body(
     if geocode.get("error"):
         return True
 
+    # Cocokkan sebagai kata utuh, bukan substring: "selat" TIDAK boleh cocok
+    # dengan "Selatan" (arah, sangat umum: "Lampung Selatan", "Jakarta
+    # Selatan"), dan "laut" tidak cocok dengan "lautan"/"pelautan".
     water_words = (
         "ocean", "sea", "laut", "selat", "strait", "bay", "teluk", "samudra",
     )
     lowered = address.lower()
-    if any(f" {w}" in f" {lowered}" for w in water_words):
+    if any(re.search(rf"\b{re.escape(w)}\b", lowered) for w in water_words):
         return True
 
     return address == "Lokasi tidak terdeteksi" and elevation <= 0

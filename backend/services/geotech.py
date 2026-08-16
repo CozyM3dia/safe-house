@@ -137,6 +137,8 @@ def classify_site(vs30: int) -> str:
         return "SE"
     if vs30 < 360:
         return "SD"
+    if vs30 >= 760:
+        return "SB"
     return "SC"
 
 
@@ -212,5 +214,10 @@ def geotech_profile(lat: float, lon: float, elevation_m: Optional[float]) -> dic
     profile["nearest_megathrust"] = nearest_point(lat, lon, MEGATHRUST)
     profile["nearest_coast"] = nearest_point(lat, lon, COASTLINE)
     profile["elevation_assumed"] = elevation_m is None
+    profile["provenance"] = {
+        "vs30": "screening_proxy_from_elevation",
+        "pga": "regional_nearest_city_lookup",
+        "faults_volcanoes_coast": "static_reference_points_not_line_or_polygon_data",
+    }
 
     return profile

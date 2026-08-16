@@ -10,9 +10,8 @@ tidak ke editor.
 
 import logging
 import secrets
+import uuid
 
-from bson import ObjectId
-from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException
 
 import db
@@ -33,57 +32,65 @@ def _new_slug() -> str:
 
 @router.post("", response_model=ShareResult)
 async def create_share(req: ShareRequest) -> ShareResult:
-    database = db.get_db()
-    if database is None:
+    pool = db.get_pool()
+    if pool is None:
         raise HTTPException(status_code=503, detail="Penyimpanan tidak tersedia")
 
     try:
-        audit_oid = ObjectId(req.audit_id)
-    except (InvalidId, TypeError) as exc:
+        audit_uid = uuid.UUID(req.audit_id)
+    except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=422, detail="ID audit tidak valid") from exc
 
-    audit = await database.audits.find_one({"_id": audit_oid})
+    audit = await pool.fetchrow("SELECT id FROM audits WHERE id = $1", audit_uid)
     if audit is None:
         raise HTTPException(status_code=404, detail="Audit tidak ditemukan")
 
     # Satu audit satu slug — kalau sudah pernah dibagikan, pakai yang lama.
-    existing = await database.shared_reports.find_one({"audit_id": audit_oid})
+    existing = await pool.fetchrow(
+        "SELECT slug FROM shared_reports WHERE audit_id = $1", audit_uid
+    )
     if existing is not None:
         return ShareResult(slug=existing["slug"], url_path=f"/laporan/{existing['slug']}")
 
     # Tabrakan slug sangat kecil kemungkinannya, tapi tetap dijaga.
     for _ in range(5):
         slug = _new_slug()
-        if await database.shared_reports.find_one({"slug": slug}) is None:
+        dup = await pool.fetchrow("SELECT 1 FROM shared_reports WHERE slug = $1", slug)
+        if dup is None:
             break
     else:
         raise HTTPException(status_code=500, detail="Gagal membuat tautan, coba lagi")
 
-    await database.shared_reports.insert_one(
-        {"slug": slug, "audit_id": audit_oid, "views": 0}
+    await pool.execute(
+        "INSERT INTO shared_reports (slug, audit_id) VALUES ($1, $2)", slug, audit_uid
     )
     return ShareResult(slug=slug, url_path=f"/laporan/{slug}")
 
 
 @router.get("/{slug}", response_model=AuditResult)
 async def get_shared(slug: str) -> AuditResult:
-    database = db.get_db()
-    if database is None:
+    pool = db.get_pool()
+    if pool is None:
         raise HTTPException(status_code=503, detail="Penyimpanan tidak tersedia")
 
-    share = await database.shared_reports.find_one({"slug": slug})
+    share = await pool.fetchrow(
+        "SELECT id, audit_id FROM shared_reports WHERE slug = $1", slug
+    )
     if share is None:
         raise HTTPException(status_code=404, detail="Tautan tidak ditemukan")
 
-    audit = await database.audits.find_one({"_id": share["audit_id"]})
+    audit = await pool.fetchrow(
+        "SELECT id, data FROM audits WHERE id = $1", share["audit_id"]
+    )
     if audit is None:
         raise HTTPException(status_code=404, detail="Audit sudah tidak tersedia")
 
     # Hitung tampilan sebagai sinyal minat, tidak menghalangi respons.
-    await database.shared_reports.update_one(
-        {"_id": share["_id"]}, {"$inc": {"views": 1}}
+    await pool.execute(
+        "UPDATE shared_reports SET views = views + 1 WHERE id = $1", share["id"]
     )
 
-    audit["id"] = str(audit.pop("_id"))
-    audit["persisted"] = True
-    return AuditResult(**audit)
+    data = dict(audit["data"])
+    data["id"] = str(audit["id"])
+    data["persisted"] = True
+    return AuditResult(**data)

@@ -32,7 +32,7 @@ class GeotechProfile(BaseModel):
     fs: float
     status: Literal["RAWAN", "AMAN"]
     vs30: int
-    site_class: Literal["SC", "SD", "SE"]
+    site_class: Literal["SA", "SB", "SC", "SD", "SE"]
     pga: float
     fa: float
     pga_surface: float
@@ -45,6 +45,7 @@ class GeotechProfile(BaseModel):
     nearest_volcano: NearestFeature
     nearest_megathrust: NearestFeature
     nearest_coast: NearestFeature
+    provenance: dict[str, str] = Field(default_factory=dict)
 
 
 class AuditResult(BaseModel):
@@ -53,8 +54,12 @@ class AuditResult(BaseModel):
     lon: float
     address: str
     elevation: Optional[float] = None
-    safe_score: int = Field(..., ge=0, le=100)
-    risk_level: Literal["safe", "moderate", "danger"]
+    safe_score: Optional[int] = Field(default=None, ge=0, le=100)
+    risk_level: Literal["safe", "moderate", "danger", "insufficient_data", "not_applicable"]
+    audit_status: Literal["valid", "provisional", "insufficient_data", "not_buildable"] = "valid"
+    confidence: int = Field(default=0, ge=0, le=100)
+    score_version: str = Field(default="buildability-v2", min_length=1, max_length=40)
+    data_quality: dict[str, Any] = Field(default_factory=dict)
     geotech: GeotechProfile
 
     # Diisi pada tahap 3 — data eksternal.
@@ -86,3 +91,60 @@ class ShareResult(BaseModel):
 class HealthResult(BaseModel):
     status: Literal["ok"]
     database: Literal["connected", "unavailable"]
+
+
+class NarrativeRequest(BaseModel):
+    """Audit inline untuk instalasi yang berjalan tanpa MongoDB."""
+
+    audit: AuditResult
+    lang: Literal["id", "en"] = "id"
+
+
+class AIMetadata(BaseModel):
+    """Server-side metadata — not requested from the model."""
+
+    model: str
+    delivery_mode: Literal["live", "fallback", "cached"]
+    prompt_version: str
+    generated_at: datetime
+    cache_age_seconds: Optional[int] = None
+
+
+class NarrativeResult(BaseModel):
+    """Laporan AI terstruktur; seluruh angka tetap berasal dari AuditResult."""
+
+    geo_stability_explanation: str = Field(..., min_length=1, max_length=1200)
+    seismic_explanation: str = Field(..., min_length=1, max_length=1200)
+    flood_env_explanation: str = Field(..., min_length=1, max_length=1200)
+    micro_analysis: str = Field(..., min_length=1, max_length=1600)
+    detailed_report: str = Field(..., min_length=1, max_length=9000)
+    sources: list[str] = Field(default_factory=list, max_length=8)
+    data_limitations: list[str] = Field(default_factory=list, max_length=8)
+    generated_by: str = Field(..., min_length=1, max_length=100)
+    street_view_used: bool = False
+    metadata: Optional[AIMetadata] = None
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(..., min_length=1, max_length=4000)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=10)
+    audit: Optional[AuditResult] = None
+    comparison: Optional[AuditResult] = None
+    mode: Literal["audit", "battle"] = "audit"
+    lang: Literal["id", "en"] = "id"
+
+
+class ChatCitation(BaseModel):
+    title: str
+    category: str
+
+
+class ChatResult(BaseModel):
+    answer: str = Field(..., min_length=1, max_length=5000)
+    citations: list[ChatCitation] = Field(default_factory=list, max_length=8)
+    follow_ups: list[str] = Field(default_factory=list, max_length=3)

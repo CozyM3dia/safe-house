@@ -7,11 +7,7 @@ import { Badge } from '../ui/badge';
 import { riskHex } from '../../lib/utils';
 
 function scoreOf(p) {
-  if (!p?.radarData) return 50;
-  if (p.isOcean) return 0; // Lautan tidak bisa dibangun, skor otomatis 0
-  const { flood = 0, soil = 0, seismic = 0, air = 0 } = p.radarData;
-  const elevR = (p.elevasi ?? 50) < 10 ? 70 : 25;
-  return Math.round(100 - (flood + soil + seismic + air + elevR) / 5);
+  return Number.isFinite(p?.safe_score) ? p.safe_score : null;
 }
 
 export function BattleCard({ propertyA, propertyB }) {
@@ -49,7 +45,9 @@ export function BattleCard({ propertyA, propertyB }) {
 
   const scoreA = scoreOf(propertyA);
   const scoreB = scoreOf(propertyB);
-  const winner = scoreA > scoreB ? 'A' : scoreA < scoreB ? 'B' : null;
+  const winner = Number.isFinite(scoreA) && Number.isFinite(scoreB)
+    ? scoreA > scoreB ? 'A' : scoreA < scoreB ? 'B' : null
+    : null;
 
   return (
     <Card glow={winner ? 'safe' : null}>
@@ -75,7 +73,9 @@ export function BattleCard({ propertyA, propertyB }) {
 }
 
 function SitePill({ label, score, address }) {
-  const hex = riskHex(score);
+  const ready = Number.isFinite(score);
+  const displayScore = ready ? score : 0;
+  const hex = riskHex(displayScore);
   return (
     <div
       className="rounded-lg border bg-white/[0.02] p-2.5"
@@ -89,7 +89,7 @@ function SitePill({ label, score, address }) {
           Site {label}
         </span>
         <span className="data-num text-[15px] text-text-primary font-semibold">
-          {score}
+          {ready ? score : 'N/A'}
         </span>
       </div>
       <p className="line-clamp-1 text-[10px] text-text-muted">{address}</p>

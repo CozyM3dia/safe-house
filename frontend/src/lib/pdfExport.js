@@ -23,16 +23,33 @@ function riskHex(score) {
 }
 
 function riskLabel(score) {
-  if (score >= 70) return 'SAFE';
-  if (score >= 40) return 'MODERATE';
-  return 'DANGER';
+  if (score >= 70) return 'AMAN';
+  if (score >= 40) return 'SEDANG';
+  return 'WASPADA';
+}
+
+function clampRiskScore(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Math.max(0, Math.min(100, Math.round(numeric))) : 0;
 }
 
 function computeScore(p) {
-  if (!p?.radarData) return 50;
-  const { flood = 0, soil = 0, seismic = 0, air = 0 } = p.radarData;
-  const elevationRisk = (p.elevasi ?? 50) < 10 ? 70 : 25;
-  return Math.max(0, Math.min(100, Math.round(100 - (flood + soil + seismic + air + elevationRisk) / 5)));
+  if (!Number.isFinite(p?.safeScore)) {
+    throw new Error('PDF hanya dapat dibuat dari audit dengan skor backend yang valid.');
+  }
+  return clampRiskScore(p.safeScore);
+}
+
+export function getPdfScore(property) {
+  return computeScore(property);
+}
+
+export function canExportPdf(property) {
+  return Boolean(
+    property?.auditStatus === 'valid' &&
+    Number.isFinite(property?.safeScore) &&
+    property?.aiReport?.detailedReport
+  );
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -47,7 +64,7 @@ function drawRoundedRect(pdf, x, y, w, h, r, fillColor) {
 
 function drawBar(pdf, x, y, w, h, val, maxVal, barColor, bgColor) {
   drawRoundedRect(pdf, x, y, w, h, 1.5, bgColor);
-  const filled = (val / maxVal) * w;
+  const filled = (clampRiskScore(val) / maxVal) * w;
   if (filled > 0) {
     pdf.setFillColor(barColor[0], barColor[1], barColor[2]);
     pdf.roundedRect(x, y, Math.max(filled, 3), h, 1.5, 1.5, 'F');
@@ -190,11 +207,11 @@ function drawDashboardPage(pdf, property, score, lang) {
   // ── Radar Data Bars ─────────────────────────────────────────
   const radar = property.radarData || {};
   const bars = [
-    { label: lang === 'en' ? 'Flood Risk' : 'Risiko Banjir', val: radar.flood || 0, icon: '🌊', color: C.blue },
-    { label: lang === 'en' ? 'Soil / Liquefaction' : 'Likuefaksi Tanah', val: radar.soil || 0, icon: '🧱', color: C.moderate },
-    { label: lang === 'en' ? 'Seismic Risk' : 'Risiko Seismik', val: radar.seismic || 0, icon: '🌋', color: C.danger },
-    { label: lang === 'en' ? 'Air Quality (AQI)' : 'Kualitas Udara', val: radar.air || 0, icon: '🌬️', color: C.safe },
-    { label: lang === 'en' ? 'Landslide Risk' : 'Risiko Longsor', val: radar.landslide || 0, icon: '🏔️', color: C.violet },
+    { label: lang === 'en' ? 'Flood Risk' : 'Risiko Banjir', val: clampRiskScore(radar.flood), icon: '🌊', color: C.blue },
+    { label: lang === 'en' ? 'Soil / Liquefaction' : 'Likuefaksi Tanah', val: clampRiskScore(radar.soil), icon: '🧱', color: C.moderate },
+    { label: lang === 'en' ? 'Seismic Risk' : 'Risiko Seismik', val: clampRiskScore(radar.seismic), icon: '🌋', color: C.danger },
+    { label: lang === 'en' ? 'Landslide Risk' : 'Risiko Longsor', val: clampRiskScore(radar.landslide), icon: '🏔️', color: C.violet },
+    { label: lang === 'en' ? 'Land Subsidence' : 'Penurunan Lahan', val: clampRiskScore(radar.subsidence), icon: '🧭', color: C.accent },
   ];
 
   // Section title
@@ -1026,7 +1043,9 @@ function drawPageFooter(pdf, W, H, pageNum) {
 
 // ── Main Export Function ──────────────────────────────────────
 export async function exportPrintReadyPdf(property, lang = 'id') {
-  if (!property) return;
+  if (!canExportPdf(property)) {
+    throw new Error('PDF belum tersedia: audit harus valid dan laporan AI harus selesai.');
+  }
 
   const score = computeScore(property);
   const pdf = new jsPDF('p', 'mm', 'a4');
@@ -1182,8 +1201,8 @@ function drawBattleDashboardPage(pdf, propA, propB, scoreA, scoreB, lang) {
     { key: 'flood', label: lang === 'en' ? 'Flood Risk' : 'Risiko Banjir', color: C.blue },
     { key: 'soil', label: lang === 'en' ? 'Soil / Liq.' : 'Likuefaksi', color: C.moderate },
     { key: 'seismic', label: lang === 'en' ? 'Seismic' : 'Seismik', color: C.danger },
-    { key: 'air', label: lang === 'en' ? 'Air (AQI)' : 'Udara', color: C.safe },
     { key: 'landslide', label: lang === 'en' ? 'Landslide' : 'Longsor', color: C.violet },
+    { key: 'subsidence', label: lang === 'en' ? 'Land Subsidence' : 'Penurunan Lahan', color: C.accent },
   ];
 
   metricsInfo.forEach((m) => {
@@ -1260,7 +1279,14 @@ function drawBattleDashboardPage(pdf, propA, propB, scoreA, scoreB, lang) {
 
 // ── Battle Export Function ──────────────────────────────────────
 export async function exportBattlePdf(propA, propB, battleReport, lang = 'id') {
-  if (!propA || !propB) return;
+  if (
+    !propA || !propB ||
+    propA.auditStatus !== 'valid' || propB.auditStatus !== 'valid' ||
+    !Number.isFinite(propA.safeScore) || !Number.isFinite(propB.safeScore) ||
+    !battleReport?.trim()
+  ) {
+    throw new Error('PDF battle belum tersedia: kedua audit dan laporan AI harus selesai.');
+  }
 
   const scoreA = computeScore(propA);
   const scoreB = computeScore(propB);
