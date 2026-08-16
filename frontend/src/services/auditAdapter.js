@@ -13,6 +13,28 @@ export function adaptAuditResult(r) {
   const h = r.hazard || {};
   const env = r.environment || {};
   const radar = h.radar || {};
+  const clampRisk = (value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? Math.max(0, Math.min(100, Math.round(numeric))) : 0;
+  };
+  const rawNarrative = r.aiReport || r.narrative || null;
+  const aiReport = rawNarrative
+    ? (rawNarrative.geo_stability_explanation
+      ? {
+          geoStabilityExplanation: rawNarrative.geo_stability_explanation,
+          seismicExplanation: rawNarrative.seismic_explanation,
+          floodEnvExplanation: rawNarrative.flood_env_explanation,
+          microAnalysis: rawNarrative.micro_analysis,
+          detailedReport: rawNarrative.detailed_report,
+          sources: rawNarrative.sources || [],
+          dataLimitations: rawNarrative.data_limitations || [],
+          generatedBy: rawNarrative.generated_by,
+          streetViewUsed: rawNarrative.street_view_used === true,
+          deliveryMode: rawNarrative.metadata?.delivery_mode || 'live',
+          aiModel: rawNarrative.metadata?.model || '',
+        }
+      : rawNarrative)
+    : null;
 
   return {
     id: r.id || null,
@@ -34,15 +56,21 @@ export function adaptAuditResult(r) {
     // Sumbu radar 0–100 (makin tinggi makin buruk) — nama field sama
     // dengan yang lama supaya RadarCard tidak berubah.
     radarData: {
-      flood: radar.flood ?? 0,
-      soil: radar.soil ?? 0,
-      air: radar.air ?? 0,
-      seismic: radar.seismic ?? 0,
-      landslide: radar.landslide ?? 0,
+      flood: clampRisk(radar.flood),
+      soil: clampRisk(radar.soil),
+      air: clampRisk(radar.air),
+      seismic: clampRisk(radar.seismic),
+      landslide: clampRisk(radar.landslide),
+      subsidence: clampRisk(radar.subsidence),
     },
 
     safeScore: r.safe_score,
     riskLevel: r.risk_level,
+    auditStatus: r.audit_status || 'valid',
+    confidence: r.confidence ?? 0,
+    scoreVersion: r.score_version || 'buildability-v2',
+    dataQuality: r.data_quality || {},
+    aiReport,
 
     // Padanan compressedPayload lama — dipakai kartu detail dan, nanti,
     // lapis AI. Field mengikuti penamaan lama supaya konsumen tak berubah.
@@ -82,13 +110,19 @@ export function adaptAuditResult(r) {
       },
       flood_hazard: h.flood_label,
       landslide_hazard: h.landslide_label,
+      subsidence_hazard: h.subsidence_label,
       env_extras: {
         aqi: env.aqi,
         pm25: env.pm25 != null ? `${env.pm25} µg/m³` : null,
         temperature: env.temperature_c != null ? `${env.temperature_c}°C` : null,
         humidity: env.humidity_pct != null ? `${env.humidity_pct}%` : null,
+        precipitation: env.precipitation_mm != null ? `${env.precipitation_mm} mm` : null,
+        precipitation24h: env.precipitation_24h_mm != null ? `${env.precipitation_24h_mm} mm` : null,
+        soilMoisture: env.soil_moisture_surface,
       },
       historical_earthquakes: r.seismic?.history?.length ? r.seismic.history : null,
+      air_quality_risk: env.air_risk,
+      data_quality: r.data_quality || {},
     },
 
     // Penanda sumber yang gagal — frontend bisa memberi label jujur

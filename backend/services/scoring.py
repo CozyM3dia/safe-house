@@ -9,16 +9,18 @@ from typing import Any, Optional
 
 from data.constants import RISK_DOMAIN
 
-# Bobot komponen risiko. Likuefaksi dan banjir paling berat karena keduanya
-# menentukan kelayakan fondasi dan kerugian berulang — dua hal yang paling
-# mahal untuk diperbaiki setelah bangunan berdiri.
-WEIGHTS = {
+# Bobot komponen *buildability* saja. AQI adalah indikator lingkungan yang
+# berubah-ubah, bukan risiko fondasi, sehingga sengaja tidak masuk skor ini.
+BUILDABILITY_WEIGHTS = {
     "flood": 0.25,
     "soil": 0.25,
     "seismic": 0.20,
     "landslide": 0.15,
-    "air": 0.15,
+    "subsidence": 0.15,
 }
+
+# Alias untuk konsumen lama; safe_score hanya memakai domain canonical di atas.
+WEIGHTS = BUILDABILITY_WEIGHTS
 
 
 def seismic_risk(fault_distance_km: Optional[float]) -> int:
@@ -74,7 +76,10 @@ def _hazard_view(
     if not available:
         return "TIDAK DIKETAHUI (SUMBER TIDAK TERJANGKAU)", _UNKNOWN_RISK, False
     if hazard_class is None:
-        return "TIDAK TERPETAKAN", 10, True
+        # Tidak ada piksel bahaya bukan berarti risiko rendah. Nilai netral ini
+        # hanya untuk visualisasi; caller wajib menandai hasil sebagai
+        # insufficient_data dan tidak boleh menerbitkan skor resmi.
+        return "TIDAK TERPETAKAN", 50, False
 
     label, risk = _HAZARD_CLASS.get(hazard_class, ("TIDAK DIKENALI", _UNKNOWN_RISK))
     return label, risk, True
@@ -122,25 +127,48 @@ def build_radar(
     fault_distance_km: Optional[float],
     aqi: Optional[float],
     is_water: bool,
+    subsidence_risk: Optional[int] = None,
 ) -> dict[str, int]:
-    """Lima sumbu radar risiko, masing-masing 0–100 (makin tinggi makin buruk)."""
+    """Canonical buildability axes plus a separate non-scored AQI axis."""
     return {
         "flood": hazard["flood_risk"],
         "soil": 100 if is_water else soil_risk,
         "seismic": 100 if is_water else seismic_risk(fault_distance_km),
         "landslide": hazard["landslide_risk"],
-        "air": 0 if is_water else int(aqi if aqi is not None else 20),
+        # No official subsidence layer is wired yet. 50 is neutral for a
+        # provisional chart and is excluded when score axes are supplied.
+        "subsidence": 100 if is_water else (50 if subsidence_risk is None else max(0, min(100, int(subsidence_risk)))),
+        # Kept for backwards-compatible payloads; safe_score ignores it.
+        "air": 0 if is_water else max(0, min(100, int(aqi if aqi is not None else 20))),
     }
 
 
-def safe_score(radar: dict[str, int]) -> int:
-    """S.A.F.E Score 0–100. Makin tinggi makin aman — kebalikan sumbu radar."""
-    total_risk = sum(radar[key] * WEIGHTS[key] for key in WEIGHTS)
-    return max(0, min(100, round(100 - total_risk)))
+def safe_score(
+    radar: dict[str, int], known_axes: Optional[set[str]] = None
+) -> Optional[int]:
+    """Buildability score 0–100, normalized over known canonical axes.
+
+    ``known_axes`` is explicit so an unmapped layer cannot silently become a
+    low-risk value. A caller with no usable axis receives ``None``.
+    """
+    axes = known_axes if known_axes is not None else set(BUILDABILITY_WEIGHTS)
+    axes = {
+        key for key in axes
+        if key in BUILDABILITY_WEIGHTS and isinstance(radar.get(key), (int, float))
+    }
+    if not axes:
+        return None
+
+    total_weight = sum(BUILDABILITY_WEIGHTS[key] for key in axes)
+    total_risk = sum(radar[key] * BUILDABILITY_WEIGHTS[key] for key in axes)
+    normalized_risk = total_risk / total_weight
+    return max(0, min(100, round(100 - normalized_risk)))
 
 
-def risk_level(score: int) -> str:
+def risk_level(score: Optional[int]) -> str:
     """Label domain risiko untuk sebuah skor."""
+    if score is None:
+        return "insufficient_data"
     for level, bounds in RISK_DOMAIN.items():
         if bounds["min"] <= score <= bounds["max"]:
             return level

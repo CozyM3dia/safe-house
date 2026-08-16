@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Languages, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 
@@ -10,7 +10,7 @@ import ProcessSection from '../components/landing/ProcessSection';
 import DisclaimerSection from '../components/landing/DisclaimerSection';
 import FAQSection from '../components/landing/FAQSection';
 import CTASection from '../components/landing/CTASection';
-import { LanguageSelectorDropdown } from '../components/ui/language-selector-dropdown';
+import { LanguageSelector } from '../components/ui/language-selector';
 
 const COPY = {
   id: {
@@ -126,7 +126,6 @@ export default function LandingPage() {
   const [hoveredLink, setHoveredLink] = useState(null);
   const navigate = useNavigate();
   const lang = useAppStore((s) => s.lang);
-  const setLang = useAppStore((s) => s.setLang);
   const dict = COPY[lang] || COPY.id;
 
   const t = useCallback((key, fallback) => dict[key] ?? fallback ?? key, [dict]);
@@ -217,7 +216,7 @@ export default function LandingPage() {
 
           {/* Right: CTA + Lang toggle */}
           <div className="flex items-center gap-3">
-            <LanguageSelectorDropdown />
+            <LanguageSelector />
             
             <motion.button
               onClick={() => navigate('/app')}

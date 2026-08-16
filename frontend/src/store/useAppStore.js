@@ -180,8 +180,15 @@ export const useAppStore = create(
 
           get().addRecentSearch({ label: data.address, lat, lng, timestamp: Date.now() });
 
-          // Beri tahu jujur kalau ada sumber data yang gagal.
-          if ((data.sources_failed || []).length > 0) {
+          // Beri tahu jujur kalau audit belum layak dianggap final.
+          if (data.audit_status && data.audit_status !== 'valid') {
+            toast.warning(
+              lang === 'en'
+                ? `Audit is ${data.audit_status}; confidence ${data.confidence ?? 0}%.`
+                : `Audit masih ${data.audit_status}; confidence ${data.confidence ?? 0}%.`,
+              { id: toastId, duration: 5500 }
+            );
+          } else if ((data.sources_failed || []).length > 0) {
             toast.warning(
               lang === 'en'
                 ? 'Audit ready — some data sources were unavailable.'

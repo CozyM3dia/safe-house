@@ -31,11 +31,15 @@ router = APIRouter(prefix="/api", tags=["ai"])
 _requests_by_client: dict[str, deque[float]] = defaultdict(deque)
 _RATE_LIMIT = int(os.getenv("AI_RATE_LIMIT_PER_MINUTE", "15"))
 _RATE_WINDOW_SECONDS = 60.0
+_TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true"
 
 
 def _client_key(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
-    return forwarded or (request.client.host if request.client else "unknown")
+    if _TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+        if forwarded:
+            return forwarded
+    return request.client.host if request.client else "unknown"
 
 
 def _enforce_rate_limit(request: Request) -> None:
@@ -53,6 +57,42 @@ def _enforce_rate_limit(request: Request) -> None:
 
 def _raise_public_error(exc: ai.AIServiceError) -> None:
     raise HTTPException(status_code=exc.status_code, detail=exc.public_message) from exc
+
+
+async def _load_trusted_audit(candidate: AuditResult | None, *, required: bool = False) -> AuditResult | None:
+    """Never treat a client-posted score as authoritative AI context.
+
+    Chat can remain useful without an audit, but when an ID is supplied it is
+    reloaded from the database. Inline narrative is intentionally restricted
+    to persisted audits so a caller cannot manufacture a score and obtain an
+    official-sounding explanation.
+    """
+
+    if candidate is None:
+        if required:
+            raise HTTPException(status_code=422, detail="Audit harus tersimpan sebelum AI dipanggil")
+        return None
+    if not candidate.id:
+        if required:
+            raise HTTPException(status_code=422, detail="Audit harus tersimpan sebelum AI dipanggil")
+        return None
+
+    pool = db.get_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Penyimpanan audit tidak tersedia")
+    try:
+        uid = uuid.UUID(candidate.id)
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail="ID audit tidak valid") from exc
+
+    row = await pool.fetchrow("SELECT id, data FROM audits WHERE id = $1", uid)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Audit tidak ditemukan")
+
+    data = dict(row["data"])
+    data["id"] = str(row["id"])
+    data["persisted"] = True
+    return AuditResult.model_validate(data)
 
 
 @router.get("/ai/status")
@@ -85,8 +125,9 @@ async def create_inline_narrative(
     """Generate a narrative even when MongoDB is intentionally unavailable."""
 
     _enforce_rate_limit(request)
+    audit = await _load_trusted_audit(payload.audit, required=True)
     try:
-        return await ai.generate_narrative(payload.audit, payload.lang)
+        return await ai.generate_narrative(audit, payload.lang)
     except ai.AIServiceError as exc:
         _raise_public_error(exc)
 
@@ -143,12 +184,14 @@ async def create_saved_narrative(
 @router.post("/chat", response_model=ChatResult)
 async def chat(payload: ChatRequest, request: Request) -> ChatResult:
     _enforce_rate_limit(request)
+    audit = await _load_trusted_audit(payload.audit)
+    comparison = await _load_trusted_audit(payload.comparison)
     try:
         return await ai.answer_chat(
             message=payload.message,
             history=payload.history,
-            audit=payload.audit,
-            comparison=payload.comparison,
+            audit=audit,
+            comparison=comparison,
             mode=payload.mode,
             lang=payload.lang,
         )

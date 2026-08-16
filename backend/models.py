@@ -32,7 +32,7 @@ class GeotechProfile(BaseModel):
     fs: float
     status: Literal["RAWAN", "AMAN"]
     vs30: int
-    site_class: Literal["SC", "SD", "SE"]
+    site_class: Literal["SA", "SB", "SC", "SD", "SE"]
     pga: float
     fa: float
     pga_surface: float
@@ -45,6 +45,7 @@ class GeotechProfile(BaseModel):
     nearest_volcano: NearestFeature
     nearest_megathrust: NearestFeature
     nearest_coast: NearestFeature
+    provenance: dict[str, str] = Field(default_factory=dict)
 
 
 class AuditResult(BaseModel):
@@ -53,8 +54,12 @@ class AuditResult(BaseModel):
     lon: float
     address: str
     elevation: Optional[float] = None
-    safe_score: int = Field(..., ge=0, le=100)
-    risk_level: Literal["safe", "moderate", "danger"]
+    safe_score: Optional[int] = Field(default=None, ge=0, le=100)
+    risk_level: Literal["safe", "moderate", "danger", "insufficient_data", "not_applicable"]
+    audit_status: Literal["valid", "provisional", "insufficient_data", "not_buildable"] = "valid"
+    confidence: int = Field(default=0, ge=0, le=100)
+    score_version: str = Field(default="buildability-v2", min_length=1, max_length=40)
+    data_quality: dict[str, Any] = Field(default_factory=dict)
     geotech: GeotechProfile
 
     # Diisi pada tahap 3 — data eksternal.

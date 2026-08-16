@@ -6,11 +6,7 @@ import { riskHex } from '../../lib/utils';
 function computeScore(property) {
   // Skor backend adalah sumber kebenaran.
   if (typeof property?.safe_score === 'number') return property.safe_score;
-  const r = property?.hazard?.radar;
-  if (!r) return 50;
-  if (property?.hazard?.is_water) return 0;
-  const avg = (r.flood + r.soil + r.seismic + r.landslide) / 4;
-  return Math.round(Math.max(0, Math.min(100, 100 - avg)));
+  return null;
 }
 
 function buildIcon(color = '#d4956a', label = '') {
@@ -56,14 +52,20 @@ export function MapMarker() {
         <Marker
           key={`A-${propertyA.lat}`}
           position={[propertyA.lat, propertyA.lon]}
-          icon={buildIcon(riskHex(computeScore(propertyA)), 'A')}
+          icon={buildIcon(
+            Number.isFinite(computeScore(propertyA)) ? riskHex(computeScore(propertyA)) : '#6b7280',
+            'A'
+          )}
         />
       )}
       {propertyB?.lat != null && (
         <Marker
           key={`B-${propertyB.lat}`}
           position={[propertyB.lat, propertyB.lon]}
-          icon={buildIcon(riskHex(computeScore(propertyB)), 'B')}
+          icon={buildIcon(
+            Number.isFinite(computeScore(propertyB)) ? riskHex(computeScore(propertyB)) : '#6b7280',
+            'B'
+          )}
         />
       )}
     </>

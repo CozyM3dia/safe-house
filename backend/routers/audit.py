@@ -13,8 +13,9 @@ from fastapi import APIRouter, HTTPException
 import db
 from data.constants import INDONESIA_BOUNDS
 from models import AuditRequest, AuditResult
-from services import external, scoring
+from services import completeness, external, scoring
 from services.geotech import geotech_profile
+from services.location import classify_location
 
 log = logging.getLogger(__name__)
 
@@ -43,11 +44,33 @@ def _extract_environment(
     weather: Optional[dict], air: Optional[dict], is_water: bool
 ) -> dict[str, Any]:
     current_weather = (weather or {}).get("current", {}) or {}
+    daily_weather = (weather or {}).get("daily", {}) or {}
+    hourly_weather = (weather or {}).get("hourly", {}) or {}
     current_air = (air or {}).get("current", {}) or {}
+
+    soil_moisture = hourly_weather.get("soil_moisture_0_to_1cm") or []
+    # Some global model cells return null for future soil-moisture hours. Use
+    # the latest available numeric window rather than treating those trailing
+    # nulls as if the whole field were unavailable.
+    soil_moisture_values = [
+        value for value in soil_moisture
+        if isinstance(value, (int, float))
+    ][-24:]
 
     return {
         "temperature_c": current_weather.get("temperature_2m"),
         "humidity_pct": current_weather.get("relative_humidity_2m"),
+        "precipitation_mm": current_weather.get("precipitation"),
+        "precipitation_24h_mm": (
+            daily_weather.get("precipitation_sum", [None])[0]
+            if daily_weather.get("precipitation_sum")
+            else None
+        ),
+        "soil_moisture_surface": (
+            round(sum(soil_moisture_values) / len(soil_moisture_values), 4)
+            if soil_moisture_values
+            else None
+        ),
         "aqi": 0 if is_water else current_air.get("european_aqi"),
         "pm25": 0 if is_water else current_air.get("pm2_5"),
     }
@@ -97,20 +120,21 @@ async def create_audit(req: AuditRequest) -> AuditResult:
 
     elevation = _extract_elevation(raw.get("weather"))
     address = _extract_address(raw.get("geocode"))
-    is_water = external.is_water_body(
-        req.lat, req.lon, address, elevation or 0.0, raw.get("geocode")
-    )
+    location = classify_location(req.lat, req.lon, raw.get("geocode"), elevation)
+
+    if location.status == "out_of_scope":
+        raise HTTPException(status_code=422, detail=location.reason)
+    if location.status == "not_buildable":
+        raise HTTPException(
+            status_code=422,
+            detail="Lokasi tidak dapat diaudit sebagai lahan bangunan: " + location.reason,
+        )
+    if location.status == "insufficient_data":
+        raise HTTPException(status_code=503, detail=location.reason)
+
+    is_water = False
 
     geotech = geotech_profile(req.lat, req.lon, elevation)
-
-    # Perairan bukan lahan yang bisa dinilai kelayakannya — tandai eksplisit
-    # daripada mengembalikan skor yang menyesatkan.
-    if is_water:
-        geotech["fs"] = 0.0
-        geotech["status"] = "RAWAN"
-        geotech["site_class"] = "SE"
-        geotech["risk_score"] = 100
-        address = f"{address} (Kawasan Perairan)"
 
     hazard = scoring.build_hazard(
         flood_class=raw.get("flood"),
@@ -119,6 +143,49 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         landslide_available="landslide" not in failed,
         is_water=is_water,
     )
+    hazard_quality = completeness.build_best_available_hazards(
+        flood_class=raw.get("flood"),
+        landslide_class=raw.get("landslide"),
+        flood_available="flood" not in failed,
+        landslide_available="landslide" not in failed,
+        elevation_m=elevation,
+        coast_distance_km=geotech["nearest_coast"]["distance_km"],
+        weather=raw.get("weather"),
+    )
+
+    for name in ("flood", "landslide"):
+        quality = hazard_quality[name]
+        hazard[f"{name}_label"] = quality["label"]
+        hazard[f"{name}_risk"] = quality["risk"]
+        # `known` means that a usable numeric value exists. `mapped` keeps
+        # the important distinction between InaRISK and a model fallback.
+        hazard[f"{name}_known"] = quality["status"] in {"official", "model"}
+        hazard[f"{name}_mapped"] = quality["mapped"]
+        hazard[f"{name}_data_status"] = quality["status"]
+        hazard[f"{name}_source"] = quality["source"]
+        hazard[f"{name}_estimated"] = quality["used_fallback"]
+
+    mode = completeness.audit_data_mode()
+    subsidence_quality = (
+        completeness.subsidence_proxy(
+            elevation,
+            geotech["nearest_coast"]["distance_km"],
+        )
+        if mode == "best_available"
+        else {
+            "risk": 50,
+            "label": "DATA TIDAK TERSEDIA — LAYER SUBSIDENSI",
+            "status": "unavailable",
+            "source": "no approved subsidence layer",
+            "confidence": 0,
+            "used_fallback": False,
+        }
+    )
+    hazard["subsidence_label"] = subsidence_quality["label"]
+    hazard["subsidence_known"] = subsidence_quality["status"] != "unavailable"
+    hazard["subsidence_data_status"] = subsidence_quality["status"]
+    hazard["subsidence_source"] = subsidence_quality["source"]
+    hazard["subsidence_estimated"] = subsidence_quality["used_fallback"]
     environment = _extract_environment(raw.get("weather"), raw.get("air_quality"), is_water)
     seismic = _extract_seismic(raw.get("earthquakes"))
 
@@ -128,14 +195,86 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         fault_distance_km=geotech["nearest_fault"]["distance_km"],
         aqi=environment["aqi"],
         is_water=is_water,
+        subsidence_risk=(
+            subsidence_quality["risk"]
+            if subsidence_quality["status"] != "unavailable"
+            else None
+        ),
     )
-    score = scoring.safe_score(radar)
+    known_axes = {"soil", "seismic"}
+    if elevation is None:
+        known_axes.discard("soil")
+    if geotech["nearest_fault"]["distance_km"] is None:
+        known_axes.discard("seismic")
+    if hazard_quality["flood"]["status"] in {"official", "model"}:
+        known_axes.add("flood")
+    if hazard_quality["landslide"]["status"] in {"official", "model"}:
+        known_axes.add("landslide")
+    if subsidence_quality["status"] != "unavailable":
+        known_axes.add("subsidence")
+
+    critical_missing: list[str] = []
+    if hazard_quality["flood"]["status"] == "unavailable":
+        critical_missing.append("flood")
+    if hazard_quality["landslide"]["status"] == "unavailable":
+        critical_missing.append("landslide")
+    if elevation is None:
+        critical_missing.append("elevation")
+    if geotech["nearest_fault"]["distance_km"] is None:
+        critical_missing.append("seismic_reference")
+
+    optional_missing: list[str] = [
+        "official_vs30_grid",
+        "official_pga_grid",
+        "official_fault_geometry",
+    ]
+    optional_missing.extend(name for name in ("earthquakes", "nearby", "weather", "air_quality") if name in failed)
+    if subsidence_quality["status"] == "unavailable":
+        optional_missing.append("subsidence")
+
+    score = scoring.safe_score(radar, known_axes) if known_axes else None
+    if mode == "strict" and critical_missing:
+        score = None
+    audit_status = "insufficient_data" if score is None else "provisional"
+    if not optional_missing and not critical_missing and mode == "strict":
+        audit_status = "valid"
+
+    field_quality = completeness.build_field_quality(
+        raw=raw,
+        failed=failed,
+        hazard_quality=hazard_quality,
+        geotech=geotech,
+        location_source=location.boundary_source,
+        elevation=elevation,
+        subsidence_quality=subsidence_quality,
+    )
+    scored_quality = [
+        field_quality["fields"][name]["confidence"]
+        for name in ("flood", "landslide", "soil", "seismic", "subsidence")
+        if name in known_axes
+    ]
+    confidence = round(sum(scored_quality) / len(scored_quality)) if scored_quality else 0
 
     hazard["tsunami"] = scoring.tsunami_risk(
         geotech["nearest_coast"]["distance_km"], elevation or 0.0
     )
+    hazard["tsunami_scored"] = False
     hazard["radar"] = radar
     hazard["is_water"] = is_water
+    environment["air_risk"] = radar["air"]
+
+    data_quality = {
+        "status": audit_status,
+        "mode": mode,
+        "confidence": confidence,
+        "critical_missing": critical_missing,
+        "optional_missing": optional_missing,
+        **field_quality,
+        "boundary_source": location.boundary_source,
+        "geotech_provenance": geotech.get("provenance", {}),
+        "score_axes": sorted(known_axes),
+        "not_scored": ["air_quality", "tsunami"] + (["subsidence"] if "subsidence" not in known_axes else []),
+    }
 
     result = AuditResult(
         lat=req.lat,
@@ -144,6 +283,10 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         elevation=elevation,
         safe_score=score,
         risk_level=scoring.risk_level(score),
+        audit_status=audit_status,
+        confidence=confidence,
+        score_version="buildability-v3-best-available",
+        data_quality=data_quality,
         geotech=geotech,
         hazard=hazard,
         environment=environment,

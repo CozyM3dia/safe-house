@@ -12,19 +12,13 @@ import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { exportPrintReadyPdf, exportBattlePdf } from '../../lib/pdfExport';
+import { adaptAuditResult } from '../../services/auditAdapter';
 import { locationToUrl, riskHex, riskLabel } from '../../lib/utils';
 
 // ─── Local Helpers ──────────────────────────────────────────────────
 function computeScore(p) {
   if (typeof p?.safe_score === 'number') return p.safe_score;
-  const radar = p?.hazard?.radar;
-  if (!radar) return 50;
-  if (p?.hazard?.is_water) return 0;
-  const { flood = 0, soil = 0, seismic = 0, air = 0 } = radar;
-  const elevation = p?.elevation ?? p?.geotech?.elevation_m ?? 50;
-  const elevationRisk = elevation < 10 ? 70 : 25;
-  const avgRisk = (flood + soil + seismic + air + elevationRisk) / 5;
-  return Math.max(0, Math.min(100, Math.round(100 - avgRisk)));
+  return null;
 }
 
 // ─── Visualizations for Report Sections ──────────────────────────────
@@ -694,6 +688,8 @@ export function AuditDrawer() {
   // In battle mode, show battle report; in audit mode, show single site report
   const isBattle = mode === 'battle' && propertyB;
   const aiReport = propertyA?.aiReport;
+  const drawerScore = computeScore(propertyA);
+  const drawerScoreReady = Number.isFinite(drawerScore);
 
   const lang = useAppStore((s) => s.lang);
 
@@ -702,10 +698,15 @@ export function AuditDrawer() {
       toast.loading(t('toast.pdfLoading'), { id: 'pdf' });
       if (isBattle) {
         // Battle mode: use native jsPDF implementation
-        await exportBattlePdf(propertyA, propertyB, battleReport, lang);
+        await exportBattlePdf(
+          adaptAuditResult(propertyA),
+          adaptAuditResult(propertyB),
+          battleReport,
+          lang
+        );
       } else {
         // Single site: use print-ready PDF with cover page
-        await exportPrintReadyPdf(propertyA, lang);
+        await exportPrintReadyPdf(adaptAuditResult(propertyA), lang);
       }
       toast.success(t('toast.pdfDone'), { id: 'pdf' });
     } catch (e) {
@@ -814,6 +815,19 @@ export function AuditDrawer() {
                 {t('drawer.disclaimer')}
               </div>
 
+              {!isBattle && propertyA?.data_quality?.fields && (
+                <DataCoverageSummary property={propertyA} />
+              )}
+
+              {!isBattle && propertyA?.audit_status && propertyA.audit_status !== 'valid' && (
+                <div className="mb-6 rounded-lg border border-risk-moderate/25 bg-risk-moderate/5 px-3 py-2 text-[11px] text-risk-moderate relative z-10">
+                  Audit {propertyA.audit_status}. Confidence {propertyA.confidence ?? 0}%.
+                  {propertyA.data_quality?.optional_missing?.length > 0 && (
+                    <> Layer belum tersedia: {propertyA.data_quality.optional_missing.join(', ')}.</>
+                  )}
+                </div>
+              )}
+
               {/* Dynamic Header Card */}
               {!isBattle && propertyA && (
                 <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.2)]">
@@ -839,18 +853,18 @@ export function AuditDrawer() {
                     <div className="text-right">
                       <span className="text-[8px] font-bold text-text-muted tracking-wider block mb-1">SCORE</span>
                       <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
-                        computeScore(propertyA) >= 70 ? 'bg-risk-safe/10 text-risk-safe border border-risk-safe/25' :
-                        computeScore(propertyA) >= 40 ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/25' :
+                        drawerScore >= 70 ? 'bg-risk-safe/10 text-risk-safe border border-risk-safe/25' :
+                        drawerScore >= 40 ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/25' :
                         'bg-risk-danger/10 text-risk-danger border border-risk-danger/25'
                       }`}>
-                        {computeScore(propertyA)}/100
+                        {drawerScoreReady ? `${drawerScore}/100` : 'N/A — DATA TIDAK CUKUP'}
                       </span>
                     </div>
                     <div className="h-9 w-px bg-white/10" />
                     <div>
                       <span className="text-[8px] font-bold text-text-muted tracking-wider block mb-1">KATEGORI SKOR</span>
-                      <span className="text-[11px] font-extrabold block tracking-wider uppercase" style={{ color: riskHex(computeScore(propertyA)) }}>
-                        {riskLabel(computeScore(propertyA))}
+                      <span className="text-[11px] font-extrabold block tracking-wider uppercase" style={{ color: riskHex(drawerScore || 0) }}>
+                        {drawerScoreReady ? riskLabel(drawerScore) : 'DATA TIDAK CUKUP'}
                       </span>
                     </div>
                   </div>
@@ -1024,6 +1038,80 @@ export function AuditDrawer() {
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
+  );
+}
+
+const COVERAGE_LABELS = {
+  location: 'Lokasi',
+  elevation: 'Elevasi',
+  soil: 'Tanah / Vs30',
+  seismic: 'PGA',
+  fault_reference: 'Referensi sesar',
+  flood: 'Banjir',
+  landslide: 'Longsor',
+  subsidence: 'Subsiden',
+  weather: 'Cuaca',
+  soil_moisture: 'Kelembapan tanah',
+  air_quality: 'Kualitas udara',
+  earthquake_history: 'Riwayat gempa',
+  nearby: 'Objek sekitar',
+  tsunami: 'Tsunami',
+};
+
+function DataCoverageSummary({ property }) {
+  const quality = property?.data_quality || {};
+  const fields = quality.fields || {};
+  const entries = Object.entries(COVERAGE_LABELS)
+    .filter(([key]) => fields[key])
+    .map(([key, label]) => [key, label, fields[key]]);
+
+  const statusLabel = (status) => ({
+    official: 'RESMI',
+    model: 'MODEL',
+    reference: 'REFERENSI',
+    open_data: 'OPEN DATA',
+    unavailable: 'BELUM TERSEDIA',
+  }[status] || String(status || '—').toUpperCase());
+
+  const statusClass = (status) => ({
+    official: 'text-risk-safe border-risk-safe/20 bg-risk-safe/5',
+    model: 'text-amber-300 border-amber-300/20 bg-amber-300/5',
+    reference: 'text-sky-300 border-sky-300/20 bg-sky-300/5',
+    open_data: 'text-sky-300 border-sky-300/20 bg-sky-300/5',
+    unavailable: 'text-text-muted border-white/10 bg-white/[0.03]',
+  }[status] || 'text-text-muted border-white/10 bg-white/[0.03]');
+
+  return (
+    <div className="mb-6 rounded-2xl border border-accent/15 bg-accent/[0.025] p-4 relative z-10">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <p className="text-[9px] font-bold tracking-[0.2em] text-accent uppercase">KELENGKAPAN DATA</p>
+          <p className="mt-1 text-[11px] text-text-secondary">
+            {quality.coverage_status === 'complete_with_estimates'
+              ? 'Semua field terisi; sebagian memakai estimasi model yang diberi label.'
+              : 'Field yang belum tersedia ditandai terbuka, bukan dianggap aman.'}
+          </p>
+        </div>
+        <span className="rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent">
+          {quality.mode === 'best_available' ? 'BEST AVAILABLE' : 'STRICT'} · {property.confidence ?? 0}%
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
+        {entries.map(([key, label, item]) => (
+          <div key={key} className="flex items-center justify-between gap-2 rounded-lg border border-white/6 bg-black/15 px-2 py-1.5">
+            <span className="truncate text-[9px] text-text-muted">{label}</span>
+            <span className={`shrink-0 rounded border px-1 py-0.5 text-[7px] font-bold tracking-wider ${statusClass(item.status)}`}>
+              {statusLabel(item.status)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {quality.estimated_fields?.length > 0 && (
+        <p className="mt-3 text-[9px] leading-relaxed text-amber-200/80">
+          MODEL/proxy: {quality.estimated_fields.map((name) => COVERAGE_LABELS[name] || name).join(', ')}. Ini untuk screening awal, bukan pengganti survei lapangan atau peta bahaya resmi.
+        </p>
+      )}
+    </div>
   );
 }
 

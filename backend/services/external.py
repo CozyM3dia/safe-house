@@ -63,7 +63,12 @@ async def _weather(client: httpx.AsyncClient, lat: float, lon: float) -> dict:
         params={
             "latitude": lat,
             "longitude": lon,
-            "current": "relative_humidity_2m,temperature_2m",
+            "current": "relative_humidity_2m,temperature_2m,precipitation,rain,showers",
+            "hourly": "soil_moisture_0_to_1cm,soil_moisture_1_to_3cm",
+            "daily": "precipitation_sum,precipitation_hours",
+            "forecast_days": 1,
+            "past_hours": 24,
+            "timezone": "auto",
         },
     )
     r.raise_for_status()
