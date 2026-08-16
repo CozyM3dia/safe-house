@@ -109,11 +109,6 @@ const translations = {
     id: 'Laporan Battle S.A.F.E',
     en: 'S.A.F.E Battle Report',
   },
-  'drawer.streetView': { id: 'Street View', en: 'Street View' },
-  'drawer.visualAnalysis': {
-    id: 'Analisis Visual Street View',
-    en: 'Street View Visual Analysis',
-  },
   'drawer.microAnalysis': {
     id: 'Analisis Mikro Lingkungan',
     en: 'Micro Environment Analysis',

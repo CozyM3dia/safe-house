@@ -1,15 +1,15 @@
-import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../../store/useAppStore";
 import { cn } from "../../lib/utils";
-import { Info, Map, Droplets } from "lucide-react";
+import { Info, Map, Droplets, GitBranch } from "lucide-react";
 
 export function MapLegend() {
   const overlays = useAppStore((s) => s.overlays);
 
   const showFloodLegend = overlays.flood;
   const showLandCoverLegend = overlays.landcover;
-  const anyActive = showFloodLegend || showLandCoverLegend;
+  const showFaultLegend = overlays.faults;
+  const anyActive = showFloodLegend || showLandCoverLegend || showFaultLegend;
 
   return (
     <AnimatePresence>
@@ -60,6 +60,26 @@ export function MapLegend() {
           {/* Divider if both active */}
           {showFloodLegend && showLandCoverLegend && (
             <div className="h-px bg-white/6" />
+          )}
+
+          {(showFaultLegend && (showFloodLegend || showLandCoverLegend)) && (
+            <div className="h-px bg-white/6" />
+          )}
+
+          {/* Fault reference legend */}
+          {showFaultLegend && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1">
+                <GitBranch size={10} className="text-[#d28a7b]" />
+                <span className="text-[10px] font-bold text-text-primary">Referensi sesar aktif</span>
+              </div>
+              <div className="flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2 py-1.5">
+                <span className="w-7 border-t-2 border-[#b86f63]" />
+                <span className="text-[8px] leading-relaxed text-text-secondary">
+                  Sumber: PuSGeN 2024 melalui InaRISK BNPB
+                </span>
+              </div>
+            </div>
           )}
 
           {/* Land Cover Legend */}

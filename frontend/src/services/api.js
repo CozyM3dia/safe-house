@@ -65,7 +65,6 @@ function adaptNarrative(data) {
     sources: data.sources || [],
     dataLimitations: data.data_limitations || [],
     generatedBy: data.generated_by,
-    streetViewUsed: data.street_view_used === true,
     reportLoading: false,
     deliveryMode: meta?.delivery_mode || 'live',
     aiModel: meta?.model || '',
@@ -93,6 +92,24 @@ export async function generateNarrative(audit, lang = 'id', signal = undefined) 
         )
       : await client.post('/api/narrative', { audit, lang }, { signal });
     return adaptNarrative(response.data);
+  } catch (err) {
+    throw new Error(toReadableError(err), { cause: err });
+  }
+}
+
+/** Generate a grounded AI comparison for two persisted audits. */
+export async function generateBattleReport(auditA, auditB, lang = 'id', signal = undefined) {
+  try {
+    const { data } = await client.post(
+      '/api/battle-report',
+      { audit_a: auditA, audit_b: auditB, lang },
+      { signal }
+    );
+    return {
+      report: data.report,
+      generatedBy: data.generated_by,
+      metadata: data.metadata || null,
+    };
   } catch (err) {
     throw new Error(toReadableError(err), { cause: err });
   }

@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Drawer } from 'vaul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, FileText, AlertTriangle, Camera, MapPin, Eye, Swords, Sparkles, Layers, ShieldAlert, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ShieldCheck, ChevronDown, ChevronUp, FileCheck, Scale, Award } from 'lucide-react';
+import { Copy, Check, X, FileText, AlertTriangle, MapPin, Swords, Sparkles, Layers, ShieldAlert, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ShieldCheck, ChevronDown, ChevronUp, FileCheck, Scale, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -680,6 +680,7 @@ export function AuditDrawer() {
   const propertyB = useAppStore((s) => s.propertyB);
   const mode = useAppStore((s) => s.mode);
   const battleReport = useAppStore((s) => s.battleReportContent);
+  const battleReportMeta = useAppStore((s) => s.battleReportMeta);
   const reportRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
@@ -711,11 +712,41 @@ export function AuditDrawer() {
   const drawerSubtitle = isBattle
     ? `${propertyA?.address?.slice(0, 30) ?? '---'} vs ${propertyB?.address?.slice(0, 30) ?? '---'}`
     : (propertyA?.address?.slice(0, 60) ?? '---');
+  const reportGeneratedBy = isBattle
+    ? battleReportMeta?.delivery_mode === 'fallback'
+      ? 'S.A.F.E House deterministic fallback'
+      : battleReportMeta?.model
+        ? `Gemini (${battleReportMeta.model})`
+        : 'Audit deterministik'
+    : (aiReport?.generatedBy || 'Audit deterministik');
 
+  // Vaul 1.1.2 keeps Radix's modal pointer lock active internally even when
+  // its own `modal` option is false. Restore page interaction after the
+  // drawer mounts so elements outside the report can still receive events.
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined;
+
+    const unlockPage = window.setTimeout(() => {
+      document.body.style.pointerEvents = 'auto';
+    }, 0);
+
+    return () => window.clearTimeout(unlockPage);
+  }, [open]);
+
+  // Keep this drawer non-modal so the floating audit chatbot remains usable
+  // while the full report is open. Vaul's modal mode sets body pointer-events
+  // to none, which makes elements outside the drawer look visible but ignore
+  // clicks and focus. The custom backdrop preserves the dimmed presentation
+  // and dismiss behavior without locking the rest of the app.
   return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
+    <Drawer.Root modal={false} open={open} onOpenChange={setOpen}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm" />
+        <div
+          aria-hidden="true"
+          data-testid="audit-drawer-backdrop"
+          onClick={() => setOpen(false)}
+          className="pointer-events-auto fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+        />
         <Drawer.Content className="glass-strong fixed bottom-0 left-0 right-0 z-30 mt-24 flex h-[78vh] flex-col rounded-t-2xl border-t border-white/10 outline-none">
           <Drawer.Title className="sr-only">{drawerTitle}</Drawer.Title>
 
@@ -736,8 +767,8 @@ export function AuditDrawer() {
                   {drawerTitle}
                 </h2>
                 <p className="text-[10px] text-text-muted font-mono tracking-wider flex items-center gap-1.5">
-                  {aiReport?.generatedBy || 'Audit deterministik'}
-                  {aiReport?.deliveryMode && (
+                  {reportGeneratedBy}
+                  {!isBattle && aiReport?.deliveryMode && (
                     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-bold tracking-widest uppercase ${
                       aiReport.deliveryMode === 'live' ? 'bg-risk-safe/10 text-risk-safe border border-risk-safe/20' :
                       aiReport.deliveryMode === 'fallback' ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/20' :
@@ -755,13 +786,6 @@ export function AuditDrawer() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Street View indicator */}
-              {!isBattle && aiReport?.streetViewUsed && (
-                <Badge variant="accent" className="gap-1">
-                  <Camera className="h-3 w-3" />
-                  Street View
-                </Badge>
-              )}
               <Button variant="secondary" size="sm" onClick={handleCopy}>
                 {copied
                   ? <Check className="h-3.5 w-3.5" />
@@ -926,29 +950,17 @@ export function AuditDrawer() {
                     </div>
                   )}
 
-                  {/* Micro analysis — enhanced with Street View badge */}
+                  {/* Micro analysis */}
                   {aiReport?.microAnalysis && (
                     <div className="mb-6 rounded-2xl border border-accent/20 bg-accent/[0.02] p-5 relative overflow-hidden" style={{
                       backgroundImage: 'radial-gradient(rgba(212,149,106,0.03) 1px, transparent 1px)',
                       backgroundSize: '16px 16px'
                     }}>
                       <div className="flex items-center gap-2 mb-3">
-                        {aiReport.streetViewUsed ? (
-                          <Badge variant="accent" className="gap-1 shadow-sm">
-                            <Eye className="h-3 w-3" />
-                            {t('drawer.visualAnalysis')}
-                          </Badge>
-                        ) : (
-                          <Badge variant="default" className="gap-1 shadow-sm">
-                            <MapPin className="h-3 w-3" />
-                            {t('drawer.microAnalysis')}
-                          </Badge>
-                        )}
-                        {aiReport.streetViewUsed && (
-                          <span className="text-[9px] text-accent/60 font-mono tracking-wider">
-                            SCAN PANORAMIS 360° (4-ARAH)
-                          </span>
-                        )}
+                        <Badge variant="default" className="gap-1 shadow-sm">
+                          <MapPin className="h-3 w-3" />
+                          {t('drawer.microAnalysis')}
+                        </Badge>
                       </div>
                       <p className="text-xs leading-relaxed text-text-secondary">
                         {aiReport.microAnalysis}

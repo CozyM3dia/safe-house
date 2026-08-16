@@ -299,6 +299,11 @@ def build_field_quality(
     soil_moisture_available = any(isinstance(value, (int, float)) for value in soil_values)
     geotech_provenance = geotech.get("provenance", {})
     extended = extended_quality or build_extended_hazard_quality(raw=raw, failed=failed)
+    fault_geometry_source = geotech_provenance.get(
+        "fault_geometry",
+        "static_reference_points_fallback_official_geometry_unavailable",
+    )
+    fault_geometry_is_official = "official polyline geometry" in fault_geometry_source
 
     fields = {
         "location": _field("reference", location_source, 80),
@@ -310,7 +315,11 @@ def build_field_quality(
         ),
         "soil": _field("model", geotech_provenance.get("vs30", "screening_proxy_from_elevation"), 35),
         "seismic": _field("model", geotech_provenance.get("pga", "regional_nearest_city_lookup"), 35),
-        "fault_reference": _field("reference", geotech_provenance.get("faults_volcanoes_coast", "static_reference_points"), 25),
+        "fault_reference": _field(
+            "reference",
+            fault_geometry_source,
+            85 if fault_geometry_is_official else 25,
+        ),
         "flood": _field(
             hazard_quality["flood"]["status"],
             hazard_quality["flood"]["source"],

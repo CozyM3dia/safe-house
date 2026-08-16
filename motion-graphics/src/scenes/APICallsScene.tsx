@@ -595,7 +595,7 @@ function SummaryScene() {
   const TICKER = [
     "OpenStreetMap", "Open-Meteo", "Air Quality", "USGS Earthquake",
     "BNPB InaRISK", "Overpass OSM", "Gemini Flash", "OpenRouter",
-    "FreeLLMAPI", "Ollama", "Google Street View",
+    "FreeLLMAPI", "Ollama",
   ];
   const tickerOffset = interpolate(frame, [0, 180], [0, -1200], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 

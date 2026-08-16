@@ -71,6 +71,71 @@ def nearest_point(lat: float, lon: float, points: list[dict]) -> dict:
     }
 
 
+def _line_parts(geometry: Optional[dict]) -> list[list[list[float]]]:
+    """Normalize GeoJSON LineString and MultiLineString coordinates."""
+    if not geometry:
+        return []
+    geometry_type = geometry.get("type")
+    coordinates = geometry.get("coordinates") or []
+    if geometry_type == "LineString":
+        return [coordinates]
+    if geometry_type == "MultiLineString":
+        return coordinates
+    return []
+
+
+def _point_to_segment_km(
+    lat: float,
+    lon: float,
+    first: list[float],
+    second: list[float],
+) -> float:
+    """Approximate the shortest point-to-segment distance in kilometers."""
+    # At the scale of an individual fault segment, an equirectangular local
+    # projection is more accurate than comparing the segment centroid.
+    meters_per_degree = 111.32
+    cos_lat = math.cos(math.radians(lat))
+
+    def local_xy(coordinate: list[float]) -> tuple[float, float]:
+        point_lon, point_lat = coordinate[:2]
+        return (
+            (point_lon - lon) * meters_per_degree * cos_lat,
+            (point_lat - lat) * meters_per_degree,
+        )
+
+    ax, ay = local_xy(first)
+    bx, by = local_xy(second)
+    dx, dy = bx - ax, by - ay
+    length_squared = (dx * dx) + (dy * dy)
+    if length_squared == 0:
+        return round(math.hypot(ax, ay), 2)
+
+    projection = max(0.0, min(1.0, -((ax * dx) + (ay * dy)) / length_squared))
+    closest_x = ax + (projection * dx)
+    closest_y = ay + (projection * dy)
+    return round(math.hypot(closest_x, closest_y), 2)
+
+
+def nearest_geometry_fault(lat: float, lon: float, feature_collection: Optional[dict]) -> dict:
+    """Find the nearest official fault feature from a GeoJSON collection."""
+    best_name = "N/A"
+    best_distance = float("inf")
+
+    for feature in (feature_collection or {}).get("features", []):
+        properties = feature.get("properties") or {}
+        name = properties.get("Name") or properties.get("Segment") or "Sesar aktif"
+        for line in _line_parts(feature.get("geometry")):
+            for first, second in zip(line, line[1:]):
+                distance = _point_to_segment_km(lat, lon, first, second)
+                if distance < best_distance:
+                    best_name = name
+                    best_distance = distance
+
+    if best_distance == float("inf"):
+        return {"name": "N/A", "distance_km": None}
+    return {"name": best_name, "distance_km": best_distance}
+
+
 def top_nearest(lat: float, lon: float, points: list[dict], n: int = 3) -> list[dict]:
     """N titik terdekat, terurut dari yang paling dekat."""
     scored = [
@@ -199,7 +264,12 @@ def liquefaction(lat: float, lon: float, elevation_m: float) -> dict:
     }
 
 
-def geotech_profile(lat: float, lon: float, elevation_m: Optional[float]) -> dict:
+def geotech_profile(
+    lat: float,
+    lon: float,
+    elevation_m: Optional[float],
+    fault_geometry: Optional[dict] = None,
+) -> dict:
     """Profil geoteknik lengkap untuk satu koordinat.
 
     Elevasi None diperlakukan sebagai 0 meter — asumsi paling konservatif,
@@ -209,7 +279,12 @@ def geotech_profile(lat: float, lon: float, elevation_m: Optional[float]) -> dic
 
     profile = liquefaction(lat, lon, elevation)
     profile["elevation_m"] = elevation
-    profile["nearest_fault"] = nearest_point(lat, lon, ACTIVE_FAULTS)
+    official_faults_available = bool((fault_geometry or {}).get("features"))
+    profile["nearest_fault"] = (
+        nearest_geometry_fault(lat, lon, fault_geometry)
+        if official_faults_available
+        else nearest_point(lat, lon, ACTIVE_FAULTS)
+    )
     profile["nearest_volcano"] = nearest_point(lat, lon, VOLCANOES)
     profile["nearest_megathrust"] = nearest_point(lat, lon, MEGATHRUST)
     profile["nearest_coast"] = nearest_point(lat, lon, COASTLINE)
@@ -217,7 +292,16 @@ def geotech_profile(lat: float, lon: float, elevation_m: Optional[float]) -> dic
     profile["provenance"] = {
         "vs30": "screening_proxy_from_elevation",
         "pga": "regional_nearest_city_lookup",
-        "faults_volcanoes_coast": "static_reference_points_not_line_or_polygon_data",
+        "faults_volcanoes_coast": (
+            "BNPB InaRISK PuSGeN 2024 official polyline geometry"
+            if official_faults_available
+            else "static_reference_points_fallback_official_geometry_unavailable"
+        ),
+        "fault_geometry": (
+            "BNPB InaRISK PuSGeN 2024 official polyline geometry"
+            if official_faults_available
+            else "static_reference_points_fallback_official_geometry_unavailable"
+        ),
     }
 
     return profile
