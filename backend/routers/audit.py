@@ -134,7 +134,15 @@ async def create_audit(req: AuditRequest) -> AuditResult:
 
     is_water = location.is_water
 
-    geotech = geotech_profile(req.lat, req.lon, elevation)
+    official_fault_geometry_available = bool(
+        (raw.get("official_fault_geometry") or {}).get("features")
+    )
+    geotech = geotech_profile(
+        req.lat,
+        req.lon,
+        elevation,
+        raw.get("official_fault_geometry") if official_fault_geometry_available else None,
+    )
 
     hazard = scoring.build_hazard(
         flood_class=raw.get("flood"),
@@ -238,11 +246,9 @@ async def create_audit(req: AuditRequest) -> AuditResult:
     if geotech["nearest_fault"]["distance_km"] is None:
         critical_missing.append("seismic_reference")
 
-    optional_missing: list[str] = [
-        "official_vs30_grid",
-        "official_pga_grid",
-        "official_fault_geometry",
-    ]
+    optional_missing: list[str] = ["official_vs30_grid", "official_pga_grid"]
+    if not official_fault_geometry_available:
+        optional_missing.append("official_fault_geometry")
     optional_missing.extend(name for name in ("earthquakes", "nearby", "weather", "air_quality") if name in failed)
     if subsidence_quality["status"] == "unavailable":
         optional_missing.append("subsidence")
@@ -256,18 +262,20 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         # These are explicit contract requirements, not guesses based on the
         # presence of a number. Providers can remove these requirements only
         # when they add the corresponding authoritative layers.
+        strict_requirements = (
+            "indonesia_land_geojson",
+            "official_vs30_grid",
+            "official_pga_grid",
+            "official_fault_geometry",
+            "official_coastline_geometry",
+            "versioned_subsidence_layer",
+            "versioned_tsunami_inundation",
+        )
         critical_missing.extend(
             name
-            for name in (
-                "indonesia_land_geojson",
-                "official_vs30_grid",
-                "official_pga_grid",
-                "official_fault_geometry",
-                "official_coastline_geometry",
-                "versioned_subsidence_layer",
-                "versioned_tsunami_inundation",
-            )
+            for name in strict_requirements
             if name not in critical_missing
+            and not (name == "official_fault_geometry" and official_fault_geometry_available)
         )
         if location.boundary_source == "configured_land_geojson":
             critical_missing.remove("indonesia_land_geojson")
@@ -294,7 +302,8 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         for name in ("flood", "landslide", "soil", "seismic", "subsidence")
         if name in known_axes
     ]
-    confidence = round(sum(scored_quality) / len(scored_quality)) if scored_quality else 0
+    base_confidence = round(sum(scored_quality) / len(scored_quality)) if scored_quality else 0
+    confidence = base_confidence
 
     hazard["tsunami"] = scoring.tsunami_risk(
         geotech["nearest_coast"]["distance_km"], elevation or 0.0
@@ -308,6 +317,7 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         "status": audit_status,
         "mode": mode,
         "confidence": confidence,
+        "base_confidence": base_confidence,
         "critical_missing": critical_missing,
         "optional_missing": optional_missing,
         **field_quality,

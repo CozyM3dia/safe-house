@@ -110,6 +110,22 @@ class AIMetadata(BaseModel):
     cache_age_seconds: Optional[int] = None
 
 
+class BattleReportRequest(BaseModel):
+    """Two persisted audits to compare in Battle Mode."""
+
+    audit_a: AuditResult
+    audit_b: AuditResult
+    lang: Literal["id", "en"] = "id"
+
+
+class BattleReportResult(BaseModel):
+    """Markdown battle report with server-controlled metadata."""
+
+    report: str = Field(..., min_length=1, max_length=12000)
+    generated_by: str = Field(..., min_length=1, max_length=100)
+    metadata: Optional[AIMetadata] = None
+
+
 class NarrativeResult(BaseModel):
     """Laporan AI terstruktur; seluruh angka tetap berasal dari AuditResult."""
 
@@ -121,7 +137,6 @@ class NarrativeResult(BaseModel):
     sources: list[str] = Field(default_factory=list, max_length=8)
     data_limitations: list[str] = Field(default_factory=list, max_length=8)
     generated_by: str = Field(..., min_length=1, max_length=100)
-    street_view_used: bool = False
     metadata: Optional[AIMetadata] = None
 
 

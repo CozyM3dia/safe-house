@@ -10,6 +10,7 @@ Sumber:
 - Open-Meteo AQ      PM2.5, AQI Eropa
 - USGS               gempa historis dalam radius 100 km
 - InaRISK BNPB       bahaya banjir dan longsor
+- BNPB InaRISK / PuSGeN 2024 geometri sesar resmi
 - Overpass           objek lingkungan sekitar (sungai, TPA, jalan)
 
 Tidak ada satu pun yang membutuhkan kunci API.
@@ -35,6 +36,7 @@ TIMEOUT_S = 8.0
 # untuk menangkap jawaban yang lambat, cukup pendek supaya audit tidak
 # tergantung terlalu lama. Kegagalan ditandai jujur, tidak dianggap "aman".
 INARISK_TIMEOUT_S = 25.0
+FAULT_GEOMETRY_TIMEOUT_S = 12.0
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
@@ -42,6 +44,16 @@ OPEN_METEO_AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 USGS_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 INARISK_BASE = "https://gis.bnpb.go.id/server/rest/services/inarisk"
+OFFICIAL_FAULT_GEOMETRY_URL = (
+    "https://gis.bnpb.go.id/server/rest/services/inarisk/"
+    "Faults_new/MapServer/1/query"
+)
+OFFICIAL_FAULT_GEOMETRY_PARAMS = {
+    "where": "1=1",
+    "outFields": "FID,Name,Segment,Mmax,Region,Type,Sliprate_m,Length_km",
+    "returnGeometry": "true",
+    "f": "geojson",
+}
 
 # Public BNPB raster layers. Keep the source names stable because they are
 # persisted in `sources_failed` and shown in the data-coverage manifest.
@@ -174,6 +186,20 @@ async def _inarisk_layer(
         return None
 
 
+async def _official_fault_geometry(client: httpx.AsyncClient) -> dict:
+    """Fetch the versioned PuSGeN 2024 official fault polylines."""
+    r = await client.get(
+        OFFICIAL_FAULT_GEOMETRY_URL,
+        params=OFFICIAL_FAULT_GEOMETRY_PARAMS,
+        timeout=FAULT_GEOMETRY_TIMEOUT_S,
+    )
+    r.raise_for_status()
+    payload = r.json()
+    if payload.get("type") != "FeatureCollection" or not isinstance(payload.get("features"), list):
+        raise RuntimeError("Geometri sesar resmi bukan GeoJSON FeatureCollection")
+    return payload
+
+
 async def _nearby_pois(client: httpx.AsyncClient, lat: float, lon: float) -> list[str]:
     """Objek lingkungan sekitar: sungai, TPA, jalan, fasilitas umum.
 
@@ -225,6 +251,7 @@ async def fetch_all(lat: float, lon: float) -> tuple[dict[str, Any], list[str]]:
             "weather": _weather(client, lat, lon),
             "air_quality": _air_quality(client, lat, lon),
             "earthquakes": _earthquakes(client, lat, lon),
+            "official_fault_geometry": _official_fault_geometry(client),
             "nearby": _nearby_pois(client, lat, lon),
         }
         tasks.update(

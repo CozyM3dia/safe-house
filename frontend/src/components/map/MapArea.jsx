@@ -12,6 +12,7 @@ import { MapMarker } from './MapMarker';
 import { MapControls } from './MapControls';
 import { RiskZoneOverlay } from './RiskZoneOverlay';
 import { NationwideOverlays } from './NationwideOverlays';
+import { FaultOverlay } from './FaultOverlay';
 
 function MapInteractionLayer() {
   const processLocation = useAppStore((s) => s.processLocation);
@@ -77,6 +78,7 @@ export function MapArea() {
         />
 
         <NationwideOverlays />
+        <FaultOverlay />
         <RiskZoneOverlay />
         <MapMarker />
         <MapInteractionLayer />

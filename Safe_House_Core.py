@@ -16,7 +16,6 @@ init(autoreset=True)
 import os
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-MAPS_API_KEY = os.getenv("MAPS_API_KEY", "")
 USE_GEMMA_ONLY = False 
 current_or_model = "" # Inisialisasi variabel global agar terbaca oleh linter
 
@@ -279,22 +278,12 @@ def extract_coords_from_link(link):
 
 async def process_location(link):
     lat, lon = extract_coords_from_link(link)
-    if not lat or not lon: return None, None, None
+    if not lat or not lon: return None, None
     address = await get_address(lat, lon)
     nearby = await get_nearby_pois(lat, lon) 
     raw_data = await get_all_data(lat, lon)
     clean_data = compress_payload(raw_data, lat, lon, address, nearby)
-    sv_url = f"https://maps.googleapis.com/maps/api/streetview?size=600x400&location={lat},{lon}&key={MAPS_API_KEY}"
-    
-    image_part = None
-    try:
-        img_resp = requests.get(sv_url, timeout=10)
-        if img_resp.status_code == 200:
-            image_part = genai.types.Part.from_bytes(data=img_resp.content, mime_type="image/jpeg")
-            print(f"📸 Visual Street View {address[:20]}... diunduh.")
-    except: pass
-    
-    return clean_data, image_part, address
+    return clean_data, address
 
 async def main():
     global current_or_model
@@ -308,16 +297,16 @@ async def main():
     
     print("\n🔍 Menghubungkan ke otak AI & Mengunduh Data Geospasial...")
     
-    data_a, img_a, addr_a = await process_location(link_a)
+    data_a, addr_a = await process_location(link_a)
     if not data_a:
         print("❌ Link pertama tidak valid.")
         return
         
     is_battle_mode = False
-    data_b, img_b, addr_b = None, None, None
+    data_b, addr_b = None, None
     
     if link_b:
-        data_b, img_b, addr_b = await process_location(link_b)
+        data_b, addr_b = await process_location(link_b)
         if data_b: is_battle_mode = True
 
     if is_battle_mode:
@@ -339,8 +328,6 @@ async def main():
             f"Bandingkan Properti 1 ({addr_a}) dan Properti 2 ({addr_b}).",
             "Data Geospasial: " + json.dumps(payload)
         ]
-        if img_a: prompt.append(img_a)
-        if img_b: prompt.append(img_b)
     else:
         sys_ins = (
             "Kamu adalah S.A.F.E House AI, pakar Geofisika & Geoteknik tingkat tinggi (SNI 1726:2019).\n"
@@ -356,12 +343,11 @@ async def main():
             "4. ### 💡 REKOMENDASI MITIGASI\n"
         )
         prompt = [
-            f"Lakukan audit visual & geofisika. Lokasi: {addr_a}.\n",
+            f"Lakukan audit geofisika berbasis data. Lokasi: {addr_a}.\n",
             "Data Properti: " + json.dumps(data_a) + "\n",
-            "Tugas Utama: Gunakan foto Street View yang terlampir untuk menganalisis kondisi mikro properti!\n"
-            "1. Kondisi selokan/drainase\n2. Retakan aspal/dinding\n3. Elevasi relatif."
+            "Tugas Utama: jelaskan kondisi mikro properti hanya dari data audit yang tersedia.\n"
+            "1. Risiko drainase\n2. Kondisi geoteknik\n3. Elevasi relatif."
         ]
-        if img_a: prompt.append(img_a)
 
     or_history = [
         {"role": "system", "content": sys_ins},

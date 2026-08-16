@@ -156,7 +156,7 @@ satu API mati akan terlihat buruk saat demo di depan juri.
 | USGS | gempa historis terdekat | tidak |
 | Overpass API | sungai, TPA, jalan, fasilitas sekitar | tidak |
 | Nominatim OSM | geocoding & reverse geocoding | tidak |
-| Google Gemini | laporan naratif, Street View vision | **ya — tahap 6** |
+| Google Gemini | laporan naratif | **ya — tahap 6** |
 
 Tahap 1–5 tidak butuh satu pun kunci API. Audit sudah mengeluarkan angka penuh
 tanpa AI.
