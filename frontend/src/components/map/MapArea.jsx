@@ -2,7 +2,12 @@ import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useAppStore } from '../../store/useAppStore';
-import { MAP_TILES, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/constants';
+import {
+  MAP_TILES,
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  INDONESIA_MAP_BOUNDS,
+} from '../../lib/constants';
 import { MapMarker } from './MapMarker';
 import { MapControls } from './MapControls';
 import { RiskZoneOverlay } from './RiskZoneOverlay';
@@ -54,8 +59,11 @@ export function MapArea() {
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
-        minZoom={4}
+        minZoom={5}
         maxZoom={19}
+        maxBounds={INDONESIA_MAP_BOUNDS}
+        maxBoundsViscosity={1}
+        worldCopyJump={false}
         zoomControl={false}
         attributionControl={true}
         className="!h-full !w-full"

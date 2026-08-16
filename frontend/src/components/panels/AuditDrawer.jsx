@@ -3,7 +3,7 @@ import { Drawer } from 'vaul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Copy, Check, X, FileText, AlertTriangle, Camera, MapPin, Eye, Swords, Sparkles, Layers, ShieldAlert, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ShieldCheck, ChevronDown, ChevronUp, FileCheck, Scale, Award } from 'lucide-react';
+import { Copy, Check, X, FileText, AlertTriangle, Camera, MapPin, Eye, Swords, Sparkles, Layers, ShieldAlert, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ShieldCheck, ChevronDown, ChevronUp, FileCheck, Scale, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -11,8 +11,6 @@ import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { exportPrintReadyPdf, exportBattlePdf } from '../../lib/pdfExport';
-import { adaptAuditResult } from '../../services/auditAdapter';
 import { locationToUrl, riskHex, riskLabel } from '../../lib/utils';
 
 // ─── Local Helpers ──────────────────────────────────────────────────
@@ -693,28 +691,6 @@ export function AuditDrawer() {
 
   const lang = useAppStore((s) => s.lang);
 
-  const handlePdf = async () => {
-    try {
-      toast.loading(t('toast.pdfLoading'), { id: 'pdf' });
-      if (isBattle) {
-        // Battle mode: use native jsPDF implementation
-        await exportBattlePdf(
-          adaptAuditResult(propertyA),
-          adaptAuditResult(propertyB),
-          battleReport,
-          lang
-        );
-      } else {
-        // Single site: use print-ready PDF with cover page
-        await exportPrintReadyPdf(adaptAuditResult(propertyA), lang);
-      }
-      toast.success(t('toast.pdfDone'), { id: 'pdf' });
-    } catch (e) {
-      console.error('[S.A.F.E] PDF Export Error:', e);
-      toast.error(t('toast.pdfFailed'), { id: 'pdf' });
-    }
-  };
-
   const handleCopy = async () => {
     if (propertyA?.lat == null) return;
     const url = locationToUrl(propertyA.lat, propertyA.lon);
@@ -792,10 +768,6 @@ export function AuditDrawer() {
                   : <Copy className="h-3.5 w-3.5" />
                 }
                 {copied ? t('drawer.copied') : t('drawer.copyLink')}
-              </Button>
-              <Button variant="default" size="sm" onClick={handlePdf}>
-                <Download className="h-3.5 w-3.5" />
-                {t('drawer.exportPdf')}
               </Button>
               <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)}>
                 <X className="h-4 w-4" />
