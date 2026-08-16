@@ -18,7 +18,8 @@ S.A.F.E House menyatukan sumber-sumber itu jadi satu audit yang bisa dibaca dala
 |---|---|
 | Likuefaksi | Factor of Safety (FS) — Seed & Idriss, CSR vs CRR |
 | Klasifikasi situs tanah | Inferensi Vs30, SNI 1726:2019 |
-| Risiko banjir & longsor | InaRISK BNPB, radius query 200 m |
+| Risiko banjir & longsor | InaRISK BNPB, raster identify per titik |
+| Tsunami, likuefaksi, vulkanik, abrasi | Layer bahaya InaRISK BNPB, ditampilkan dengan provenance |
 | Kegempaan | USGS, deteksi kedekatan sesar (Semangko, Palu-Koro, Lembang) |
 | Lingkungan | AQI/PM2.5 (Open-Meteo), deteksi TPA terdekat (Overpass API) |
 | Topografi | Analisis elevasi untuk jalur aliran air alami |
@@ -98,7 +99,17 @@ Baca [CONTRIBUTING.md](CONTRIBUTING.md) sebelum push pertama. Ringkasnya: `main`
 
 ## Sumber data
 
-InaRISK BNPB · Open-Meteo · USGS · OpenStreetMap/Nominatim/Overpass · Google Gemini (penjelasan saja)
+InaRISK BNPB · USGS earthquake context · Open-Meteo · OpenStreetMap/Nominatim/Overpass · Google Gemini (penjelasan saja)
+
+### Akurasi dan mode data
+
+Audit membedakan observasi layer resmi, referensi open data, dan proxy model.
+`AUDIT_DATA_MODE=best_available` cocok untuk screening awal dan tetap memberi
+label `provisional` bila layer penting belum tersedia. Untuk workflow PBG,
+konstruksi, atau keputusan investasi, gunakan `AUDIT_DATA_MODE=strict` agar
+skor tidak diterbitkan ketika input kritis hilang. Nilai Vs30, PGA desain,
+geometri sesar, DEMNAS, muka air tanah, subsidence InSAR, dan kerentanan
+bangunan tetap membutuhkan input resmi/penyelidikan tersendiri.
 
 ## Lisensi
 

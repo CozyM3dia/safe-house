@@ -135,6 +135,64 @@ def _official_hazard(class_value: Optional[int], name: str) -> Optional[dict[str
     }
 
 
+def _official_continuous_hazard(value: Any, name: str) -> Optional[dict[str, Any]]:
+    """Map an InaRISK continuous index (0..1) to a display risk (0..100)."""
+
+    if not isinstance(value, (int, float)) or not 0 <= float(value) <= 1:
+        return None
+    risk = _clamp(float(value) * 100)
+    return {
+        "risk": risk,
+        "label": _band(risk),
+        "status": "official",
+        "source": f"InaRISK BNPB — {name}",
+        "confidence": 85,
+        "used_fallback": False,
+        "raw_value": round(float(value), 6),
+        "value_scale": "0_to_1_index",
+    }
+
+
+EXTENDED_HAZARD_NAMES = {
+    "tsunami": "tsunami",
+    "liquefaction": "likuefaksi",
+    "volcanic": "letusan gunungapi",
+    "coastal": "gelombang ekstrem dan abrasi",
+}
+
+
+def build_extended_hazard_quality(
+    *, raw: dict[str, Any], failed: list[str]
+) -> dict[str, dict[str, Any]]:
+    """Build provenance for official InaRISK layers outside the score axes.
+
+    These layers are useful evidence for the report, but their presence does
+    not silently change the buildability weighting. A missing pixel and a
+    failed request both remain unavailable rather than becoming low risk.
+    """
+
+    quality: dict[str, dict[str, Any]] = {}
+    for key, display_name in EXTENDED_HAZARD_NAMES.items():
+        class_value = raw.get(key)
+        item = (
+            _official_continuous_hazard(class_value, display_name)
+            if isinstance(class_value, float) and 0 <= class_value <= 1
+            else _official_hazard(class_value, display_name)
+        )
+        if item is None:
+            reason = (
+                "InaRISK tidak dapat dihubungi"
+                if key in failed
+                else f"InaRISK tidak memiliki piksel {display_name} pada titik ini"
+            )
+            item = _unavailable(display_name, reason)
+        item["mapped"] = item["status"] == "official"
+        item["used_fallback"] = False
+        quality[key] = item
+
+    return quality
+
+
 def _unavailable(name: str, reason: str) -> dict[str, Any]:
     return {
         "risk": 50,
@@ -229,6 +287,7 @@ def build_field_quality(
     location_source: str,
     elevation: Optional[float],
     subsidence_quality: Optional[dict[str, Any]] = None,
+    extended_quality: Optional[dict[str, dict[str, Any]]] = None,
 ) -> dict[str, Any]:
     """Build a complete field-by-field coverage manifest for the response."""
 
@@ -239,6 +298,7 @@ def build_field_quality(
     soil_values = ((raw.get("weather") or {}).get("hourly") or {}).get("soil_moisture_0_to_1cm") or []
     soil_moisture_available = any(isinstance(value, (int, float)) for value in soil_values)
     geotech_provenance = geotech.get("provenance", {})
+    extended = extended_quality or build_extended_hazard_quality(raw=raw, failed=failed)
 
     fields = {
         "location": _field("reference", location_source, 80),
@@ -276,6 +336,15 @@ def build_field_quality(
         "nearby": _field("open_data" if nearby_available else "unavailable", "OpenStreetMap Overpass", 60 if nearby_available else 0),
         "tsunami": _field("model", "coast_distance_elevation_screening_proxy", 25),
     }
+
+    for key in EXTENDED_HAZARD_NAMES:
+        item = extended[key]
+        fields[f"{key}_map"] = _field(
+            item["status"],
+            item["source"],
+            item["confidence"],
+            item.get("risk"),
+        )
 
     unavailable = [name for name, item in fields.items() if item["status"] == "unavailable"]
     estimated = [name for name, item in fields.items() if item["status"] == "model"]

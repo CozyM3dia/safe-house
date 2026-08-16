@@ -111,6 +111,12 @@ export function adaptAuditResult(r) {
       flood_hazard: h.flood_label,
       landslide_hazard: h.landslide_label,
       subsidence_hazard: h.subsidence_label,
+      hazard_maps: {
+        tsunami: h.tsunami_map || null,
+        liquefaction: h.liquefaction_map || null,
+        volcanic: h.volcanic_map || null,
+        coastal: h.coastal_map || null,
+      },
       env_extras: {
         aqi: env.aqi,
         pm25: env.pm25 != null ? `${env.pm25} µg/m³` : null,

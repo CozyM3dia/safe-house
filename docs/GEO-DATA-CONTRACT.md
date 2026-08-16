@@ -20,9 +20,23 @@ Required production inputs:
 - Fault and coastline line geometries, not only representative points.
 - Versioned subsidence and tsunami inundation layers.
 
+The audit also queries public BNPB InaRISK MapServer layers for tsunami,
+liquefaction, volcanic eruption, and extreme-wave/abrasion evidence. These
+observations are shown as `official` source observations when a pixel is
+returned, but they are not automatically treated as a site investigation and
+are not silently added to the buildability weighting. A missing pixel or a
+timeout remains `unavailable`.
+
+For a construction or permitting workflow, configure `AUDIT_DATA_MODE=strict`.
+Use `best_available` only for early screening: it may calculate a clearly
+labelled provisional score from elevation/coast/precipitation proxies when an
+official layer is absent.
+
 Until these inputs are available, `data_quality.fields`,
 `data_quality.estimated_fields`, and `data_quality.optional_missing` must remain
 visible and the S.A.F.E score must not be presented as a final engineering
 decision. The existing InaRISK, USGS, Open-Meteo, Nominatim, and OSM calls are
 retained as source-specific observations; they do not upgrade proxy geotech
-values into official site investigation data.
+values into official site investigation data. Each field includes status,
+source, confidence, and an `as_of` timestamp so consumers can filter evidence
+quality instead of inferring accuracy from the presence of a number.
