@@ -130,7 +130,9 @@ class GroundingTests(unittest.TestCase):
     def test_compact_audit_redacts_precise_address(self):
         audit = sample_audit()
         compact = ai.compact_audit_for_ai(audit)
-        self.assertNotIn("Jl. Raden Intan", compact["location_label"])
+        self.assertIn("Jl. Raden Intan", compact["location_label"])
+        self.assertIn("Bandar Lampung", compact["location_label"])
+        self.assertNotIn("No. 45", compact["location_label"])
         self.assertNotIn("lat", compact)
         self.assertNotIn("lon", compact)
         self.assertNotIn("id", compact)
@@ -500,6 +502,26 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("hanya dapat menjawab", result.answer.lower())
         self.assertEqual([], result.citations)
+
+    async def test_chat_starts_with_audit_location(self):
+        raw = {
+            "answer": "Skor berada pada kategori sedang berdasarkan data audit.",
+            "citation_titles": ["S.A.F.E House deterministic geotechnical engine"],
+            "follow_ups": ["Apa arti skor?", "Apa risiko utama?", "Apa langkah berikutnya?"],
+        }
+        client = _mock_client(lambda _: gemini_response(raw))
+        with patch.dict(os.environ, ENV_PRIMARY):
+            result = await ai.answer_chat(
+                message="Di mana lokasi ini?",
+                history=[],
+                audit=sample_audit(),
+                comparison=None,
+                mode="audit",
+                lang="id",
+                client=client,
+            )
+        await client.aclose()
+        self.assertTrue(result.answer.startswith("Lokasi audit: Jl. Raden Intan, Bandar Lampung."))
 
     def test_compact_audit_whitelists_untrusted_hazard_text(self):
         audit = sample_audit()

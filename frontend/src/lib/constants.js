@@ -15,8 +15,12 @@ export const MAP_TILES = {
   },
 };
 
-export const DEFAULT_CENTER = [-6.2088, 106.8456]; // Jakarta
-export const DEFAULT_ZOOM = 12;
+// Viewport guard: the Leaflet map cannot be panned outside the Indonesian
+// bounding region. Coordinate validation remains server-side as the source of
+// truth, so this is a UX lock rather than a security boundary.
+export const INDONESIA_MAP_BOUNDS = [[-11.5, 94.5], [6.5, 141.5]];
+export const DEFAULT_CENTER = [-2.5, 118]; // Indonesia
+export const DEFAULT_ZOOM = 5;
 
 export const RISK_DOMAIN = {
   safe: { min: 70, max: 100, label: 'SAFE', hex: '#10b981' },

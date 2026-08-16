@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Download, Share2 } from 'lucide-react';
+import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Share2 } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
 import { createShare } from '../../services/api';
-import { adaptAuditResult } from '../../services/auditAdapter';
-import { exportPrintReadyPdf } from '../../lib/pdfExport';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -229,25 +227,7 @@ function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
   const aiLoading = useAppStore((s) => s.aiLoading);
-  const [exporting, setExporting] = useState(false);
-
   const [sharing, setSharing] = useState(false);
-
-  const handleExport = async () => {
-    setExporting(true);
-    const id = toast.loading(lang === 'en' ? 'Building PDF…' : 'Menyusun PDF…');
-    try {
-      // pdfExport masih memakai bentuk lama; adapter dipakai hanya di sini
-      // sampai generator PDF ditulis ulang untuk membaca AuditResult.
-      await exportPrintReadyPdf(adaptAuditResult(propertyA), lang);
-      toast.success(lang === 'en' ? 'PDF downloaded' : 'PDF terunduh', { id });
-    } catch (e) {
-      console.error('PDF export failed', e);
-      toast.error(lang === 'en' ? 'PDF export failed' : 'Gagal membuat PDF', { id });
-    } finally {
-      setExporting(false);
-    }
-  };
 
   const handleShare = async () => {
     // Tautan publik butuh audit yang tersimpan. Tanpa database, audit tidak
@@ -348,32 +328,14 @@ function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
         </Button>
       </motion.div>
 
-      {/* Action Buttons */}
-      <motion.div variants={item} className="grid grid-cols-5 gap-2">
-        <Button
-          onClick={handleExport}
-          variant="default"
-          size="lg"
-          className="col-span-3 group text-xs py-2 px-3 flex items-center justify-center gap-1.5"
-          disabled={exporting}
-        >
-          {exporting ? (
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-          ) : (
-            <Download className="h-3.5 w-3.5 shrink-0" />
-          )}
-          <span className="truncate">
-            {exporting
-              ? (lang === 'en' ? 'Building…' : 'Menyusun…')
-              : (lang === 'en' ? 'Download PDF' : 'Unduh PDF')}
-          </span>
-        </Button>
+      {/* Secondary action */}
+      <motion.div variants={item} className="grid grid-cols-1 gap-2">
         <Button
           onClick={handleShare}
           disabled={sharing}
           variant="accent"
           size="lg"
-          className="col-span-2 group text-xs py-2 px-3 border border-accent/20 flex items-center justify-center gap-1.5 hover:bg-accent/20 transition-all"
+          className="group text-xs py-2 px-3 border border-accent/20 flex items-center justify-center gap-1.5 hover:bg-accent/20 transition-all"
         >
           {sharing ? (
             <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />

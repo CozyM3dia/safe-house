@@ -105,7 +105,6 @@ const translations = {
   'drawer.title': { id: 'Laporan Audit S.A.F.E', en: 'S.A.F.E Audit Report' },
   'drawer.copyLink': { id: 'Salin Link', en: 'Copy Link' },
   'drawer.copied': { id: 'Tersalin!', en: 'Copied!' },
-  'drawer.exportPdf': { id: 'Ekspor PDF', en: 'Export PDF' },
   'drawer.battleTitle': {
     id: 'Laporan Battle S.A.F.E',
     en: 'S.A.F.E Battle Report',
@@ -231,9 +230,6 @@ const translations = {
     id: 'Laporan AI gagal — menggunakan data offline',
     en: 'AI report failed — using offline data',
   },
-  'toast.pdfLoading': { id: 'Membuat PDF...', en: 'Generating PDF...' },
-  'toast.pdfDone': { id: 'PDF diunduh', en: 'PDF downloaded' },
-  'toast.pdfFailed': { id: 'Ekspor PDF gagal', en: 'PDF export failed' },
   'toast.shareCopied': {
     id: 'Link berbagi disalin ke clipboard',
     en: 'Share link copied to clipboard',
