@@ -2,10 +2,38 @@
 
 import unittest
 
-from services.completeness import build_best_available_hazards, build_field_quality
+from services.completeness import (
+    build_best_available_hazards,
+    build_extended_hazard_quality,
+    build_field_quality,
+)
 
 
 class CompletenessTests(unittest.TestCase):
+    def test_extended_official_hazards_have_source_and_confidence(self):
+        quality = build_extended_hazard_quality(
+            raw={"tsunami": 3, "liquefaction": 2, "volcanic": 1, "coastal": 3},
+            failed=[],
+        )
+
+        self.assertEqual("official", quality["tsunami"]["status"])
+        self.assertEqual(85, quality["tsunami"]["confidence"])
+        self.assertEqual("TINGGI", quality["tsunami"]["label"])
+        self.assertEqual("unavailable", build_extended_hazard_quality(
+            raw={}, failed=["tsunami"]
+        )["tsunami"]["status"])
+
+    def test_extended_continuous_indexes_are_not_treated_as_missing(self):
+        quality = build_extended_hazard_quality(
+            raw={"tsunami": 0.80, "liquefaction": 0.442072},
+            failed=[],
+        )
+
+        self.assertEqual("official", quality["tsunami"]["status"])
+        self.assertEqual(80, quality["tsunami"]["risk"])
+        self.assertEqual("0_to_1_index", quality["liquefaction"]["value_scale"])
+        self.assertEqual(44, quality["liquefaction"]["risk"])
+
     def test_missing_hazard_layers_receive_explicit_model_fallbacks(self):
         hazards = build_best_available_hazards(
             flood_class=None,
@@ -64,6 +92,10 @@ class CompletenessTests(unittest.TestCase):
         self.assertEqual("unavailable", quality["fields"]["air_quality"]["status"])
         self.assertIn("source", quality["fields"]["soil"])
         self.assertIn("confidence", quality["fields"]["soil"])
+        self.assertIn("tsunami_map", quality["fields"])
+        self.assertIn("liquefaction_map", quality["fields"])
+        self.assertIn("volcanic_map", quality["fields"])
+        self.assertIn("coastal_map", quality["fields"])
 
 
 if __name__ == "__main__":

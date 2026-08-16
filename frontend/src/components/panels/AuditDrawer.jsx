@@ -1028,6 +1028,10 @@ const COVERAGE_LABELS = {
   earthquake_history: 'Riwayat gempa',
   nearby: 'Objek sekitar',
   tsunami: 'Tsunami',
+  tsunami_map: 'Peta tsunami InaRISK',
+  liquefaction_map: 'Peta likuefaksi InaRISK',
+  volcanic_map: 'Peta letusan gunungapi InaRISK',
+  coastal_map: 'Peta abrasi/gelombang InaRISK',
 };
 
 function DataCoverageSummary({ property }) {

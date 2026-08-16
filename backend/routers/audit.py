@@ -132,7 +132,7 @@ async def create_audit(req: AuditRequest) -> AuditResult:
     if location.status == "insufficient_data":
         raise HTTPException(status_code=503, detail=location.reason)
 
-    is_water = False
+    is_water = location.is_water
 
     geotech = geotech_profile(req.lat, req.lon, elevation)
 
@@ -152,6 +152,10 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         coast_distance_km=geotech["nearest_coast"]["distance_km"],
         weather=raw.get("weather"),
     )
+    extended_hazard_quality = completeness.build_extended_hazard_quality(
+        raw=raw,
+        failed=failed,
+    )
 
     for name in ("flood", "landslide"):
         quality = hazard_quality[name]
@@ -164,6 +168,17 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         hazard[f"{name}_data_status"] = quality["status"]
         hazard[f"{name}_source"] = quality["source"]
         hazard[f"{name}_estimated"] = quality["used_fallback"]
+
+    for name, quality in extended_hazard_quality.items():
+        hazard[f"{name}_map"] = {
+            "risk": quality["risk"],
+            "label": quality["label"],
+            "source": quality["source"],
+            "confidence": quality["confidence"],
+            "data_status": quality["status"],
+            "mapped": quality["mapped"],
+            "estimated": quality["used_fallback"],
+        }
 
     mode = completeness.audit_data_mode()
     subsidence_quality = (
@@ -231,6 +246,31 @@ async def create_audit(req: AuditRequest) -> AuditResult:
     optional_missing.extend(name for name in ("earthquakes", "nearby", "weather", "air_quality") if name in failed)
     if subsidence_quality["status"] == "unavailable":
         optional_missing.append("subsidence")
+    optional_missing.extend(
+        f"{name}_map"
+        for name, quality in extended_hazard_quality.items()
+        if quality["status"] == "unavailable"
+    )
+
+    if mode == "strict":
+        # These are explicit contract requirements, not guesses based on the
+        # presence of a number. Providers can remove these requirements only
+        # when they add the corresponding authoritative layers.
+        critical_missing.extend(
+            name
+            for name in (
+                "indonesia_land_geojson",
+                "official_vs30_grid",
+                "official_pga_grid",
+                "official_fault_geometry",
+                "official_coastline_geometry",
+                "versioned_subsidence_layer",
+                "versioned_tsunami_inundation",
+            )
+            if name not in critical_missing
+        )
+        if location.boundary_source == "configured_land_geojson":
+            critical_missing.remove("indonesia_land_geojson")
 
     score = scoring.safe_score(radar, known_axes) if known_axes else None
     if mode == "strict" and critical_missing:
@@ -247,6 +287,7 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         location_source=location.boundary_source,
         elevation=elevation,
         subsidence_quality=subsidence_quality,
+        extended_quality=extended_hazard_quality,
     )
     scored_quality = [
         field_quality["fields"][name]["confidence"]
@@ -272,8 +313,16 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         **field_quality,
         "boundary_source": location.boundary_source,
         "geotech_provenance": geotech.get("provenance", {}),
+        "extended_hazards": extended_hazard_quality,
         "score_axes": sorted(known_axes),
-        "not_scored": ["air_quality", "tsunami"] + (["subsidence"] if "subsidence" not in known_axes else []),
+        "not_scored": [
+            "air_quality",
+            "tsunami",
+            "tsunami_map",
+            "liquefaction_map",
+            "volcanic_map",
+            "coastal_map",
+        ] + (["subsidence"] if "subsidence" not in known_axes else []),
     }
 
     result = AuditResult(

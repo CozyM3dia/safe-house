@@ -40,5 +40,20 @@ class WaterDetectionTests(unittest.TestCase):
         self.assertTrue(external.is_water_body(-7.0, 111.0, "Somewhere", 0.0, far))
 
 
+class InariskLayerContractTests(unittest.TestCase):
+    def test_extended_layers_use_public_inarisk_mapservers(self):
+        self.assertEqual(
+            {
+                "flood": "layer_bahaya_banjir_30",
+                "landslide": "layer_bahaya_tanah_longsor_30",
+                "tsunami": "layer_bahaya_tsunami_30",
+                "liquefaction": "layer_bahaya_likuefaksi_30",
+                "volcanic": "layer_bahaya_letusan_gunungapi_30",
+                "coastal": "layer_bahaya_gelombang_ekstrim_dan_abrasi_30",
+            },
+            external.INARISK_LAYERS,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -529,6 +529,21 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
         compact = ai.compact_audit_for_ai(audit)
         self.assertNotIn("IGNORE ALL RULES", json.dumps(compact))
 
+    def test_compact_audit_preserves_extended_hazard_provenance(self):
+        audit = sample_audit()
+        audit.hazard["liquefaction_map"] = {
+            "risk": 44,
+            "label": "SEDANG",
+            "source": "InaRISK BNPB — likuefaksi",
+            "confidence": 85,
+            "data_status": "official",
+            "mapped": True,
+        }
+
+        compact = ai.compact_audit_for_ai(audit)
+        assert compact["hazard"]["liquefaction_map"]["data_status"] == "official"
+        assert compact["hazard"]["liquefaction_map"]["risk"] == 44
+
     # T25: Battle Mode membandingkan audit A dan B
     async def test_chat_battle_mode(self):
         raw = {

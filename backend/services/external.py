@@ -43,6 +43,17 @@ USGS_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 INARISK_BASE = "https://gis.bnpb.go.id/server/rest/services/inarisk"
 
+# Public BNPB raster layers. Keep the source names stable because they are
+# persisted in `sources_failed` and shown in the data-coverage manifest.
+INARISK_LAYERS = {
+    "flood": "layer_bahaya_banjir_30",
+    "landslide": "layer_bahaya_tanah_longsor_30",
+    "tsunami": "layer_bahaya_tsunami_30",
+    "liquefaction": "layer_bahaya_likuefaksi_30",
+    "volcanic": "layer_bahaya_letusan_gunungapi_30",
+    "coastal": "layer_bahaya_gelombang_ekstrim_dan_abrasi_30",
+}
+
 # Nominatim mewajibkan User-Agent yang mengidentifikasi aplikasi.
 HEADERS = {"User-Agent": "SAFE-House/1.0 (audit risiko geospasial Indonesia)"}
 
@@ -102,8 +113,13 @@ async def _earthquakes(client: httpx.AsyncClient, lat: float, lon: float) -> dic
 
 
 async def _inarisk_layer(
-    client: httpx.AsyncClient, layer: str, lat: float, lon: float
-) -> Optional[int]:
+    client: httpx.AsyncClient,
+    layer: str,
+    lat: float,
+    lon: float,
+    *,
+    as_class: bool = True,
+) -> Optional[float | int]:
     """Kelas bahaya InaRISK pada satu titik.
 
     Layer InaRISK adalah raster, bukan feature layer. Operasi /query dengan
@@ -111,8 +127,9 @@ async def _inarisk_layer(
     berhasil, padahal tidak ada data. Yang benar adalah /identify, yang
     mengembalikan nilai piksel.
 
-    Mengembalikan 1 (rendah), 2 (sedang), 3 (tinggi), atau None kalau titik
-    tidak berada di area bahaya yang dipetakan.
+    Mengembalikan kelas 1/2/3 untuk layer kelas, nilai indeks mentah untuk
+    layer kontinu, atau None kalau titik tidak berada di area bahaya yang
+    dipetakan.
     """
     half_span = 0.01  # ~1 km, cukup untuk mengunci satu piksel
 
@@ -150,7 +167,8 @@ async def _inarisk_layer(
 
     try:
         # Nilai piksel kadang datang sebagai desimal ("2.000000").
-        return int(round(float(raw)))
+        value = float(raw)
+        return int(round(value)) if as_class else value
     except (TypeError, ValueError):
         log.warning("Nilai piksel InaRISK tidak dikenali: %r", raw)
         return None
@@ -207,12 +225,20 @@ async def fetch_all(lat: float, lon: float) -> tuple[dict[str, Any], list[str]]:
             "weather": _weather(client, lat, lon),
             "air_quality": _air_quality(client, lat, lon),
             "earthquakes": _earthquakes(client, lat, lon),
-            "flood": _inarisk_layer(client, "layer_bahaya_banjir_30", lat, lon),
-            "landslide": _inarisk_layer(
-                client, "layer_bahaya_tanah_longsor_30", lat, lon
-            ),
             "nearby": _nearby_pois(client, lat, lon),
         }
+        tasks.update(
+            {
+                name: _inarisk_layer(
+                    client,
+                    layer,
+                    lat,
+                    lon,
+                    as_class=name in {"flood", "landslide"},
+                )
+                for name, layer in INARISK_LAYERS.items()
+            }
+        )
 
         settled = await asyncio.gather(*tasks.values(), return_exceptions=True)
 

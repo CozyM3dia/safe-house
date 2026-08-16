@@ -32,6 +32,10 @@ def _raw_data(*, geocode=None, flood=1, landslide=1):
         "earthquakes": {"features": []},
         "flood": flood,
         "landslide": landslide,
+        "tsunami": None,
+        "liquefaction": None,
+        "volcanic": None,
+        "coastal": None,
         "nearby": [],
     }
 
@@ -93,6 +97,32 @@ class AuditRouteIntegrationTests(unittest.IsolatedAsyncioTestCase):
         payload = response.json()
         self.assertIsNone(payload["safe_score"])
         self.assertEqual("insufficient_data", payload["audit_status"])
+
+    async def test_strict_mode_blocks_missing_authoritative_geotech_inputs(self):
+        with patch.dict(os.environ, {"AUDIT_DATA_MODE": "strict"}):
+            response = await self._post(-5.397, 105.266, _raw_data())
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertIsNone(payload["safe_score"])
+        self.assertEqual("insufficient_data", payload["audit_status"])
+        self.assertIn("official_vs30_grid", payload["data_quality"]["critical_missing"])
+        self.assertIn("official_pga_grid", payload["data_quality"]["critical_missing"])
+
+    async def test_extended_official_hazards_are_exposed_with_provenance(self):
+        raw = _raw_data()
+        raw.update(tsunami=3, liquefaction=2, volcanic=1, coastal=3)
+        response = await self._post(-5.397, 105.266, raw)
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+
+        for name, expected_status in (
+            ("tsunami_map", "official"),
+            ("liquefaction_map", "official"),
+            ("volcanic_map", "official"),
+            ("coastal_map", "official"),
+        ):
+            self.assertEqual(expected_status, payload["hazard"][name]["data_status"])
+            self.assertIn(name, payload["data_quality"]["fields"])
 
 
 if __name__ == "__main__":

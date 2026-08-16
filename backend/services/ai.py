@@ -103,7 +103,7 @@ _SOURCE_CATALOG = {
     ),
     "inarisk": ChatCitation(
         title="InaRISK BNPB",
-        category="Bahaya banjir dan longsor",
+        category="Bahaya banjir, longsor, tsunami, likuefaksi, vulkanik, dan abrasi",
     ),
     "open_meteo": ChatCitation(
         title="Open-Meteo",
@@ -126,6 +126,10 @@ _FAILED_SOURCE_LABELS = {
     "earthquakes": "katalog gempa USGS tidak tersedia",
     "flood": "kelas bahaya banjir InaRISK tidak tersedia",
     "landslide": "kelas bahaya longsor InaRISK tidak tersedia",
+    "tsunami": "peta bahaya tsunami InaRISK tidak tersedia",
+    "liquefaction": "peta bahaya likuefaksi InaRISK tidak tersedia",
+    "volcanic": "peta bahaya letusan gunungapi InaRISK tidak tersedia",
+    "coastal": "peta bahaya abrasi InaRISK tidak tersedia",
     "nearby": "konteks objek sekitar dari Overpass tidak tersedia",
 }
 
@@ -138,7 +142,17 @@ def available_citations(audit: Optional[AuditResult]) -> list[ChatCitation]:
 
     failed = set(audit.sources_failed)
     keys = ["engine"]
-    if not {"flood", "landslide"}.issubset(failed):
+    inarisk_sources = {"flood", "landslide", "tsunami", "liquefaction", "volcanic", "coastal"}
+    inarisk_fields = audit.data_quality.get("fields") or {}
+    official_inarisk = any(
+        isinstance(item, dict) and item.get("status") == "official"
+        for name, item in inarisk_fields.items()
+        if name in {"flood", "landslide", "tsunami_map", "liquefaction_map", "volcanic_map", "coastal_map"}
+    )
+    # Older cached AuditResult payloads have no coverage manifest; retain the
+    # historical citation behavior for those payloads only.
+    legacy_inarisk_payload = not inarisk_fields and not audit.data_quality.get("extended_hazards")
+    if not inarisk_sources.intersection(failed) and (official_inarisk or legacy_inarisk_payload):
         keys.append("inarisk")
     if not {"weather", "air_quality"}.issubset(failed):
         keys.append("open_meteo")
@@ -227,6 +241,20 @@ def compact_audit_for_ai(audit: Optional[AuditResult]) -> Optional[dict[str, Any
             hazard_view[key] = _safe_text(value)
         elif isinstance(value, (int, float, bool)) or value is None:
             hazard_view[key] = value
+    for key in ("tsunami_map", "liquefaction_map", "volcanic_map", "coastal_map"):
+        value = hazard.get(key)
+        if isinstance(value, dict):
+            hazard_view[key] = {
+                field: (
+                    _safe_number(value.get(field))
+                    if field in {"risk", "confidence"}
+                    else _safe_text(value.get(field), max_length=120)
+                    if field in {"label", "source", "data_status"}
+                    else bool(value.get(field))
+                )
+                for field in ("risk", "label", "source", "confidence", "data_status", "mapped")
+                if value.get(field) is not None
+            }
     if isinstance(hazard.get("radar"), dict):
         hazard_view["radar"] = {
             key: _safe_number(hazard["radar"].get(key))
