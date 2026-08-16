@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import { useAppStore } from '../../store/useAppStore';
-import { INARISK_HAZARDS, createInariskLayer } from '../../lib/hazardOverlay';
+import { INARISK_HAZARDS } from '../../lib/hazardOverlay';
+import { createInariskLayer } from '../../lib/inariskLayer';
 
 /**
  * Overlay bahaya nasional InaRISK BNPB (banjir, longsor, gempa).
