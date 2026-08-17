@@ -6,6 +6,7 @@ import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Share2,
 import { useAppStore } from '../../store/useAppStore';
 import { createShare } from '../../services/api';
 import { canExportPdf, exportPrintReadyPdf } from '../../lib/pdfExport';
+import { exportProfessionalReport } from '../../lib/professionalReport';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -233,9 +234,32 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
   const aiLoading = useAppStore((s) => s.aiLoading);
   const [sharing, setSharing] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
   const hasAiReport = Boolean(
     propertyA?.aiReport?.detailedReport || propertyA?.narrative?.detailed_report
   );
+
+  const handleDownloadReport = async () => {
+    if (!canExportPdf(propertyA)) {
+      toast.warning(
+        lang === 'en'
+          ? 'Report is locked because this audit has insufficient evidence.'
+          : 'Laporan dikunci karena bukti audit belum cukup.'
+      );
+      return;
+    }
+    setReportLoading(true);
+    const toastId = toast.loading(lang === 'en' ? 'Preparing SNI report…' : 'Menyiapkan Laporan SNI…');
+    try {
+      await exportProfessionalReport(propertyA, lang);
+      toast.success(lang === 'en' ? 'SNI report downloaded.' : 'Laporan SNI berhasil diunduh.', { id: toastId });
+    } catch (error) {
+      console.error('SNI report failed', error);
+      toast.error(error.message || (lang === 'en' ? 'Report failed.' : 'Laporan gagal.'), { id: toastId });
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     if (aiLoading || !hasAiReport) {
@@ -370,6 +394,25 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
               : (lang === 'en' ? 'View Full AI Report' : 'Lihat Laporan Lengkap AI')}
           </span>
           <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+        </Button>
+      </motion.div>
+
+      {/* Professional SNI report */}
+      <motion.div variants={item}>
+        <Button
+          onClick={handleDownloadReport}
+          disabled={reportLoading}
+          variant="secondary"
+          size="lg"
+          className="w-full group text-xs py-2.5 flex items-center justify-center gap-2 border border-accent/25 hover:border-accent/50 hover:text-accent transition-all"
+          title={lang === 'en' ? 'Download the professional SNI-format report PDF' : 'Unduh laporan format SNI profesional (PDF)'}
+        >
+          {reportLoading ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent" />
+          ) : (
+            <FileText className="h-4 w-4 shrink-0 text-accent" />
+          )}
+          <span className="font-semibold">{lang === 'en' ? 'SNI Report (PDF)' : 'Laporan SNI (PDF)'}</span>
         </Button>
       </motion.div>
 
