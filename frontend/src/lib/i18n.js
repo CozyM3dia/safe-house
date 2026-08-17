@@ -220,66 +220,74 @@ const translations = {
 
   // ─── Onboarding Tour ────────────────────────────────────────────
   'tour.welcome.title': {
-    id: 'Pusat Komando Geofisika',
-    en: 'Your Geophysics Command Center',
+    id: 'Pusat Komando Geoteknik S.A.F.E House',
+    en: 'S.A.F.E House Geotechnical Command Center',
   },
   'tour.welcome.desc': {
-    id: 'Klik di mana saja pada peta untuk menganalisis risiko seismik, kondisi tanah, kerentanan banjir, dan lainnya secara instan untuk lokasi mana pun di Indonesia.',
-    en: 'Click anywhere on the map to instantly analyze seismic risk, soil conditions, flood vulnerability, and more for any location in Indonesia.',
+    id: 'Selamat datang! S.A.F.E House mengintegrasikan data resmi BNPB InaRISK, sesar PuSGeN 2024, standar SNI 1726/8460, dan AI ter-grounding untuk menganalisis risiko lahan di seluruh Indonesia.',
+    en: 'Welcome! S.A.F.E House integrates official BNPB InaRISK data, PuSGeN 2024 faults, SNI 1726/8460 standards, and grounded AI to analyze land safety across Indonesia.',
+  },
+  'tour.cursor.title': {
+    id: 'Kursor Presisi & Konfirmasi Audit',
+    en: 'Precision Reticle & Audit Confirmation',
+  },
+  'tour.cursor.desc': {
+    id: 'Jelajahi peta dengan kursor hitam presisi tinggi dan pembaca koordinat real-time. Klik titik mana pun untuk membuka dialog konfirmasi audit yang aman.',
+    en: 'Explore the map with high-precision black crosshairs and live coordinate readouts. Click any point to open a safe location audit confirmation dialog.',
   },
   'tour.search.title': {
-    id: 'Pencarian Lokasi Cerdas',
-    en: 'Smart Location Search',
+    id: 'Pencarian Lokasi Cerdas (⌘K / Ctrl+K)',
+    en: 'Smart Location Search (⌘K / Ctrl+K)',
   },
   'tour.search.desc': {
-    id: 'Tekan ⌘K untuk mencari alamat, jalan, atau koordinat mana pun di Indonesia. Hasil muncul langsung dengan geocoding.',
-    en: 'Press ⌘K to search any address, street, or coordinate in Indonesia. Results appear instantly with geocoding.',
+    id: 'Tekan ⌘K atau klik bilah pencarian untuk mencari alamat, nama jalan, kecamatan, atau koordinat langsung di seluruh Indonesia.',
+    en: 'Press ⌘K or click search to look up addresses, streets, districts, or precise coordinates anywhere in Indonesia.',
   },
   'tour.mode.title': {
     id: 'Mode Audit vs Battle',
     en: 'Audit vs Battle Mode',
   },
   'tour.mode.desc': {
-    id: 'Mode AUDIT menganalisis satu lokasi secara mendalam. Mode BATTLE membandingkan dua lokasi head-to-head dengan laporan AI.',
-    en: 'AUDIT mode analyzes a single site in depth. BATTLE mode lets you compare two locations head-to-head with an AI-generated versus report.',
+    id: 'Pilih Mode Audit untuk evaluasi komprehensif satu lokasi, atau Mode Battle untuk membandingkan 2 properti secara head-to-head.',
+    en: 'Choose Audit Mode for comprehensive single-site evaluation, or Battle Mode to compare 2 candidate properties head-to-head.',
   },
   'tour.panel.title': {
-    id: 'Dashboard Risiko',
-    en: 'Risk Dashboard',
+    id: 'Dashboard Geoteknik & Laporan SNI (PDF)',
+    en: 'Geotechnical Dashboard & SNI PDF Report',
   },
   'tour.panel.desc': {
-    id: 'Setelah memilih lokasi, panel ini terisi dengan Skor S.A.F.E, tanda tangan seismik, radar risiko, kurva probabilitas, dan data situs — semua dihitung real-time.',
-    en: 'Once you select a location, this panel fills with the S.A.F.E Score, seismic signature, risk radar, probability curves, and site data — all computed in real-time.',
+    id: 'Panel ini menampilkan Skor S.A.F.E (0–100), Vs30, PGA, Kelas Situs (SA–SF), radar risiko, serta tombol ekspor Laporan SNI Profesional (PDF).',
+    en: 'This panel displays S.A.F.E Score (0–100), Vs30, PGA, Site Class (SA–SF), risk radar, and the Professional SNI Report (PDF) export button.',
   },
-  'tour.status.title': {
-    id: 'Status Langsung',
-    en: 'Live Status',
+  'tour.layers.title': {
+    id: 'Layer Kebencanaan & Sesar Aktif',
+    en: 'Hazard Layers & Active Faults',
   },
-  'tour.status.desc': {
-    id: 'Perhatikan badge ini berubah antara Siap, Menganalisis, dan AI Memproses saat sistem mengambil data geofisika dan menghasilkan laporan audit.',
-    en: 'Watch this badge shift between Ready, Analyzing, and AI Processing as the system fetches geophysical data and generates your audit report.',
+  'tour.layers.desc': {
+    id: 'Buka panel layer untuk mengaktifkan overlay bahaya InaRISK (Banjir, Longsor, Gempa) dan jalur Sesar Aktif PuSGeN 2024 bergaris putus-putus.',
+    en: 'Open layer controls to toggle official InaRISK hazard overlays (Flood, Landslide, Seismic) and PuSGeN 2024 dashed active fault lines.',
   },
   'tour.chatbot.title': {
-    id: 'Konsultan GEO-AI',
-    en: 'GEO-AI Consultant',
+    id: 'Konsultan S.A.F.E AI Chatbot',
+    en: 'S.A.F.E AI Geotechnical Consultant',
   },
   'tour.chatbot.desc': {
-    id: 'Tanya AI apa saja tentang lokasi yang dipindai — rekomendasi pondasi, biaya mitigasi, standar bangunan, kesiapsiagaan gempa. AI memiliki konteks lengkap.',
-    en: 'Ask the AI anything about your scanned site — foundation recommendations, mitigation costs, building codes, earthquake preparedness. It has full context.',
+    id: 'Tanyakan rekomendasi pondasi, mitigasi tanah lunak, dan aturan SNI langsung kepada AI yang memiliki konteks audit lokasi secara utuh.',
+    en: 'Ask foundation recommendations, soft soil mitigation, and SNI building codes directly to an AI consultant with full audit context.',
   },
   'tour.finish.title': {
-    id: 'Siap Memindai',
-    en: 'Ready to Scan',
+    id: 'Siap Memulai Audit',
+    en: 'Ready to Audit',
   },
   'tour.finish.desc': {
-    id: 'Klik titik mana pun pada peta untuk memulai audit geofisika pertama Anda. Seluruh analisis memakan waktu sekitar 10 detik.',
-    en: 'Click any point on the map to begin your first geophysics audit. The entire analysis takes about 10 seconds.',
+    id: 'Klik titik mana saja di peta atau gunakan bilah pencarian untuk menjalankan audit kelayakan tanah dan mitigasi bencana pertama Anda!',
+    en: 'Click any location on the map or search an address to run your first geotechnical land safety and hazard audit!',
   },
+  'tour.stepOf': { id: 'dari', en: 'of' },
+  'tour.getStarted': { id: 'Mulai Sekarang', en: 'Get Started' },
   'tour.skip': { id: 'Lewati', en: 'Skip' },
   'tour.back': { id: 'Kembali', en: 'Back' },
   'tour.next': { id: 'Lanjut', en: 'Next' },
-  'tour.getStarted': { id: 'Mulai', en: 'Get Started' },
-  'tour.stepOf': { id: 'dari', en: 'of' },
   'tour.restart': {
     id: 'Mulai Ulang Tur Onboarding',
     en: 'Restart Onboarding Tour',

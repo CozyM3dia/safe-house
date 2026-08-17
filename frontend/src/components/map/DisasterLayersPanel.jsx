@@ -234,6 +234,7 @@ export function DisasterLayersPanel() {
               ? "border-white/8 text-text-secondary hover:text-accent hover:border-accent/40"
               : "border-accent/40 text-accent"
           )}
+          data-tour="map-layers-trigger"
           title={collapsed ? t('panel.mapView') : t('panel.closeMapPanel')}
           aria-label={collapsed ? t('panel.mapView') : t('panel.closeMapPanel')}
         >

@@ -23,6 +23,12 @@ export function OnboardingTour() {
       position: 'center',
     },
     {
+      title: t('tour.cursor.title'),
+      desc: t('tour.cursor.desc'),
+      selector: '[data-tour="map-area"]',
+      position: 'center',
+    },
+    {
       title: t('tour.search.title'),
       desc: t('tour.search.desc'),
       selector: '[data-tour="topbar-search"]',
@@ -35,16 +41,16 @@ export function OnboardingTour() {
       position: 'bottom',
     },
     {
-      title: t('tour.status.title'),
-      desc: t('tour.status.desc'),
-      selector: '[data-tour="topbar-status"]',
-      position: 'bottom-left',
-    },
-    {
       title: t('tour.panel.title'),
       desc: t('tour.panel.desc'),
       selector: '[data-tour="left-panel"]',
       position: 'right',
+    },
+    {
+      title: t('tour.layers.title'),
+      desc: t('tour.layers.desc'),
+      selector: '[data-tour="map-layers-trigger"]',
+      position: 'left-top',
     },
     {
       title: t('tour.chatbot.title'),

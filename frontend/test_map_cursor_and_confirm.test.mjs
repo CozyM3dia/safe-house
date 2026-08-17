@@ -23,6 +23,19 @@ const markerSource = readFileSync(
   'utf8'
 );
 
+const cssSource = readFileSync(
+  new URL('./src/index.css', import.meta.url),
+  'utf8'
+);
+const tourSource = readFileSync(
+  new URL('./src/components/onboarding/OnboardingTour.jsx', import.meta.url),
+  'utf8'
+);
+const i18nSource = readFileSync(
+  new URL('./src/lib/i18n.js', import.meta.url),
+  'utf8'
+);
+
 test('map area integrates custom geospatial cursor and audit confirmation dialog', () => {
   assert.match(mapAreaSource, /<MapCursor\s*\/>/);
   assert.match(mapAreaSource, /<AuditConfirmDialog\s*\/>/);
@@ -34,6 +47,8 @@ test('map cursor implements high-visibility HUD reticle and coordinate readout',
   assert.match(mapCursorSource, /border-black/);
   assert.match(mapCursorSource, /containerPointToLatLng/);
   assert.match(mapCursorSource, /pointer-events-none/);
+  assert.match(cssSource, /data:image\/svg\+xml/);
+  assert.match(cssSource, /fill='%23000000'/);
 });
 
 test('audit confirmation dialog asks user before running audit with coordinates preview and portal', () => {
@@ -56,4 +71,13 @@ test('map marker displays pending target reticle and dashed connecting line', ()
   assert.match(markerSource, /pendingAudit/);
   assert.match(markerSource, /buildPendingIcon/);
   assert.match(markerSource, /dashArray:\s*['"]6,\s*8['"]/);
+});
+
+test('onboarding tour provides comprehensive guidance covering cursor, SNI report, and layers', () => {
+  assert.match(tourSource, /tour\.cursor\.title/);
+  assert.match(tourSource, /tour\.layers\.title/);
+  assert.match(tourSource, /map-layers-trigger/);
+  assert.match(i18nSource, /tour\.cursor\.title/);
+  assert.match(i18nSource, /tour\.layers\.title/);
+  assert.match(i18nSource, /SNI 1726\/8460/);
 });
