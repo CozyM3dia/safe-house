@@ -26,7 +26,7 @@ export default function FAQSection({ t }) {
       question: t("faqQ3", "Apakah laporan audit AI ini 100% akurat?"),
       answer: t(
         "faqA3",
-        "Analisis awal ini merupakan penaksiran cepat berbasis data spasial publik dan Street View. Hasil analisis ini tidak menggantikan uji tanah laboratorium (sondir/SPT) atau survei langsung insinyur geoteknik di lapangan."
+        "Analisis awal ini merupakan penaksiran cepat berbasis data spasial publik. Hasil analisis ini tidak menggantikan uji tanah laboratorium (sondir/SPT) atau survei langsung insinyur geoteknik di lapangan."
       ),
     },
     {

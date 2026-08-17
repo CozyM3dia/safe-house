@@ -17,6 +17,8 @@ import db
 from models import (
     AIMetadata,
     AuditResult,
+    BattleReportRequest,
+    BattleReportResult,
     ChatRequest,
     ChatResult,
     NarrativeRequest,
@@ -179,6 +181,27 @@ async def create_saved_narrative(
     store["narrative"] = result.model_dump(mode="json")
     await pool.execute("UPDATE audits SET data = $2 WHERE id = $1", uid, store)
     return result
+
+
+@router.post("/battle-report", response_model=BattleReportResult)
+async def create_battle_report(
+    payload: BattleReportRequest,
+    request: Request,
+) -> BattleReportResult:
+    """Generate a grounded comparison from two persisted audits."""
+
+    _enforce_rate_limit(request)
+    audit_a = await _load_trusted_audit(payload.audit_a, required=True)
+    audit_b = await _load_trusted_audit(payload.audit_b, required=True)
+    if audit_a is None or audit_b is None:
+        raise HTTPException(status_code=422, detail="Dua audit harus tersedia")
+    if audit_a.id and audit_a.id == audit_b.id:
+        raise HTTPException(status_code=422, detail="Lokasi A dan B harus berbeda")
+
+    try:
+        return await ai.generate_battle_report(audit_a, audit_b, payload.lang)
+    except ai.AIServiceError as exc:
+        _raise_public_error(exc)
 
 
 @router.post("/chat", response_model=ChatResult)

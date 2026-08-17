@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Share2 } from 'lucide-react';
+import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Share2, Download } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
 import { createShare } from '../../services/api';
+import { canExportPdf, exportPrintReadyPdf } from '../../lib/pdfExport';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -226,6 +227,47 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
   const lang = useAppStore((s) => s.lang);
   const aiLoading = useAppStore((s) => s.aiLoading);
   const [sharing, setSharing] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const hasAiReport = Boolean(
+    propertyA?.aiReport?.detailedReport || propertyA?.narrative?.detailed_report
+  );
+
+  const handleDownloadPdf = async () => {
+    if (aiLoading || !hasAiReport) {
+      toast.info(
+        lang === 'en'
+          ? 'The full PDF will be available after the AI audit finishes.'
+          : 'PDF full tersedia setelah audit AI selesai dibuat.'
+      );
+      return;
+    }
+    if (!canExportPdf(propertyA)) {
+      toast.warning(
+        lang === 'en'
+          ? 'PDF is locked because this audit has insufficient evidence or is not buildable.'
+          : 'PDF dikunci karena bukti audit belum cukup atau lokasi tidak layak dinilai.'
+      );
+      return;
+    }
+
+    setPdfLoading(true);
+    const toastId = toast.loading(lang === 'en' ? 'Preparing full audit PDF…' : 'Menyiapkan PDF audit full…');
+    try {
+      await exportPrintReadyPdf(propertyA, lang);
+      toast.success(
+        lang === 'en' ? 'Full AI audit PDF downloaded.' : 'PDF full audit AI berhasil diunduh.',
+        { id: toastId }
+      );
+    } catch (error) {
+      console.error('PDF export failed', error);
+      toast.error(
+        error.message || (lang === 'en' ? 'PDF export failed.' : 'Ekspor PDF gagal.'),
+        { id: toastId }
+      );
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const handleShare = async () => {
     // Tautan publik butuh audit yang tersimpan. Tanpa database, audit tidak
@@ -326,8 +368,23 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
         </Button>
       </motion.div>
 
-      {/* Secondary action */}
-      <motion.div variants={item} className="grid grid-cols-1 gap-2">
+      {/* Full PDF + share actions */}
+      <motion.div variants={item} className="grid grid-cols-2 gap-2">
+        <Button
+          onClick={handleDownloadPdf}
+          disabled={pdfLoading}
+          variant="secondary"
+          size="lg"
+          className="group text-xs py-2 px-3 border border-white/12 flex items-center justify-center gap-1.5 hover:border-accent/40 hover:text-accent transition-all"
+          title={lang === 'en' ? 'Download the complete AI-grounded audit PDF' : 'Unduh PDF lengkap dengan audit AI ter-grounding'}
+        >
+          {pdfLoading ? (
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
+          ) : (
+            <Download className="h-3.5 w-3.5 shrink-0 text-accent" />
+          )}
+          <span>{lang === 'en' ? 'Full PDF' : 'Unduh Full PDF'}</span>
+        </Button>
         <Button
           onClick={handleShare}
           disabled={sharing}

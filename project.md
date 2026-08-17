@@ -23,4 +23,4 @@
 ## 📡 4. Data Sources
 *   **InaRISK & Open-Meteo:** Fokus utama pada Flood & Weather data.
 *   **USGS & Overpass API:** Data seismik dan objek lingkungan (Landfill/TPA).
-*   **Google Gemini 2.5 Flash:** Visual Audit via Street View.
+*   **Google Gemini 2.5 Flash:** Penjelasan berbasis data audit geospasial.

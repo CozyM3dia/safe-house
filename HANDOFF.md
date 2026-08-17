@@ -28,7 +28,6 @@ Browser
   ├── Gemini 2.0 Flash Lite (primary AI)
   ├── OpenRouter / Gemma 2 9B (AI fallback 1)
   ├── Ollama localhost:11434 (AI fallback 2)
-  ├── Google Maps Geocoding API
   ├── Open-Meteo (elevation, AQI, weather)
   └── USGS Earthquake API
 ```
@@ -61,7 +60,6 @@ File: `frontend/.env`
 ```env
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
 VITE_OPENROUTER_API_KEY=your_openrouter_api_key_here
-VITE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
 > Keys are in the frontend bundle — fine for demo/MVP only.
@@ -218,12 +216,10 @@ const GEMINI_MODEL = 'gemini-2.0-flash-lite';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
 // Key exports:
-export const MAPS_API_KEY = ...
 export async function fetchGeospatialData(lat, lng) { ... }
 export async function generateSummaryCards(data, lang, signal) { ... }
 export async function generateDetailedReport(data, lang, signal) { ... }
 export async function generateBattleReport(propA, propB, lang) { ... }
-export async function runStreetViewAnalysis() { return null; } // DISABLED — CORS
 export async function callAI(prompt, signal) { ... } // Gemini → OpenRouter → Ollama
 ```
 
@@ -263,7 +259,6 @@ processLocation(lat, lng)
   → fetchGeospatialData()          (~2s) → show map immediately
   → generateSummaryCards()         (~3s) → show score cards
   → generateDetailedReport()       (~8s) → show full report in drawer
-  → runStreetViewAnalysis()        → returns null (CORS disabled)
 ```
 
 AbortController cancels previous request when user clicks new location.
@@ -331,7 +326,6 @@ Separate theme. Full spec in `LANDING_PAGE_HANDOFF.md`.
 | Onboarding tour | ✅ Working | 7-step spotlight, auto first-visit |
 | Map overlays | ✅ Working | AQI, Soil, Volcano badges on map |
 | Disaster layers | ✅ Working | Toggle panel for map layers |
-| Street View | ❌ Disabled | CORS — Google Maps blocks browser |
 
 ---
 
@@ -340,7 +334,6 @@ Separate theme. Full spec in `LANDING_PAGE_HANDOFF.md`.
 | Issue | Detail |
 |-------|--------|
 | API keys in bundle | Exposed in frontend — demo only, not production-safe |
-| Street View disabled | `runStreetViewAnalysis()` returns null — CORS limitation |
 | Large bundle | ~2MB uncompressed (Leaflet + jsPDF + react-globe.gl) |
 | AI rate limits | Free tier Gemini may fail under load |
 | Indonesia only | Geological DB coverage — other countries get limited analysis |
@@ -401,7 +394,6 @@ See `DESIGN_SYSTEM.md` section 13 "What to Redesign" for specific pain points pe
 
 ### For Production
 - Move API keys to backend proxy
-- Enable Street View via backend proxy (no CORS limitation)
 - Add rate limiting
 - SEO meta tags on landing page
 - PWA manifest

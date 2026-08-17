@@ -4,7 +4,6 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import aiRouter from './routes/ai.js';
-import streetviewRouter from './routes/streetview.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,10 +20,9 @@ app.use(cors({
     ]
 }));
 
-app.use(express.json({ limit: '10mb' })); // 10mb for Street View base64 payloads
+app.use(express.json());
 
 app.use('/api/ai', aiRouter);
-app.use('/api/streetview', streetviewRouter);
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 

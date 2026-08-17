@@ -22,6 +22,7 @@ const translations = {
   'accessibility.search': { id: 'Cari lokasi atau jalankan perintah', en: 'Search location or run a command' },
   'accessibility.close': { id: 'Tutup', en: 'Close' },
   'panel.mapView': { id: 'Tampilan Peta', en: 'Map View' },
+  'panel.mapLayerControls': { id: 'Kontrol layer referensi', en: 'Reference layer controls' },
   'panel.closeMapPanel': { id: 'Tutup panel peta', en: 'Close map panel' },
   'panel.street': { id: 'Biasa', en: 'Street' },
   'panel.satellite': { id: 'Satelit', en: 'Satellite' },
@@ -157,11 +158,6 @@ const translations = {
   'drawer.battleTitle': {
     id: 'Laporan Battle S.A.F.E',
     en: 'S.A.F.E Battle Report',
-  },
-  'drawer.streetView': { id: 'Street View', en: 'Street View' },
-  'drawer.visualAnalysis': {
-    id: 'Analisis Visual Street View',
-    en: 'Street View Visual Analysis',
   },
   'drawer.microAnalysis': {
     id: 'Analisis Mikro Lingkungan',
