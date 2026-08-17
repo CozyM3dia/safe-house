@@ -2,16 +2,12 @@ const puppeteer = require('puppeteer');
 const { exec } = require('child_process');
 
 (async () => {
-  console.log('Starting preview server...');
-  const server = exec('npm run preview');
-  
-  // Wait for server to start
-  await new Promise(r => setTimeout(r, 3000));
-  
+  const baseUrl = process.env.SAFEHOUSE_BASE_URL || 'http://localhost:5173';
   console.log('Launching browser...');
   const browser = await puppeteer.launch({
     headless: "new",
-    ignoreHTTPSErrors: true
+    ignoreHTTPSErrors: true,
+    args: ['--no-sandbox']
   });
   const page = await browser.newPage();
   
@@ -34,14 +30,14 @@ const { exec } = require('child_process');
   });
 
   try {
-    console.log('Navigating to http://localhost:4173/app');
-    await page.goto('http://localhost:4173/app', { waitUntil: 'networkidle2' });
+    console.log(`Navigating to ${baseUrl}/app`);
+    await page.goto(`${baseUrl}/app`, { waitUntil: 'networkidle2' });
     
     console.log('Waiting for button...');
-    await page.waitForSelector('button[title="Buka Overlay Risiko"]', { timeout: 10000 });
+    const button = await page.waitForSelector('button[aria-label="Map View"], button[aria-label="Tampilan Peta"]', { timeout: 10000 });
     
     console.log('Opening Overlay Panel...');
-    await page.click('button[title="Buka Overlay Risiko"]');
+    await button.click();
     await new Promise(r => setTimeout(r, 1000));
     
     const toggleButtons = await page.$$('button[title="Tampilkan"]');
@@ -83,7 +79,6 @@ const { exec } = require('child_process');
   } finally {
     console.log('Closing browser...');
     await browser.close();
-    server.kill();
     process.exit(0);
   }
 })();
