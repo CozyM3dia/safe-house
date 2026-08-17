@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Zap, X, Crosshair } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { Button } from '../ui/button';
 
 export function AuditConfirmDialog() {
   const pendingAudit = useAppStore((s) => s.pendingAudit);
@@ -121,26 +120,22 @@ export function AuditConfirmDialog() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/8">
-              <Button
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={cancelPendingAudit}
-                className="text-xs px-4 py-2 hover:bg-white/5 text-text-muted hover:text-text-primary"
+                className="flex items-center justify-center rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-text-secondary transition-all hover:border-white/25 hover:bg-white/10 hover:text-text-primary active:scale-95 cursor-pointer"
               >
                 {isEn ? 'Cancel' : 'Batal'}
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant="accent"
-                size="sm"
                 onClick={confirmPendingAudit}
-                className="flex items-center gap-1.5 text-xs font-bold px-4 py-2 border border-accent/40 shadow-glow hover:bg-accent/90"
+                className="flex items-center gap-1.5 rounded-xl border border-[#d4956a] bg-[#d4956a] px-5 py-2 text-xs font-bold text-[#140e0a] shadow-[0_0_20px_rgba(212,149,106,0.35)] transition-all hover:bg-[#e4a87e] hover:text-black hover:shadow-[0_0_25px_rgba(212,149,106,0.55)] active:scale-95 cursor-pointer"
               >
-                <Zap className="h-3.5 w-3.5 text-bg" />
+                <Zap className="h-3.5 w-3.5 fill-[#140e0a] text-[#140e0a]" />
                 <span>{isEn ? 'Audit This Location' : 'Audit Lokasi Sekarang'}</span>
-              </Button>
+              </button>
             </div>
           </motion.div>
         </div>
