@@ -1004,7 +1004,7 @@ async def _get_cached_narrative(
     db_module: Any,
 ) -> Optional[dict[str, Any]]:
     """Look up a cached narrative by fingerprint. Returns None if unavailable."""
-    if not CACHE_ENABLED:
+    if not CACHE_ENABLED or db_module is None:
         return None
     try:
         pool = db_module.get_pool()
@@ -1033,7 +1033,7 @@ async def _store_cached_narrative(
     db_module: Any,
 ) -> None:
     """Persist a validated narrative to the cache table."""
-    if not CACHE_ENABLED:
+    if not CACHE_ENABLED or db_module is None:
         return
     try:
         pool = db_module.get_pool()
@@ -1075,7 +1075,7 @@ async def generate_narrative(
     client: Optional[httpx.AsyncClient] = None,
     db_module: Any = None,
 ) -> NarrativeResult:
-    """Generate or retrieve a narrative. Falls back to cache on AI failure."""
+    """Generate or retrieve a narrative. Uses in-memory & DB cache for instant response."""
 
     if db_module is None:
         try:
@@ -1120,7 +1120,7 @@ async def generate_narrative(
             system_instruction=_NARRATIVE_SYSTEM_INSTRUCTION,
             user_payload=prompt,
             response_schema=_narrative_schema(),
-            max_output_tokens=4096,
+            max_output_tokens=1536,
             temperature=0.2,
             client=client,
         )
@@ -1171,21 +1171,14 @@ async def generate_narrative(
 
     try:
         result = NarrativeResult.model_validate(raw)
+        # Store in cache for instant re-queries
+        await _store_cached_narrative(fingerprint, result.model_dump(mode="json"), meta.model, db_module)
     except ValidationError as exc:
         log.warning("Gemini narrative failed validation: %s", exc.errors())
         raise AIServiceError(
             "Laporan AI tidak lolos validasi. Silakan coba lagi.",
             status_code=502,
         ) from exc
-
-    # Cache valid result
-    if db_module is not None:
-        await _store_cached_narrative(
-            fingerprint,
-            result.model_dump(mode="json"),
-            meta.model,
-            db_module,
-        )
 
     return result
 
