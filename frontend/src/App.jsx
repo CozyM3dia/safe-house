@@ -65,7 +65,7 @@ function AppShell() {
       {/* z-25: Overlay Layer Panel — MUST be outside MapArea's z-0 stacking context */}
       <DisasterLayersPanel />
 
-      {/* z-20: Dynamic Map Overlays Legend */}
+      {/* z-20: Legend for active hazard/reference overlays */}
       <MapLegend />
 
       {/* z-20: ChatbotFab + expand */}

@@ -11,12 +11,15 @@ const HAZARD_LEGEND = [
 
 const ATTRIBUTION = 'Sumber bahaya: InaRISK BNPB';
 
+// Sumber = ImageServer INDEKS_BAHAYA_* (publik, tanpa token, cepat ~100-300ms).
+// Catatan: MapServer/export pada layer_bahaya_* butuh token (error 499), jadi
+// dipakai ImageServer/exportImage yang terbuka.
 export const INARISK_HAZARDS = [
   {
     key: 'flood',
     label: 'Banjir',
     icon: '🌊',
-    serviceUrl: `${INARISK_BASE}/layer_bahaya_banjir/MapServer`,
+    serviceUrl: `${INARISK_BASE}/INDEKS_BAHAYA_BANJIR/ImageServer`,
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
   },
@@ -24,7 +27,7 @@ export const INARISK_HAZARDS = [
     key: 'landslide',
     label: 'Longsor',
     icon: '🏔️',
-    serviceUrl: `${INARISK_BASE}/layer_bahaya_tanah_longsor/MapServer`,
+    serviceUrl: `${INARISK_BASE}/INDEKS_BAHAYA_TANAHLONGSOR/ImageServer`,
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
   },
@@ -32,7 +35,7 @@ export const INARISK_HAZARDS = [
     key: 'earthquake',
     label: 'Gempa',
     icon: '🌋',
-    serviceUrl: `${INARISK_BASE}/layer_bahaya_gempabumi/MapServer`,
+    serviceUrl: `${INARISK_BASE}/INDEKS_BAHAYA_GEMPABUMI/ImageServer`,
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
   },
@@ -71,15 +74,14 @@ export function tileToBbox3857({ x, y, z }) {
   return `${xmin},${ymin},${xmax},${ymax}`;
 }
 
+// ArcGIS ImageServer exportImage: PNG32 memberi transparansi via nodata.
 export function buildExportUrl(serviceUrl, bbox) {
   const params = new URLSearchParams({
     bboxSR: '3857',
     imageSR: '3857',
     size: '256,256',
-    dpi: '96',
     format: 'png32',
-    transparent: 'true',
     f: 'image',
   });
-  return `${serviceUrl}/export?bbox=${bbox}&${params.toString()}`;
+  return `${serviceUrl}/exportImage?bbox=${bbox}&${params.toString()}`;
 }

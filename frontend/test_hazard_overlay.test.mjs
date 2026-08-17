@@ -11,9 +11,9 @@ test('config covers exactly banjir, longsor, gempa with official services', () =
   assert.equal(INARISK_HAZARDS.length, 3);
   const byKey = Object.fromEntries(INARISK_HAZARDS.map((h) => [h.key, h]));
   assert.ok(byKey.flood && byKey.landslide && byKey.earthquake);
-  assert.match(byKey.flood.serviceUrl, /inarisk\/layer_bahaya_banjir\/MapServer$/);
-  assert.match(byKey.landslide.serviceUrl, /inarisk\/layer_bahaya_tanah_longsor\/MapServer$/);
-  assert.match(byKey.earthquake.serviceUrl, /inarisk\/layer_bahaya_gempabumi\/MapServer$/);
+  assert.match(byKey.flood.serviceUrl, /inarisk\/INDEKS_BAHAYA_BANJIR\/ImageServer$/);
+  assert.match(byKey.landslide.serviceUrl, /inarisk\/INDEKS_BAHAYA_TANAHLONGSOR\/ImageServer$/);
+  assert.match(byKey.earthquake.serviceUrl, /inarisk\/INDEKS_BAHAYA_GEMPABUMI\/ImageServer$/);
   for (const h of INARISK_HAZARDS) {
     assert.match(h.attribution, /InaRISK BNPB/);
     assert.ok(h.legend.length >= 3); // Rendah/Sedang/Tinggi
@@ -37,12 +37,12 @@ test('tileToBbox3857 keeps ordering xmin<xmax and ymin<ymax for an inner tile', 
   assert.ok(ymin < ymax);
 });
 
-test('buildExportUrl requests transparent png in 3857', () => {
-  const url = buildExportUrl('https://svc/MapServer', '1,2,3,4');
-  assert.match(url, /\/export\?/);
+test('buildExportUrl requests a png32 image export in 3857 via exportImage', () => {
+  const url = buildExportUrl('https://svc/ImageServer', '1,2,3,4');
+  assert.match(url, /\/exportImage\?/);
   assert.match(url, /bbox=1,2,3,4/);
   assert.match(url, /bboxSR=3857/);
   assert.match(url, /imageSR=3857/);
-  assert.match(url, /transparent=true/);
+  assert.match(url, /format=png32/);
   assert.match(url, /f=image/);
 });
