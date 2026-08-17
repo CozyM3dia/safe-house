@@ -30,7 +30,7 @@ test('mobile topbar and interactive controls expose a responsive accessibility c
   assert.match(topbar, /min-w-0/);
   assert.match(topbar, /aria-label=/);
   assert.match(topbar, /sm:hidden/);
-  assert.match(mapControls, /aria-label=\{title\}/);
+  assert.match(mapControls, /aria-label=\{label\}/);
   assert.match(mapControls, /min-h-\[44px\]/);
   assert.match(layers, /aria-label=/);
   assert.match(chatbot, /aria-label=/);

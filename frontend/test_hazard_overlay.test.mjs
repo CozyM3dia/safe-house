@@ -23,7 +23,12 @@ test('config covers exactly banjir, longsor, gempa with official services', () =
   for (const h of INARISK_HAZARDS) {
     assert.match(h.attribution, /InaRISK BNPB/);
     assert.ok(h.legend.length >= 3); // Rendah/Sedang/Tinggi
-    assert.ok(h.label && h.icon);
+    assert.ok(h.label && h.icon && h.labelKey && h.descriptionKey);
+    assert.ok(h.serviceCandidates?.length >= 1);
+    for (const candidate of h.serviceCandidates) {
+      assert.match(candidate.url, /ImageServer$/);
+      assert.ok(candidate.source === 'official' || candidate.source === 'fallback');
+    }
   }
 });
 

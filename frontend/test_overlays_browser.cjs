@@ -1,84 +1,149 @@
+const assert = require('node:assert/strict');
 const puppeteer = require('puppeteer');
-const { exec } = require('child_process');
+
+const baseUrl = process.env.SAFEHOUSE_BASE_URL || 'http://localhost:5173';
+const hazardKeys = ['flood', 'landslide', 'earthquake'];
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForOverlaySettled(page, key) {
+  await page.waitForFunction(
+    (overlayKey) => {
+      const status = window.useAppStore.getState().overlayStatuses[overlayKey];
+      return status === 'ready' || status === 'error';
+    },
+    { timeout: 15000 },
+    key
+  );
+}
 
 (async () => {
-  const baseUrl = process.env.SAFEHOUSE_BASE_URL || 'http://localhost:5173';
-  console.log('Launching browser...');
-  const browser = await puppeteer.launch({
-    headless: "new",
-    ignoreHTTPSErrors: true,
-    args: ['--no-sandbox']
-  });
+  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
   const page = await browser.newPage();
-  
-  // Capture logs
-  page.on('console', msg => console.log('BROWSER LOG:', msg.type(), msg.text()));
-  page.on('pageerror', error => console.log('BROWSER ERROR:', error.message));
-  page.on('requestfailed', request => {
+  const layerRequests = [];
+  const pageErrors = [];
+  const layerStatuses = {};
+  const layerSources = {};
+  const layerResponseStatuses = {};
+  const layerRequestFailures = [];
+
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('request', (request) => {
     const url = request.url();
-    if (url.includes('MapServer') || url.includes('ImageServer') || url.includes('geoserver')) {
-      console.log('BROWSER REQUEST FAILED:', url, request.failure().errorText);
+    if (url.includes('ImageServer') || url.includes('MapServer') || url.includes('basemaps') || url.includes('arcgisonline')) {
+      layerRequests.push(url);
     }
   });
-  page.on('requestfinished', async (request) => {
-    const url = request.url();
-    if (url.includes('MapServer') || url.includes('ImageServer') || url.includes('geoserver')) {
-      const response = request.response();
-      const status = response ? response.status() : 'UNKNOWN';
-      console.log(`BROWSER REQUEST SUCCESS: ${url} (Status: ${status})`);
+  page.on('response', (response) => {
+    const url = response.url();
+    const match = url.match(/inarisk\/([^/]+)\/ImageServer\//i);
+    if (match) layerResponseStatuses[match[1]] = response.status();
+  });
+  page.on('requestfailed', (request) => {
+    if (request.url().includes('ImageServer')) {
+      layerRequestFailures.push({ url: request.url(), error: request.failure()?.errorText });
     }
   });
 
   try {
-    console.log(`Navigating to ${baseUrl}/app`);
-    await page.goto(`${baseUrl}/app`, { waitUntil: 'networkidle2' });
-    
-    console.log('Waiting for button...');
-    const button = await page.waitForSelector('button[aria-label="Map View"], button[aria-label="Tampilan Peta"]', { timeout: 10000 });
-    
-    console.log('Opening Overlay Panel...');
-    await button.click();
-    await new Promise(r => setTimeout(r, 1000));
-    
-    const toggleButtons = await page.$$('button[title="Tampilkan"]');
-    console.log(`Found ${toggleButtons.length} overlay toggle buttons.`);
-    if (toggleButtons.length > 0) {
-      // Toggle Flood
-      console.log('Toggling Flood Overlay...');
-      await toggleButtons[0].click();
-      await new Promise(r => setTimeout(r, 1500));
-      
-      // Toggle ZNT
-      if (toggleButtons.length > 8) {
-        console.log('Toggling ZNT (Cadastral WMS) Overlay...');
-        await toggleButtons[8].click();
-        await new Promise(r => setTimeout(r, 1500));
-      }
-      
-      // Toggle Landcover
-      if (toggleButtons.length > 9) {
-        console.log('Toggling Landcover (KLHK ArcGIS) Overlay...');
-        await toggleButtons[9].click();
-        await new Promise(r => setTimeout(r, 1500));
-      }
-      
-      // Toggle Population
-      if (toggleButtons.length > 10) {
-        console.log('Toggling Population (InaRISK ImageServer) Overlay...');
-        await toggleButtons[10].click();
-        await new Promise(r => setTimeout(r, 1500));
-      }
-    } else {
-      console.log('No toggle buttons found with title "Tampilkan"');
+    await page.goto(`${baseUrl}/app`, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.waitForSelector('.leaflet-container');
+    await page.waitForFunction(() => Boolean(window.useAppStore?.getState));
+    await page.click('button[aria-label="Tampilan Peta"]');
+    await page.waitForSelector('[data-testid="overlay-toggle-flood"]');
+
+    const toggles = await page.evaluate(() => ({
+      hazard: [...document.querySelectorAll('[data-testid^="overlay-toggle-"]')].map((button) => button.dataset.testid),
+      base: [...document.querySelectorAll('button[aria-pressed]')].map((button) => button.getAttribute('aria-label')),
+    }));
+    assert.deepEqual(toggles.hazard.sort(), [
+      'overlay-toggle-earthquake',
+      'overlay-toggle-faults',
+      'overlay-toggle-flood',
+      'overlay-toggle-landslide',
+    ]);
+    assert.ok(toggles.base.some((label) => label.includes('Satelit')), JSON.stringify(toggles));
+
+    for (const key of hazardKeys) {
+      const requestCountBefore = layerRequests.length;
+      await page.click(`[data-testid="overlay-toggle-${key}"]`);
+      await page.waitForFunction((overlayKey) => window.useAppStore.getState().overlays[overlayKey] === true, {}, key);
+      await waitForOverlaySettled(page, key);
+      const status = await page.evaluate((overlayKey) => window.useAppStore.getState().overlayStatuses[overlayKey], key);
+      layerStatuses[key] = status;
+      layerSources[key] = await page.evaluate((overlayKey) => window.useAppStore.getState().overlaySources[overlayKey], key);
+      assert.equal(status, 'ready', `${key} did not render a tile; status=${status}`);
+      assert.ok(layerRequests.length > requestCountBefore, `${key} did not request a raster tile`);
+      const serviceName = key === 'landslide' ? 'TANAHLONGSOR' : key === 'earthquake' ? 'GEMPABUMI' : 'BANJIR';
+      const requestedUrls = layerRequests.slice(requestCountBefore).join('\n');
+      assert.match(requestedUrls, /ImageServer/);
+      const servicePattern = serviceName === 'TANAHLONGSOR' ? /TANAH[_]?LONGSOR/i : new RegExp(serviceName, 'i');
+      assert.match(requestedUrls, servicePattern);
+
+      await page.click(`[data-testid="overlay-toggle-${key}"]`);
+      await page.waitForFunction((overlayKey) => (
+        window.useAppStore.getState().overlays[overlayKey] === false
+        && window.useAppStore.getState().overlayStatuses[overlayKey] === 'idle'
+      ), {}, key);
     }
-    
-    console.log('Waiting 10 seconds for all tiles to fully load...');
-    await new Promise(r => setTimeout(r, 10000));
-  } catch (err) {
-    console.log('Test execution failed:', err.message);
+
+    await page.click('[data-testid="overlay-toggle-faults"]');
+    await page.waitForFunction(() => window.useAppStore.getState().overlays.faults === true);
+    await page.waitForSelector('.leaflet-faultReference-pane canvas', { timeout: 15000 });
+    await page.waitForFunction(() => window.useAppStore.getState().faultLayerSource !== 'loading', { timeout: 15000 });
+    await page.click('[data-testid="overlay-toggle-faults"]');
+    await page.waitForFunction(() => window.useAppStore.getState().overlays.faults === false);
+
+    const satelliteButton = await page.$('button[aria-label="Gunakan peta dasar: Satelit"]');
+    assert.ok(satelliteButton, 'satellite basemap control is missing');
+    await satelliteButton.click();
+    await page.waitForFunction(() => window.useAppStore.getState().baseMapStyle === 'satellite');
+    assert.ok(layerRequests.some((url) => url.includes('server.arcgisonline.com/ArcGIS/rest/services/World_Imagery')));
+
+    await page.evaluate(() => window.useAppStore.getState().setLang('en'));
+    await page.waitForFunction(() => document.body.innerText.includes('HAZARD LAYERS'));
+    await page.evaluate(() => {
+      const store = window.useAppStore.getState();
+      store.toggleOverlay('flood');
+      store.toggleOverlay('landslide');
+      store.toggleOverlay('faults');
+    });
+    await waitForOverlaySettled(page, 'flood');
+    await waitForOverlaySettled(page, 'landslide');
+    await page.waitForFunction(() => window.useAppStore.getState().faultLayerSource !== 'loading', { timeout: 15000 });
+    await wait(250);
+    const fallbackSource = await page.evaluate(() => window.useAppStore.getState().overlaySources.landslide);
+    assert.equal(fallbackSource, 'fallback');
+    const faultLegendCount = await page.$$eval('[data-testid="fault-layer-legend"]', (legends) => legends.length);
+    assert.equal(faultLegendCount, 1, 'fault legend should render exactly once inside the layer panel');
+    const panelText = await page.$eval('[data-testid="overlay-toggle-flood"]', (button) => {
+      let panel = button;
+      while (panel && !String(panel.className).includes('w-[min(18rem,calc(100vw-1rem))]')) panel = panel.parentElement;
+      return panel?.innerText || '';
+    });
+    assert.doesNotMatch(panelText, /Layer bahaya|Layer referensi|Banjir|Longsor|Gempa|Sesar aktif|Sumber|Geometri resmi|Legenda aktif/);
+    assert.match(panelText, /Hazard layers|Reference layers|Flood|Active faults|Map Legend/);
+    assert.match(panelText, /Official landslide-risk raster used as a responsive fallback/);
+
+    assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join('; ')}`);
+    console.log(JSON.stringify({
+      baseUrl,
+      layers: 'flood, landslide, earthquake, faults passed',
+      basemaps: 'street and satellite passed',
+      englishPanel: 'passed',
+      layerStatuses,
+      layerSources,
+      layerResponseStatuses,
+      layerRequestFailures: layerRequestFailures.slice(0, 5),
+      sampleLayerUrls: layerRequests.filter((url) => url.includes('ImageServer')).slice(0, 3),
+      requestCount: layerRequests.length,
+    }, null, 2));
   } finally {
-    console.log('Closing browser...');
     await browser.close();
-    process.exit(0);
   }
-})();
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

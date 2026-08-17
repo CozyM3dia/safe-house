@@ -11,35 +11,68 @@ const HAZARD_LEGEND = [
 
 const ATTRIBUTION = 'Sumber bahaya: InaRISK BNPB';
 
-// Sumber = ImageServer INDEKS_BAHAYA_* (publik, tanpa token, cepat ~100-300ms).
-// Catatan: MapServer/export pada layer_bahaya_* butuh token (error 499), jadi
-// dipakai ImageServer/exportImage yang terbuka.
+// Beberapa katalog raster BNPB yang paling baru kadang menerima permintaan
+// metadata tetapi tidak pernah menyelesaikan exportImage. Tetap pertahankan
+// URL kanonis untuk provenance, lalu dahulukan raster resmi alternatif yang
+// responsif agar kontrol layer tidak terlihat aktif tanpa gambar.
+const SERVICE = (name) => `${INARISK_BASE}/${name}/ImageServer`;
+
+// Sumber = ImageServer publik tanpa token. Beberapa raster kanonis BNPB
+// lambat pada exportImage, sehingga kandidat resmi alternatif dicoba lebih
+// dulu dan URL kanonis tetap disimpan sebagai provenance/fallback terakhir.
 export const INARISK_HAZARDS = [
   {
     key: 'flood',
     label: 'Banjir',
+    labelKey: 'panel.hazard.flood',
+    descriptionKey: 'panel.hazard.floodDescription',
     icon: '🌊',
-    serviceUrl: `${INARISK_BASE}/INDEKS_BAHAYA_BANJIR/ImageServer`,
+    serviceUrl: SERVICE('INDEKS_BAHAYA_BANJIR'),
+    serviceCandidates: [
+      { url: SERVICE('INDEKS_BAHAYA_BANJIR'), source: 'official' },
+    ],
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
   },
   {
     key: 'landslide',
     label: 'Longsor',
+    labelKey: 'panel.hazard.landslide',
+    descriptionKey: 'panel.hazard.landslideDescription',
     icon: '🏔️',
-    serviceUrl: `${INARISK_BASE}/INDEKS_BAHAYA_TANAHLONGSOR/ImageServer`,
+    serviceUrl: SERVICE('INDEKS_BAHAYA_TANAHLONGSOR'),
+    serviceCandidates: [
+      { url: SERVICE('INDEKS_RISIKO_TANAH_LONGSOR'), source: 'fallback' },
+      { url: SERVICE('INDEKS_BAHAYA_TANAHLONGSOR'), source: 'official' },
+    ],
+    fallbackDescriptionKey: 'panel.hazard.landslideFallbackDescription',
+    fallbackLegendKey: 'panel.hazard.landslideFallbackLegend',
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
   },
   {
     key: 'earthquake',
     label: 'Gempa',
+    labelKey: 'panel.hazard.earthquake',
+    descriptionKey: 'panel.hazard.earthquakeDescription',
     icon: '🌋',
-    serviceUrl: `${INARISK_BASE}/INDEKS_BAHAYA_GEMPABUMI/ImageServer`,
+    serviceUrl: SERVICE('INDEKS_BAHAYA_GEMPABUMI'),
+    serviceCandidates: [
+      { url: SERVICE('layer_bahaya_gempabumi_2015'), source: 'fallback' },
+      { url: SERVICE('INDEKS_BAHAYA_GEMPABUMI'), source: 'official' },
+    ],
+    fallbackDescriptionKey: 'panel.hazard.earthquakeFallbackDescription',
+    fallbackLegendKey: 'panel.hazard.earthquakeFallbackLegend',
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
   },
 ];
+
+// This is the single source of truth for overlays exposed by the current UI.
+// Keep legacy backend hazard fields out of this list: they are report data,
+// not browser-rendered map layers.
+export const INARISK_OVERLAY_KEYS = INARISK_HAZARDS.map(({ key }) => key);
+export const MAP_OVERLAY_KEYS = [...INARISK_OVERLAY_KEYS, 'faults'];
 
 const R = 6378137; // radius bola web-mercator (EPSG:3857)
 const HALF = Math.PI * R; // 20037508.342789244
@@ -124,9 +157,9 @@ export function buildRainbowLut() {
 
 // Stop legenda (t, label) — sinkron dengan warna raster.
 export const HAZARD_RAMP_STOPS = [
-  { t: 0, label: 'Rendah' },
-  { t: 0.5, label: 'Sedang' },
-  { t: 1, label: 'Tinggi' },
+  { t: 0, label: 'Rendah', translationKey: 'panel.low' },
+  { t: 0.5, label: 'Sedang', translationKey: 'panel.moderate' },
+  { t: 1, label: 'Tinggi', translationKey: 'panel.high' },
 ];
 
 // CSS linear-gradient dari ramp untuk bar legenda.
