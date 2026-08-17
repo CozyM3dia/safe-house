@@ -27,16 +27,10 @@ from services.geotech import haversine as _haversine_km
 
 log = logging.getLogger(__name__)
 
-# Timeout dasar untuk sumber yang responsif.
-TIMEOUT_S = 8.0
-
-# InaRISK jauh lebih lambat daripada sumber lain. Layer longsor menjawab di
-# bawah dua detik, tetapi layer banjir kerap memakan 40–60 detik dan sering
-# tidak menjawab sama sekali. Batas 25 detik adalah kompromi: cukup lama
-# untuk menangkap jawaban yang lambat, cukup pendek supaya audit tidak
-# tergantung terlalu lama. Kegagalan ditandai jujur, tidak dianggap "aman".
-INARISK_TIMEOUT_S = 25.0
-FAULT_GEOMETRY_TIMEOUT_S = 12.0
+# Timeout agresif & snappy agar audit selesai dalam ~1.5-2.0 detik.
+TIMEOUT_S = 2.5
+INARISK_TIMEOUT_S = 2.0
+FAULT_GEOMETRY_TIMEOUT_S = 2.0
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
@@ -54,6 +48,24 @@ OFFICIAL_FAULT_GEOMETRY_PARAMS = {
     "returnGeometry": "true",
     "f": "geojson",
 }
+
+_shared_client: Optional[httpx.AsyncClient] = None
+_cached_fault_geometry: Optional[dict] = None
+
+
+def _get_shared_client() -> httpx.AsyncClient:
+    global _shared_client
+    if _shared_client is None or _shared_client.is_closed:
+        _shared_client = httpx.AsyncClient(
+            timeout=TIMEOUT_S,
+            follow_redirects=True,
+            limits=httpx.Limits(
+                max_keepalive_connections=30,
+                max_connections=100,
+                keepalive_expiry=60.0,
+            ),
+        )
+    return _shared_client
 
 # Public BNPB raster layers. Keep the source names stable because they are
 # persisted in `sources_failed` and shown in the data-coverage manifest.
@@ -187,7 +199,11 @@ async def _inarisk_layer(
 
 
 async def _official_fault_geometry(client: httpx.AsyncClient) -> dict:
-    """Fetch the versioned PuSGeN 2024 official fault polylines."""
+    """Fetch the versioned PuSGeN 2024 official fault polylines with memory caching."""
+    global _cached_fault_geometry
+    if _cached_fault_geometry is not None:
+        return _cached_fault_geometry
+
     r = await client.get(
         OFFICIAL_FAULT_GEOMETRY_URL,
         params=OFFICIAL_FAULT_GEOMETRY_PARAMS,
@@ -197,6 +213,7 @@ async def _official_fault_geometry(client: httpx.AsyncClient) -> dict:
     payload = r.json()
     if payload.get("type") != "FeatureCollection" or not isinstance(payload.get("features"), list):
         raise RuntimeError("Geometri sesar resmi bukan GeoJSON FeatureCollection")
+    _cached_fault_geometry = payload
     return payload
 
 
@@ -240,34 +257,34 @@ async def _nearby_pois(client: httpx.AsyncClient, lat: float, lon: float) -> lis
 
 
 async def fetch_all(lat: float, lon: float) -> tuple[dict[str, Any], list[str]]:
-    """Ambil semua sumber luar secara paralel.
+    """Ambil semua sumber luar secara paralel dengan connection pooling.
 
     Mengembalikan (hasil, daftar_sumber_gagal). Nilai untuk sumber yang gagal
     adalah None — pemanggil wajib memeriksanya.
     """
-    async with httpx.AsyncClient(timeout=TIMEOUT_S, follow_redirects=True) as client:
-        tasks = {
-            "geocode": _reverse_geocode(client, lat, lon),
-            "weather": _weather(client, lat, lon),
-            "air_quality": _air_quality(client, lat, lon),
-            "earthquakes": _earthquakes(client, lat, lon),
-            "official_fault_geometry": _official_fault_geometry(client),
-            "nearby": _nearby_pois(client, lat, lon),
+    client = _get_shared_client()
+    tasks = {
+        "geocode": _reverse_geocode(client, lat, lon),
+        "weather": _weather(client, lat, lon),
+        "air_quality": _air_quality(client, lat, lon),
+        "earthquakes": _earthquakes(client, lat, lon),
+        "official_fault_geometry": _official_fault_geometry(client),
+        "nearby": _nearby_pois(client, lat, lon),
+    }
+    tasks.update(
+        {
+            name: _inarisk_layer(
+                client,
+                layer,
+                lat,
+                lon,
+                as_class=name in {"flood", "landslide"},
+            )
+            for name, layer in INARISK_LAYERS.items()
         }
-        tasks.update(
-            {
-                name: _inarisk_layer(
-                    client,
-                    layer,
-                    lat,
-                    lon,
-                    as_class=name in {"flood", "landslide"},
-                )
-                for name, layer in INARISK_LAYERS.items()
-            }
-        )
+    )
 
-        settled = await asyncio.gather(*tasks.values(), return_exceptions=True)
+    settled = await asyncio.gather(*tasks.values(), return_exceptions=True)
 
     results: dict[str, Any] = {}
     failed: list[str] = []
