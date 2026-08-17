@@ -1,15 +1,19 @@
-import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../../store/useAppStore";
 import { cn } from "../../lib/utils";
-import { Info, Map, Droplets } from "lucide-react";
+import { Info, Map, Droplets, GitBranch } from "lucide-react";
 
 export function MapLegend() {
   const overlays = useAppStore((s) => s.overlays);
 
   const showFloodLegend = overlays.flood;
+  const showLandslideLegend = overlays.landslide;
+  const showEarthquakeLegend = overlays.earthquake;
   const showLandCoverLegend = overlays.landcover;
-  const anyActive = showFloodLegend || showLandCoverLegend;
+  const showFaultLegend = overlays.faults;
+  const anyActive =
+    showFloodLegend || showLandslideLegend || showEarthquakeLegend ||
+    showLandCoverLegend || showFaultLegend;
 
   return (
     <AnimatePresence>
@@ -57,9 +61,63 @@ export function MapLegend() {
             </div>
           )}
 
+          {showLandslideLegend && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] leading-none">🏔️</span>
+                <span className="text-[10px] font-bold text-text-primary">Bahaya Longsor</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 pt-1">
+                {[['Rendah','bg-green-500'],['Sedang','bg-yellow-500'],['Tinggi','bg-red-500']].map(([label,clr]) => (
+                  <div key={label} className="flex flex-col items-center gap-1 rounded bg-white/[0.02] border border-white/5 py-1">
+                    <div className={cn('w-2 h-2 rounded', clr)} />
+                    <span className="text-[8px] font-bold text-text-secondary">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {showEarthquakeLegend && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] leading-none">🌋</span>
+                <span className="text-[10px] font-bold text-text-primary">Bahaya Gempa</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 pt-1">
+                {[['Rendah','bg-green-500'],['Sedang','bg-yellow-500'],['Tinggi','bg-red-500']].map(([label,clr]) => (
+                  <div key={label} className="flex flex-col items-center gap-1 rounded bg-white/[0.02] border border-white/5 py-1">
+                    <div className={cn('w-2 h-2 rounded', clr)} />
+                    <span className="text-[8px] font-bold text-text-secondary">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Divider if both active */}
           {showFloodLegend && showLandCoverLegend && (
             <div className="h-px bg-white/6" />
+          )}
+
+          {(showFaultLegend && (showFloodLegend || showLandCoverLegend)) && (
+            <div className="h-px bg-white/6" />
+          )}
+
+          {/* Fault reference legend */}
+          {showFaultLegend && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1">
+                <GitBranch size={10} className="text-[#d28a7b]" />
+                <span className="text-[10px] font-bold text-text-primary">Referensi sesar aktif</span>
+              </div>
+              <div className="flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2 py-1.5">
+                <span className="w-7 border-t-2 border-[#b86f63]" />
+                <span className="text-[8px] leading-relaxed text-text-secondary">
+                  Sumber: PuSGeN 2024 melalui InaRISK BNPB
+                </span>
+              </div>
+            </div>
           )}
 
           {/* Land Cover Legend */}
@@ -88,6 +146,11 @@ export function MapLegend() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Atribusi sumber hazard */}
+          {(showFloodLegend || showLandslideLegend || showEarthquakeLegend) && (
+            <p className="text-[7px] leading-relaxed text-text-muted">Sumber: InaRISK BNPB</p>
           )}
         </motion.div>
       )}
