@@ -18,7 +18,7 @@ export function createInariskLayer(cfg, opacity) {
     opacity,
     attribution: cfg.attribution,
     crossOrigin: false,
-    zIndex: 350, // di bawah faults (pane z 430) & marker
+    zIndex: 350, // di tilePane, di atas basemap; faults pakai pane z430 (di atas)
     className: `inarisk-overlay inarisk-${cfg.key}`,
   });
 }
