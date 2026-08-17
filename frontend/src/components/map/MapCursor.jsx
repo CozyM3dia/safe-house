@@ -22,7 +22,7 @@ export function MapCursor() {
     container.classList.add('safe-map-crosshair');
 
     const handleMouseMove = (e) => {
-      // If hovering over any UI controls/dialogs/panels, hide the custom reticle
+      // If hovering over any floating UI controls/dialogs/panels, hide the custom reticle
       const target = e.target;
       if (
         target.closest('.glass') ||
@@ -87,37 +87,40 @@ export function MapCursor() {
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.6 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
             style={{
               transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
               willChange: 'transform',
             }}
             className="absolute -left-[20px] -top-[20px] h-[40px] w-[40px]"
           >
-            {/* ── Outer glowing dashed ring ── */}
-            <div className="absolute inset-0 rounded-full border border-accent/40 animate-[spin_12s_linear_infinite]" style={{ borderStyle: 'dashed' }} />
+            {/* ── Outer dashed ring (Black with contrast halo) ── */}
+            <div
+              className="absolute inset-0 rounded-full border border-black/85 drop-shadow-[0_0_1.5px_rgba(255,255,255,0.9)] animate-[spin_10s_linear_infinite]"
+              style={{ borderStyle: 'dashed' }}
+            />
 
-            {/* ── Precision HUD corner brackets ── */}
-            <div className="absolute left-[3px] top-[3px] h-[6px] w-[6px] border-l-2 border-t-2 border-accent" />
-            <div className="absolute right-[3px] top-[3px] h-[6px] w-[6px] border-r-2 border-t-2 border-accent" />
-            <div className="absolute bottom-[3px] left-[3px] h-[6px] w-[6px] border-b-2 border-l-2 border-accent" />
-            <div className="absolute bottom-[3px] right-[3px] h-[6px] w-[6px] border-b-2 border-r-2 border-accent" />
+            {/* ── Precision HUD corner brackets (Black with sharp white drop-shadow) ── */}
+            <div className="absolute left-[3px] top-[3px] h-[6px] w-[6px] border-l-2 border-t-2 border-black drop-shadow-[0_0_1px_#ffffff]" />
+            <div className="absolute right-[3px] top-[3px] h-[6px] w-[6px] border-r-2 border-t-2 border-black drop-shadow-[0_0_1px_#ffffff]" />
+            <div className="absolute bottom-[3px] left-[3px] h-[6px] w-[6px] border-b-2 border-l-2 border-black drop-shadow-[0_0_1px_#ffffff]" />
+            <div className="absolute bottom-[3px] right-[3px] h-[6px] w-[6px] border-b-2 border-r-2 border-black drop-shadow-[0_0_1px_#ffffff]" />
 
-            {/* ── Crosshair guide ticks ── */}
-            <div className="absolute left-1/2 top-0 h-[5px] w-[1px] -translate-x-1/2 bg-accent/80" />
-            <div className="absolute bottom-0 left-1/2 h-[5px] w-[1px] -translate-x-1/2 bg-accent/80" />
-            <div className="absolute left-0 top-1/2 h-[1px] w-[5px] -translate-y-1/2 bg-accent/80" />
-            <div className="absolute right-0 top-1/2 h-[1px] w-[5px] -translate-y-1/2 bg-accent/80" />
+            {/* ── Crosshair guide ticks (Black with contrast outline) ── */}
+            <div className="absolute left-1/2 top-0 h-[6px] w-[1.5px] -translate-x-1/2 bg-black drop-shadow-[0_0_1px_#ffffff]" />
+            <div className="absolute bottom-0 left-1/2 h-[6px] w-[1.5px] -translate-x-1/2 bg-black drop-shadow-[0_0_1px_#ffffff]" />
+            <div className="absolute left-0 top-1/2 h-[1.5px] w-[6px] -translate-y-1/2 bg-black drop-shadow-[0_0_1px_#ffffff]" />
+            <div className="absolute right-0 top-1/2 h-[1.5px] w-[6px] -translate-y-1/2 bg-black drop-shadow-[0_0_1px_#ffffff]" />
 
-            {/* ── Center pinpoint dot with glow pulse ── */}
-            <div className="absolute left-1/2 top-1/2 h-[5px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_8px_#d4956a]" />
-            <div className="absolute left-1/2 top-1/2 h-[14px] w-[14px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent/50 animate-ping opacity-30" />
+            {/* ── Center pinpoint dot (Deep Black with high-contrast white ring) ── */}
+            <div className="absolute left-1/2 top-1/2 h-[5px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black ring-1 ring-white/90 shadow-[0_0_6px_rgba(0,0,0,0.9)]" />
+            <div className="absolute left-1/2 top-1/2 h-[14px] w-[14px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/70 animate-ping opacity-40" />
 
-            {/* ── Real-time Coordinate Readout Pill ── */}
+            {/* ── Real-time Coordinate Readout Pill (Black styling) ── */}
             {coords && (
-              <div className="absolute left-[28px] top-[24px] flex items-center gap-1.5 whitespace-nowrap rounded-md border border-accent/25 bg-bg/90 px-2 py-0.5 shadow-glass-md backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-                <span className="font-mono text-[9px] font-semibold tracking-wider text-text-primary">
+              <div className="absolute left-[26px] top-[22px] flex items-center gap-1.5 whitespace-nowrap rounded-md border border-black/40 bg-black/90 px-2 py-0.5 shadow-lg shadow-black/60 backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                <span className="font-mono text-[9px] font-bold tracking-wider text-white">
                   {coords.lat}°, {coords.lng}°
                 </span>
               </div>

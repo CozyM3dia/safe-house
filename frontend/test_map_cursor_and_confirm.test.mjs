@@ -31,12 +31,13 @@ test('map area integrates custom geospatial cursor and audit confirmation dialog
 
 test('map cursor implements high-visibility HUD reticle and coordinate readout', () => {
   assert.match(mapCursorSource, /safe-map-crosshair/);
-  assert.match(mapCursorSource, /animate-\[spin_12s_linear_infinite\]/);
+  assert.match(mapCursorSource, /border-black/);
   assert.match(mapCursorSource, /containerPointToLatLng/);
   assert.match(mapCursorSource, /pointer-events-none/);
 });
 
-test('audit confirmation dialog asks user before running audit with coordinates preview', () => {
+test('audit confirmation dialog asks user before running audit with coordinates preview and portal', () => {
+  assert.match(dialogSource, /createPortal/);
   assert.match(dialogSource, /Apakah Anda yakin ingin mengaudit lokasi ini\?/);
   assert.match(dialogSource, /Are you sure you want to audit this location\?/);
   assert.match(dialogSource, /pendingAudit\.lat\.toFixed/);
