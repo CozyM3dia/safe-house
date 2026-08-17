@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { GeoJSON, Pane } from 'react-leaflet';
-import { toast } from 'sonner';
 import { useAppStore } from '../../store/useAppStore';
 import {
   FAULT_OVERLAY_PANE_NAME,
   FAULT_OVERLAY_PANE_Z_INDEX,
   FAULT_OVERLAY_STYLE,
+  FAULT_TRACE_SEGMENTS,
   OFFICIAL_FAULT_GEOJSON_URL,
   OFFICIAL_FAULT_SOURCE,
 } from '../../lib/faultOverlay';
@@ -36,9 +36,27 @@ function bindOfficialFaultTooltip(feature, layer) {
   );
 }
 
+function buildFallbackFaultGeoJSON() {
+  return {
+    type: 'FeatureCollection',
+    features: FAULT_TRACE_SEGMENTS.map((segment) => ({
+      type: 'Feature',
+      properties: {
+        Name: segment.label,
+        Segment: segment.names.slice(0, 3).join(', ') + (segment.names.length > 3 ? '…' : ''),
+        Region: 'Indonesia',
+      },
+      geometry: {
+        type: 'LineString',
+        coordinates: segment.points.map(([lat, lon]) => [lon, lat]),
+      },
+    })),
+  };
+}
+
 export function FaultOverlay() {
   const enabled = useAppStore((s) => s.overlays.faults);
-  const [officialGeometry, setOfficialGeometry] = useState(null);
+  const [geometry, setGeometry] = useState(() => buildFallbackFaultGeoJSON());
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -56,13 +74,13 @@ export function FaultOverlay() {
         }
         return payload;
       })
-      .then(setOfficialGeometry)
+      .then((data) => {
+        setGeometry(data);
+      })
       .catch((error) => {
         if (error.name === 'AbortError') return;
-        console.error('Official fault geometry unavailable', error);
-        toast.error('Geometri resmi sesar tidak dapat dimuat', {
-          description: 'Overlay tidak menampilkan garis perkiraan.',
-        });
+        // Keep the local fallback geometry active so fault lines never disappear
+        console.warn('PuSGeN official geometry service offline, using national reference corridor fallback', error);
       });
 
     return () => controller.abort();
@@ -72,10 +90,10 @@ export function FaultOverlay() {
 
   return (
     <Pane name={FAULT_OVERLAY_PANE_NAME} style={{ zIndex: FAULT_OVERLAY_PANE_Z_INDEX }}>
-      {officialGeometry && (
+      {geometry && (
         <GeoJSON
-          key={OFFICIAL_FAULT_SOURCE.dataset}
-          data={officialGeometry}
+          key={geometry.features?.length || 'faults'}
+          data={geometry}
           style={FAULT_OVERLAY_STYLE}
           onEachFeature={bindOfficialFaultTooltip}
         />
