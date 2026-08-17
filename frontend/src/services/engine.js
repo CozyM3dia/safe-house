@@ -4,7 +4,6 @@ export { ACTIVE_FAULTS } from '../lib/faultOverlay.js';
 
 // Legacy engine kept only for migration fixtures. Secrets and provider calls
 // belong in the backend; never read VITE_* API keys in browser code.
-const GEMINI_API_KEY = '';
 const OPENROUTER_API_KEY = '';
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
@@ -341,7 +340,7 @@ const calcLiquefaction = (lat, lon, elevasi) => {
 
     let fs = csr > 0 ? parseFloat((crr / csr).toFixed(2)) : 10.0;
 
-    let riskScore = 0;
+    let riskScore;
     if (fs < 0.5) riskScore = 95;
     else if (fs < 1.0) riskScore = 80;
     else if (fs < 1.2) riskScore = 50;
@@ -583,7 +582,7 @@ export const fetchGeospatialData = async (lat, lon) => {
 
 export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = null, maxOutputTokens = 2048, temperature = 0.4, signal = null) => {
     const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true';
-    const backendBase = import.meta.env.PROD ? '' : 'http://localhost:3001';
+    const backendBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
 
     // Helper functions for each stage to avoid code duplication
     const tryBackendGemini = async () => {
@@ -599,29 +598,6 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
         const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) return text;
         throw new Error("Empty response from backend Gemini proxy");
-    };
-
-    const tryFreeLLMAPI = async () => {
-        const adjustedSysPrompt = responseMimeType === 'application/json' 
-            ? `${sysPrompt}\n\nIMPORTANT: Respond ONLY with a valid JSON object. Do not include markdown code blocks, backticks, or any conversational text. Return raw JSON.`
-            : sysPrompt;
-        
-        const payload = {
-            model: "auto",
-            messages: [
-                { role: "system", content: adjustedSysPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            temperature: temperature
-        };
-        if (responseMimeType === 'application/json') {
-            payload.response_format = { type: "json_object" };
-        }
-        
-        const response = await axios.post(`${backendBase}/api/ai/freellmapi`, payload, { timeout: 30000, signal });
-        const text = response.data?.choices?.[0]?.message?.content;
-        if (text) return text;
-        throw new Error("Empty response from FreeLLMAPI proxy");
     };
 
     const tryBackendOpenRouter = async () => {
@@ -701,7 +677,7 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
             if (status === 429 || status === 503) {
                 console.warn(`Rate limited (${status}), retrying in ${retryDelay}ms...`);
                 await new Promise(r => setTimeout(r, retryDelay));
-                if (signal?.aborted) throw new Error('canceled');
+                if (signal?.aborted) throw new Error('canceled', { cause: e });
                 return await fn();
             }
             throw e;
@@ -715,14 +691,7 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
             return await withRateLimitRetry(tryBackendGemini);
         } catch (e) {
             if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
-            console.warn("Backend Gemini failed, trying FreeLLMAPI...", e.message || e);
-        }
-
-        try {
-            return await tryFreeLLMAPI();
-        } catch (e) {
-            if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
-            console.warn("FreeLLMAPI failed, trying backend OpenRouter...", e.message || e);
+            console.warn("Backend Gemini failed, trying backend OpenRouter...", e.message || e);
         }
 
         try {
@@ -753,11 +722,11 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
     } catch (e) {
         if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
         console.error("All AI Models failed to respond.", e.message || e);
-        throw new Error("All AI models failed");
+        throw new Error("All AI models failed", { cause: e });
     }
 };
 
-export const callAI = async (sysPrompt, userPrompt, useOpenRouter = false, signal = null) => {
+export const callAI = async (sysPrompt, userPrompt, signal = null) => {
     return callAIRobust(sysPrompt, userPrompt, null, 4096, 0.5, signal);
 };
 
@@ -795,7 +764,7 @@ export const generateSummaryCards = async (propertyData, lang = 'id', signal = n
 - "microAnalysis": 50-60 word paragraph on micro-environment (urban density, drainage, road access).
 Respond ONLY with valid JSON. No markdown blocks.`
         : `Anda adalah S.A.F.E AI, konsultan risiko geofisika untuk Indonesia. Berikan objek JSON dengan TEPAT 4 field berikut (Bahasa Indonesia, ringkas):
-- "geoStabilityExplanation": 1-2 kalimat tentang Vs30/kelas situs/likuifaksi
+- "geoStabilityExplanation": 1-2 kalimat tentang Vs30/kelas situs/likuefaksi
 - "seismicExplanation": 1-2 kalimat tentang PGA/nama sesar terdekat & jaraknya
 - "floodEnvExplanation": 1-2 kalimat tentang risiko banjir/AQI/elevasi
 - "microAnalysis": paragraf 50-60 kata tentang mikro lingkungan (kepadatan urban, drainase, akses jalan).
@@ -820,7 +789,7 @@ Balas HANYA dengan JSON valid. Tanpa markdown blocks.`;
             aiError: true, offline: isOffline,
             geoStabilityExplanation: isEnglish 
                 ? `Site analysis shows ${vsText}. Liquefaction risk is estimated at ${liqText}.`
-                : `Analisis situs menunjukkan ${vsText}. Potensi likuifaksi diestimasi pada ${liqText}.`,
+                : `Analisis situs menunjukkan ${vsText}. Potensi likuefaksi diestimasi pada ${liqText}.`,
             seismicExplanation: isEnglish
                 ? `Regional PGA is ${slimPayload.pga}g. ${faultText}`
                 : `Nilai PGA regional adalah ${slimPayload.pga}g. ${faultText}`,
@@ -855,7 +824,7 @@ export const generateDetailedReport = async (propertyData, lang = 'id', signal =
         '### ANALISIS GEOTEKNIK (Kondisi Tanah)',
         'Jelaskan kondisi tanah dengan bahasa yang mudah dipahami:',
         '- Nilai Vs30: tanah ini sekeras batu, padat, atau selunak lumpur? Apa artinya untuk fondasi bangunan?',
-        '- Risiko likuifaksi (tanah yang "meleleh" saat gempa): nilai FS-nya berapa dan artinya apa? Jika FS < 1.0 jelaskan bahaya konkretnya.',
+        '- Risiko likuefaksi (tanah yang "meleleh" saat gempa): nilai FS-nya berapa dan artinya apa? Jika FS < 1.0 jelaskan bahaya konkretnya.',
         '- Jenis fondasi yang dibutuhkan â€” dangkal atau perlu tiang pancang? Estimasi biaya tambahan fondasi dalam jika diperlukan.',
         '- Perbandingan kondisi tanah ini dengan wilayah sekitarnya.',
         '',
@@ -894,7 +863,7 @@ export const generateDetailedReport = async (propertyData, lang = 'id', signal =
         'Apa yang wajib dipenuhi bangunan di lokasi ini:',
         '- SNI 1726:2019 (Desain Gempa): zona seismik dan beban desain yang berlaku untuk lokasi ini',
         '- SNI 2847:2019 (Beton Bertulang): persyaratan khusus untuk kelas situs tanah ini',
-        '- Jika ada risiko likuifaksi (FS < 1.0): sistem fondasi yang diwajibkan dan estimasi biaya tambahan',
+        '- Jika ada risiko likuefaksi (FS < 1.0): sistem fondasi yang diwajibkan dan estimasi biaya tambahan',
         '- Perizinan yang perlu dicek sebelum membeli atau membangun (IMB, KRK, dll.)',
         '',
         '---',
@@ -1035,7 +1004,6 @@ ${reportTemplate}`;
         if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
         console.warn('[S.A.F.E] Detailed report failed:', e.message);
         
-        const d = propertyData.compressedPayload ?? propertyData;
         const fallbackText = lang === 'en' 
             ? `## S.A.F.E AI Detailed Report Unavailable\n\nThe AI service encountered an error while generating the full report (${e.message}). However, you can rely on the summary cards above for the core risk assessment.`
             : `## Laporan Lengkap S.A.F.E AI Tidak Tersedia\n\nLayanan AI mengalami kendala saat menghasilkan laporan lengkap (${e.message}). Namun, Anda tetap dapat mengandalkan kartu ringkasan di atas untuk penilaian risiko utama.`;
@@ -1050,7 +1018,7 @@ ${reportTemplate}`;
 export const generateSiteAuditReport = async (propertyData, lang = 'id', signal = null) => {
     const isEnglish = lang === 'en';
     const langInstruction = isEnglish
-        ? 'IMPORTANT: Write ALL output in English. Use Indonesian place names and technical terms (e.g., sesar, likuifaksi) where standard, but all explanations, headers, and narrative must be in English.'
+        ? 'IMPORTANT: Write ALL output in English. Use Indonesian place names and technical terms (e.g., sesar, likuefaksi) where standard, but all explanations, headers, and narrative must be in English.'
         : 'IMPORTANT: Tulis SEMUA output dalam Bahasa Indonesia. Gunakan istilah teknis (Vs30, PGA, FS) dengan penjelasan sederhana.';
 
     const sysPrompt = `You are S.A.F.E AI, a senior Geophysics & Property Risk Consultant specializing in Indonesian geology (SNI 1726:2019, SNI 2847:2019).
@@ -1106,7 +1074,7 @@ Respond ONLY with valid JSON. Do not include markdown blocks like \`\`\`json.`;
         const d = propertyData.compressedPayload ?? propertyData;
         const fallbackReport = isEnglish 
         ? `# S.A.F.E AUDIT REPORT (OFFLINE MODE)\n\n### GEOTECHNICAL\n- **Vs30**: ${d.liquefaction_analysis?.vs30_est} m/s (${d.liquefaction_analysis?.site_class})\n- **Liquefaction FS**: ${d.liquefaction_analysis?.fs_score}\n\n### SEISMIC\n- **PGA**: ${d.liquefaction_analysis?.pga_surface}g\n- **Nearest Fault**: ${d.seismotectonic?.nearest_fault?.name} (${(d.seismotectonic?.nearest_fault?.distance/1000).toFixed(1)} km)\n\n### ENVIRONMENT\n- **Elevation**: ${d.elevasi}m\n- **Flood Risk**: ${d.flood_hazard}\n- **AQI**: ${d.env_extras?.aqi}\n\n*Note: This is a rule-based fallback report because external AI APIs are unreachable.*`
-        : `# LAPORAN AUDIT S.A.F.E (MODE LURING)\n\n### GEOTEKNIK (TANAH)\n- **Vs30 (Kekerasan Tanah)**: ${d.liquefaction_analysis?.vs30_est} m/s (Kelas ${d.liquefaction_analysis?.site_class})\n- **Likuifaksi FS**: ${d.liquefaction_analysis?.fs_score} (${d.liquefaction_analysis?.status})\n\n### SEISMIK (GEMPA)\n- **PGA Permukaan**: ${d.liquefaction_analysis?.pga_surface}g\n- **Sesar Terdekat**: ${d.seismotectonic?.nearest_fault?.name} berjarak ${(d.seismotectonic?.nearest_fault?.distance/1000).toFixed(1)} km\n\n### LINGKUNGAN & BANJIR\n- **Elevasi**: ${d.elevasi} mdpl\n- **Risiko Banjir**: ${d.flood_hazard}\n- **Kualitas Udara (AQI)**: ${d.env_extras?.aqi}\n\n*Catatan: Ini adalah laporan prosedural darurat (rule-based) karena koneksi ke server AI terputus atau batas kuota habis.*`;
+        : `# LAPORAN AUDIT S.A.F.E (MODE LURING)\n\n### GEOTEKNIK (TANAH)\n- **Vs30 (Kekerasan Tanah)**: ${d.liquefaction_analysis?.vs30_est} m/s (Kelas ${d.liquefaction_analysis?.site_class})\n- **Likuefaksi FS**: ${d.liquefaction_analysis?.fs_score} (${d.liquefaction_analysis?.status})\n\n### SEISMIK (GEMPA)\n- **PGA Permukaan**: ${d.liquefaction_analysis?.pga_surface}g\n- **Sesar Terdekat**: ${d.seismotectonic?.nearest_fault?.name} berjarak ${(d.seismotectonic?.nearest_fault?.distance/1000).toFixed(1)} km\n\n### LINGKUNGAN & BANJIR\n- **Elevasi**: ${d.elevasi} mdpl\n- **Risiko Banjir**: ${d.flood_hazard}\n- **Kualitas Udara (AQI)**: ${d.env_extras?.aqi}\n\n*Catatan: Ini adalah laporan prosedural darurat (rule-based) karena koneksi ke server AI terputus atau batas kuota habis.*`;
 
         return {
             aiError: true, offline: _offline,
@@ -1152,7 +1120,7 @@ Practical advice for the buyer -- which property to choose and what to prepare b
 Conclude with disclaimer.` : `
 
 ### HEAD-TO-HEAD COMPARISON
-Markdown table comparing: Vs30, Elevasi, Likuifaksi FS, PGA Surface, Jarak Patahan, Risiko Banjir, Risiko Tsunami. Use simple words (e.g. "Tanah Lunak" not "Site Class SE").
+Markdown table comparing: Vs30, Elevasi, Likuefaksi FS, PGA Surface, Jarak Patahan, Risiko Banjir, Risiko Tsunami. Use simple words (e.g. "Tanah Lunak" not "Site Class SE").
 
 ### ENVIRONMENTAL CONTRAST
 Compare distance to faults (NAME the faults), flooding risks, and regional hazard history in 2-3 sentences.
@@ -1245,7 +1213,7 @@ Berdasarkan data geospasial, perbandingan langsung kedua properti disajikan di b
 |--------|-----------|-----------|
 | Vs30 (m/s) | ${vs30A} | ${vs30B} |
 | Elevasi (m) | ${elevA} | ${elevB} |
-| Likuifaksi FS | ${fsA} | ${fsB} |
+| Likuefaksi FS | ${fsA} | ${fsB} |
 | PGA Permukaan (g) | ${pgaA} | ${pgaB} |
 | Sesar Terdekat | ${faultA?.name ?? '-'} (${faultDistA}) | ${faultB?.name ?? '-'} (${faultDistB}) |
 | Risiko Banjir | ${floodA} | ${floodB} |

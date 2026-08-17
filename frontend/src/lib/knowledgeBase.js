@@ -19,19 +19,19 @@ export const KNOWLEDGE_BASE = [
   },
   {
     id: "liquefaction_mitigation",
-    title: "Rekayasa Mitigasi Likuifaksi & Stabilisasi Tanah (Soil Improvement)",
+    title: "Rekayasa Mitigasi Likuefaksi & Stabilisasi Tanah (Soil Improvement)",
     category: "Geoteknik & Pondasi",
-    tags: ["likuifaksi", "stabilisasi tanah", "pondasi dalam", "bored pile", "cakar ayam", "rekayasa tanah"],
-    content: `Likuifaksi (liquefaction) adalah fenomena hilangnya kekuatan geser tanah pasir jenuh air akibat beban siklik dinamis seperti gempa bumi, menyebabkan tanah berperilaku seperti cairan. Likuifaksi umumnya terjadi pada tanah berbutir halus-sedang (pasir halus/lanau), dengan muka air tanah dangkal (< 5-10 meter), dan guncangan gempa dengan PGA > 0.15g. Indikator keamanan likuifaksi dinyatakan dalam Safety Factor (FS):
-- FS < 1.0: Rawan Kritis (Likuifaksi pasti terjadi, struktur akan amblas atau miring).
+    tags: ["likuefaksi", "stabilisasi tanah", "pondasi dalam", "bored pile", "cakar ayam", "rekayasa tanah"],
+    content: `Likuefaksi (liquefaction) adalah fenomena hilangnya kekuatan geser tanah pasir jenuh air akibat beban siklik dinamis seperti gempa bumi, menyebabkan tanah berperilaku seperti cairan. Likuefaksi umumnya terjadi pada tanah berbutir halus-sedang (pasir halus/lanau), dengan muka air tanah dangkal (< 5-10 meter), dan guncangan gempa dengan PGA > 0.15g. Indikator keamanan likuefaksi dinyatakan dalam Safety Factor (FS):
+- FS < 1.0: Rawan Kritis (Likuefaksi pasti terjadi, struktur akan amblas atau miring).
 - FS 1.0 - 1.2: Rawan Menengah (Perlu mitigasi dan penguatan tanah).
-- FS > 1.2: Aman dari risiko likuifaksi.
+- FS > 1.2: Aman dari risiko likuefaksi.
 
-Mitigasi Rekayasa Sipil untuk Likuifaksi:
+Mitigasi Rekayasa Sipil untuk Likuefaksi:
 1. Deep Cement Mixing (DCM): Penyuntikan bubur semen ke dalam tanah pasir menggunakan bor auger untuk membentuk kolom tanah-semen (soil-cement columns) yang kaku, mencegah pergeseran lateral. Biaya: Rp 900.000 - Rp 1.600.000 per meter kubik tanah yang diperkuat.
 2. Vibroflotation / Soil Compaction: Pemadatan tanah pasir longgar menggunakan alat getar (vibroflot) dikombinasikan dengan penyemprotan air bertekanan tinggi untuk merapatkan butiran tanah. Biaya: Rp 450.000 - Rp 800.000 per meter kubik.
 3. Stone Columns (Kolom Batu): Pembuatan lubang vertikal yang diisi dengan agregat batu pecah yang dipadatkan. Berfungsi meningkatkan kekuatan geser tanah sekaligus sebagai jalur drainase cepat untuk mereduksi tekanan air pori yang naik akibat gempa. Biaya: Rp 1.200.000 - Rp 2.000.000 per meter lari.
-4. Desain Pondasi Mat/Raft Foundation: Pondasi pelat beton tebal yang menutupi seluruh area bangunan untuk menyebarkan beban secara merata dan mencegah kemiringan lokal bangunan saat likuifaksi parsial terjadi.`
+4. Desain Pondasi Mat/Raft Foundation: Pondasi pelat beton tebal yang menutupi seluruh area bangunan untuk menyebarkan beban secara merata dan mencegah kemiringan lokal bangunan saat likuefaksi parsial terjadi.`
   },
   {
     id: "flood_subsidence_coastal",
@@ -67,8 +67,8 @@ Zona Kawasan Rawan Bencana (KRB) Gunung Api (Badan Geologi):
     category: "Hukum & Investasi",
     tags: ["RTRW", "zoning", "tata ruang", "ZNT", "nilai tanah", "investasi", "asuransi"],
     content: `Rencana Tata Ruang Wilayah (RTRW) dari Kementerian ATR/BPN membagi lahan menjadi dua fungsi utama: Kawasan Lindung (daerah tangkapan air, sempadan sungai, zona rawan longsor/gempa) dan Kawasan Budidaya (pemukiman, komersial, industri). 
-- Membeli tanah di Zona Merah Bencana (misal: tepat di jalur sesar Lembang, zona bahaya likuifaksi Palu, atau zona rawan longsor tinggi) akan mengakibatkan penolakan pengajuan Persetujuan Bangunan Gedung (PBG, pengganti IMB). Bangunan tanpa PBG ilegal dan dapat dibongkar paksa.
-- Zona Nilai Tanah (ZNT) yang dirilis ATR/BPN mencerminkan harga pasar tanah rata-rata. Tanah yang berada di zona risiko geologis tinggi (banjir tahunan, sesar aktif < 5 km, atau likuifaksi) mengalami depresiasi nilai aset sebesar 20% hingga 45%. Properti di daerah rawan likuifaksi umumnya ditolak oleh bank BUMN/swasta untuk agunan pinjaman atau pengajuan Kredit Pemilikan Rumah (KPR).
+- Membeli tanah di Zona Merah Bencana (misal: tepat di jalur sesar Lembang, zona bahaya likuefaksi Palu, atau zona rawan longsor tinggi) akan mengakibatkan penolakan pengajuan Persetujuan Bangunan Gedung (PBG, pengganti IMB). Bangunan tanpa PBG ilegal dan dapat dibongkar paksa.
+- Zona Nilai Tanah (ZNT) yang dirilis ATR/BPN mencerminkan harga pasar tanah rata-rata. Tanah yang berada di zona risiko geologis tinggi (banjir tahunan, sesar aktif < 5 km, atau likuefaksi) mengalami depresiasi nilai aset sebesar 20% hingga 45%. Properti di daerah rawan likuefaksi umumnya ditolak oleh bank BUMN/swasta untuk agunan pinjaman atau pengajuan Kredit Pemilikan Rumah (KPR).
 - Premi Asuransi Kebakaran dan Gempa Bumi (FLEXAS & Earthquake) melonjak drastis hingga 3-5 kali lipat tarif standar di area rawan bencana. Biaya premi asuransi gempa berkisar antara 0.1% hingga 0.25% dari nilai total bangunan per tahun untuk wilayah zona gempa tinggi.`
   }
 ];

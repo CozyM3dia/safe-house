@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 
 import HeroSection from '../components/landing/HeroSection';
@@ -18,7 +18,7 @@ const COPY = {
     heroBadge: 'Desk study geoteknik — InaRISK BNPB · USGS · PuSGeN',
     heroTitlePrefix: 'Parameter Teknis PBG, ',
     heroTitleItalic: 'Otomatis',
-    heroSub: 'Kelas situs SNI 1726:2019, PGA desain, FS likuifaksi, dan bahaya banjir — dari satu titik koordinat, dalam dua menit. Untuk konsultan perizinan, developer, dan konsultan geoteknik.',
+    heroSub: 'Kelas situs SNI 1726:2019, PGA desain, FS likuefaksi, dan bahaya banjir — dari satu titik koordinat, dalam dua menit. Untuk konsultan perizinan, developer, dan konsultan geoteknik.',
     heroCTA: 'Coba Gratis',
     demoLoc: 'Bandar Lampung',
     demoRisk: 'Risiko Sedang',
@@ -34,7 +34,7 @@ const COPY = {
     aboutFactorVolcanic: 'Risiko Vulkanik',
     aboutFactorVolcanicDesc: 'Mendeteksi letak gunung api aktif terdekat dan mencocokkan koordinat dengan Kawasan Rawan Bencana (KRB) vulkanis PVMBG.',
     aboutFactorGeotech: 'Risiko Geoteknik',
-    aboutFactorGeotechDesc: 'Mengestimasi kelas situs tanah Vs30, menghitung Factor of Safety (FS) likuifaksi tanah secara asinkron, dan mengevaluasi kemiringan lereng.',
+    aboutFactorGeotechDesc: 'Mengestimasi kelas situs tanah Vs30, menghitung Factor of Safety (FS) likuefaksi tanah secara asinkron, dan mengevaluasi kemiringan lereng.',
 
     processTitleLabel: 'CARA KERJA',
     processHeading: 'Proses Audit dalam 3 Langkah',
@@ -43,14 +43,32 @@ const COPY = {
     processStep2Title: '2. Penarikan Data Geospasial',
     processStep2Desc: 'Sistem menarik data spasial secara paralel dari InaRISK BNPB, Open-Meteo, gempa USGS, dan objek lingkungan OpenStreetMap — dengan parameter PGA mengacu PuSGeN.',
     processStep3Title: '3. Laporan Parameter SNI',
-    processStep3Desc: 'Sistem menghitung kelas situs Vs30, FS likuifaksi, PGA desain, dan bahaya banjir, lalu menyusun laporan siap lampir dengan sumber data tercantum — mengacu SNI 1726:2019.',
+    processStep3Desc: 'Sistem menghitung kelas situs Vs30, FS likuefaksi, PGA desain, dan bahaya banjir, lalu menyusun laporan siap lampir dengan sumber data tercantum — mengacu SNI 1726:2019.',
 
     disclaimerTitleLabel: 'TRANSPARANSI DATA',
     disclaimerHeading: 'Sumber Data & Disclaimer Hukum',
     disclaimerText: 'Analisis kami menggunakan data publik dari BNPB InaRISK, BMKG, PVMBG, USGS, dan OpenStreetMap. Laporan diagnostik awal berbasis AI ini TIDAK menggantikan uji tanah laboratorium atau survei geoteknik profesional langsung di lapangan. Konsultasikan dengan ahli struktur berlisensi sebelum mengambil keputusan finansial final.',
+    disclaimerIntro: 'S.A.F.E House memetakan koordinat mikro Anda secara langsung ke basis data spasial resmi yang dikelola pemerintah Indonesia dan lembaga kegempaan global.',
+    disclaimerProfessional: 'DISCLAIMER PROFESIONAL',
+    disclaimerSupports: 'MENDUKUNG DIAGNOSIS',
+    disclaimerDoesNotReplace: 'TIDAK MENGGANTIKAN',
+    disclaimerSupport1: 'Pencocokan zona KRB vulkanik',
+    disclaimerSupport2: 'Deteksi sesar aktif < 20 km',
+    disclaimerSupport3: 'PGA & Factor of Safety likuefaksi',
+    disclaimerLimit1: 'Uji penetrasi tanah (SPT/CPT)',
+    disclaimerLimit2: 'Sertifikasi Laik Fungsi (SLF)',
+    disclaimerLimit3: 'Desain fondasi sipil rinci',
+    sourceInaRole: 'Bencana Mikro & Kerentanan Spasial',
+    sourceInaDesc: 'Badan Nasional Penanggulangan Bencana',
+    sourcePvmRole: 'Sesar Aktif & Kawasan Vulkanik (KRB)',
+    sourcePvmDesc: 'Pusat Vulkanologi dan Mitigasi Bencana Geologi',
+    sourceBmkgRole: 'Katalis Seismik & Peak Ground Acceleration',
+    sourceBmkgDesc: 'Badan Meteorologi Klimatologi dan Geofisika',
+    sourceUsgsRole: 'Historis Kekuatan Gempa Bumi regional',
+    sourceUsgsDesc: 'United States Geological Survey',
 
     faqHeading: 'Pertanyaan yang Sering Diajukan',
-    faqSub: 'Temukan jawaban cepat seputar audit geologi, data spasial, dan keandalan sistem audit kognitif S.A.F.E House.',
+    faqSub: 'Temukan jawaban cepat seputar audit geologi, data spasial, dan batasan analisis risiko S.A.F.E House.',
     faqQ1: 'Apa itu S.A.F.E House?',
     faqA1: 'S.A.F.E House (Seismic Analysis for Foundation Evaluation) adalah platform audit geospasial berbasis AI untuk menganalisis risiko kebencanaan properti secara cepat dan akurat di Indonesia.',
     faqQ2: 'Dari mana asal data kerawanan bencana di sistem ini?',
@@ -58,9 +76,26 @@ const COPY = {
     faqQ3: 'Apakah laporan audit AI ini 100% akurat?',
     faqA3: 'Analisis awal ini merupakan penaksiran cepat berbasis data spasial publik. Hasil analisis ini tidak menggantikan uji tanah laboratorium (sondir/SPT) atau survei langsung insinyur geoteknik di lapangan.',
     faqQ4: 'Bagaimana cara kerja simulasi PGA dan gempa di peta?',
-    faqA4: 'Pengguna dapat memilih titik koordinat apa saja di Indonesia. Sistem akan menghitung percepatan tanah (PGA) berdasarkan model redaman gempa, memperkirakan respon seismik lokal (Vs30), dan menganalisis potensi likuifaksi asinkron secara langsung.',
+    faqA4: 'Pengguna dapat memilih titik koordinat apa saja di Indonesia. Sistem akan menghitung percepatan tanah (PGA) berdasarkan model redaman gempa, memperkirakan respon seismik lokal (Vs30), dan menganalisis potensi likuefaksi asinkron secara langsung.',
     faqQ5: 'Apakah riwayat pencarian lokasi saya aman?',
     faqA5: 'Ya. Semua koordinat dan histori pencarian properti disimpan secara lokal di dalam local storage peramban Anda. Kami tidak menyimpan histori pencarian Anda di server kami untuk menjamin kerahasiaan kepemilikan aset properti Anda.',
+
+    aboutMapLabel: 'PETA RISIKO BERBASIS DATA TERBUKA',
+    aboutLocalPrompt: 'PILIH TITIK UNTUK MELIHAT RISIKO LOKAL',
+    processDataReady: 'SUMBER DATA GEOSPASIAL · TERSEDIA',
+    processStageLocation: 'TAHAP 01 / LOKASI',
+    processStagePull: 'TAHAP 02 / PENARIKAN DATA',
+    processStageDiagnostic: 'TAHAP 03 / DIAGNOSTIK',
+    processSelection: 'SELEKSI TITIK',
+    processInjection: 'INJEKSI DATA API',
+    processReport: 'LAPORAN GEOLOGI',
+    processMapView: 'TAMPILAN PEMILIHAN TITIK S.A.F.E',
+    processPipeline: 'PIPELINE PENGUMPULAN DATA ASINKRON',
+    processListening: 'MENDENGARKAN',
+    processConnecting: 'Menghubungkan ke API geospasial…',
+    processTotalCalls: 'TOTAL PANGGILAN: 4 ENDPOINT API',
+    processAggregate: 'AGREGAT: 0,92 DETIK',
+    processReportDrawer: 'PANEL LAPORAN BERBASIS SNI',
 
     ctaHeading: 'Siapkan parameter PBG\ntanpa buka lima portal.',
     ctaSub: 'Satu koordinat, parameter SNI 1726:2019 dan bahaya banjir siap lampir dalam dua menit.',
@@ -78,7 +113,7 @@ const COPY = {
 
     aboutTitleLabel: 'ABOUT S.A.F.E HOUSE',
     aboutHeading: 'Build with Certainty, Not Speculation',
-    aboutText: 'S.A.F.E House (Seismic Analysis for Foundation Evaluation) is the first integrated property geological risk analysis platform in Indonesia. We combine national spatial data with cognitive AI to provide instant risk assessments before you build, buy, or rent property.',
+    aboutText: 'S.A.F.E House (Seismic Analysis for Foundation Evaluation) combines national spatial data with an AI-assisted explanation layer to provide rapid, transparent risk summaries before you build, buy, or rent property.',
     
     aboutFactorSeismic: 'Seismic Risk',
     aboutFactorSeismicDesc: 'Analyzes proximity to regional active faults, PuSGeN Peak Ground Acceleration (PGA), and megathrust potentials.',
@@ -101,9 +136,27 @@ const COPY = {
     disclaimerTitleLabel: 'DATA TRANSPARENCY',
     disclaimerHeading: 'Data Sources & Legal Disclaimer',
     disclaimerText: 'Our analysis uses public data from BNPB InaRISK, BMKG, PVMBG, USGS, and OpenStreetMap. This preliminary diagnostic AI report does NOT replace laboratory soil testing or professional on-site geotechnical surveys. Consult a licensed structural engineer before making final financial decisions.',
+    disclaimerIntro: 'S.A.F.E House maps your micro-coordinate directly to official spatial databases maintained by Indonesian government agencies and global seismological institutions.',
+    disclaimerProfessional: 'PROFESSIONAL DISCLAIMER',
+    disclaimerSupports: 'SUPPORTS SCREENING',
+    disclaimerDoesNotReplace: 'DOES NOT REPLACE',
+    disclaimerSupport1: 'Volcanic hazard-zone matching',
+    disclaimerSupport2: 'Active-fault detection within 20 km',
+    disclaimerSupport3: 'PGA & liquefaction Factor of Safety',
+    disclaimerLimit1: 'Soil penetration testing (SPT/CPT)',
+    disclaimerLimit2: 'Occupancy certification (SLF)',
+    disclaimerLimit3: 'Detailed civil foundation design',
+    sourceInaRole: 'Micro Hazards & Spatial Vulnerability',
+    sourceInaDesc: 'National Disaster Management Agency',
+    sourcePvmRole: 'Active Faults & Volcanic Zones (KRB)',
+    sourcePvmDesc: 'Center for Volcanology and Geological Hazard Mitigation',
+    sourceBmkgRole: 'Seismic Catalyst & Peak Ground Acceleration',
+    sourceBmkgDesc: 'Agency for Meteorology, Climatology and Geophysics',
+    sourceUsgsRole: 'Regional Earthquake Magnitude History',
+    sourceUsgsDesc: 'United States Geological Survey',
 
     faqHeading: 'Frequently Asked Questions',
-    faqSub: 'Find quick answers regarding geological audits, spatial data, and the reliability of the S.A.F.E House cognitive audit system.',
+    faqSub: 'Find quick answers about geological audits, spatial data, and the limits of S.A.F.E House risk assessments.',
     faqQ1: 'What is S.A.F.E House?',
     faqA1: 'S.A.F.E House (Seismic Analysis for Foundation Evaluation) is an AI-powered geospatial audit platform that instantly analyzes property natural hazard risks in Indonesia.',
     faqQ2: 'Where does the hazard data come from?',
@@ -114,6 +167,23 @@ const COPY = {
     faqA4: 'You can choose any coordinate in Indonesia. The system calculates ground acceleration (PGA) based on attenuation models, estimates local site class response (Vs30), and runs an asynchronous soil liquefaction analysis.',
     faqQ5: 'Is my property location history secure?',
     faqA5: 'Yes. All audited coordinates and search histories are stored locally in your browser\'s local storage. We do not store your private asset searches on our servers to ensure full confidentiality.',
+
+    aboutMapLabel: 'OPEN-DATA RISK MAP',
+    aboutLocalPrompt: 'SELECT A POINT TO VIEW LOCAL RISK',
+    processDataReady: 'GEOSPATIAL DATA SOURCES · AVAILABLE',
+    processStageLocation: 'STAGE 01 / LOCATION',
+    processStagePull: 'STAGE 02 / DATA FETCH',
+    processStageDiagnostic: 'STAGE 03 / DIAGNOSTICS',
+    processSelection: 'POINT SELECTION',
+    processInjection: 'API DATA INJECTION',
+    processReport: 'GEOLOGICAL REPORT',
+    processMapView: 'S.A.F.E POINT SELECTION VIEW',
+    processPipeline: 'ASYNC DATA GATHERING PIPELINE',
+    processListening: 'LISTENING',
+    processConnecting: 'Connecting to geospatial APIs…',
+    processTotalCalls: 'TOTAL CALLS: 4 API ENDPOINTS',
+    processAggregate: 'AGGREGATE: 0.92 SEC',
+    processReportDrawer: 'SNI-COMPLIANT REPORT DRAWER',
 
     ctaHeading: 'Don\'t buy property\nwith your eyes closed.',
     ctaSub: 'Evaluate geological risk and protect your property investment before it is too late.',
@@ -140,7 +210,7 @@ export default function LandingPage() {
       metaDesc.name = 'description';
       document.head.appendChild(metaDesc);
     }
-    metaDesc.content = "Audit kerentanan geologis properti instan di Indonesia. Analisis sesar aktif, bahaya banjir, letusan gunung api, dan likuifaksi tanah berbasis data spasial InaRISK BNPB.";
+    metaDesc.content = "Audit kerentanan geologis properti instan di Indonesia. Analisis sesar aktif, bahaya banjir, letusan gunung api, dan likuefaksi tanah berbasis data spasial InaRISK BNPB.";
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);

@@ -77,7 +77,7 @@ export default function ProcessSection({ t }) {
         GRID REF: 107.6152°E / 6.7820°S
       </div>
       <div className="absolute right-[5%] bottom-[15%] text-[9px] font-mono text-accent/15 select-none pointer-events-none">
-        DATALOGGER CHANNEL A & B STATUS: NOMINAL
+        {t('processDataReady', 'SUMBER DATA GEOSPASIAL · TERSEDIA')}
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -111,7 +111,7 @@ export default function ProcessSection({ t }) {
               variants={slideLeft}
               className="w-full lg:w-[45%] flex flex-col"
             >
-              <span className="text-[11px] font-mono text-accent/60 uppercase tracking-widest mb-2 font-bold">TAHAP 01 / LOKASI</span>
+              <span className="text-[11px] font-mono text-accent/60 uppercase tracking-widest mb-2 font-bold">{t('processStageLocation', 'TAHAP 01 / LOKASI')}</span>
               <h3 className="font-display text-3xl md:text-4xl text-foreground font-medium leading-snug">
                 {t('processStep1Title', '1. Pilih Titik Properti')}
               </h3>
@@ -123,7 +123,7 @@ export default function ProcessSection({ t }) {
               <div className="mt-8 flex items-center gap-3">
                 <span className="h-6 w-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-[10px] font-bold text-accent">01</span>
                 <div className="h-[1px] w-24 bg-border/60" />
-                <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-mono">SELEKSI TITIK</span>
+                <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-mono">{t('processSelection', 'SELEKSI TITIK')}</span>
               </div>
             </motion.div>
 
@@ -142,7 +142,7 @@ export default function ProcessSection({ t }) {
               />
               <div className="absolute inset-0 border border-white/5 rounded-2xl pointer-events-none" />
               <div className="absolute top-3 left-3 bg-[#0a0705]/95 border border-accent/20 rounded px-2.5 py-1 text-[8px] font-mono tracking-wider text-accent backdrop-blur-sm">
-                MAP VIEW: S.A.F.E POINT SELECTION
+                {t('processMapView', 'TAMPILAN PEMILIHAN TITIK S.A.F.E')}
               </div>
             </motion.div>
           </div>
@@ -157,7 +157,7 @@ export default function ProcessSection({ t }) {
               variants={slideRight}
               className="w-full lg:w-[45%] flex flex-col"
             >
-              <span className="text-[11px] font-mono text-accent/60 uppercase tracking-widest mb-2 font-bold">TAHAP 02 / PULL</span>
+              <span className="text-[11px] font-mono text-accent/60 uppercase tracking-widest mb-2 font-bold">{t('processStagePull', 'TAHAP 02 / PENARIKAN DATA')}</span>
               <h3 className="font-display text-3xl md:text-4xl text-foreground font-medium leading-snug">
                 {t('processStep2Title', '2. Penarikan Data Geospasial')}
               </h3>
@@ -169,7 +169,7 @@ export default function ProcessSection({ t }) {
               <div className="mt-8 flex items-center gap-3">
                 <span className="h-6 w-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-[10px] font-bold text-accent">02</span>
                 <div className="h-[1px] w-24 bg-border/60" />
-                <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-mono">INJEKSI DATA API</span>
+                <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-mono">{t('processInjection', 'INJEKSI DATA API')}</span>
               </div>
             </motion.div>
 
@@ -182,10 +182,10 @@ export default function ProcessSection({ t }) {
               className="w-full lg:w-[50%] h-[280px] bg-[#0c0806]/95 rounded-2xl border border-border/85 p-5 relative overflow-hidden flex flex-col justify-between font-mono shadow-[0_4px_30px_rgba(0,0,0,0.4)]"
             >
               <div className="flex justify-between items-center text-[8px] text-muted-foreground/80 tracking-wider">
-                <span>ASYNC DATA GATHERING PIPELINE</span>
+                <span>{t('processPipeline', 'PIPELINE PENGUMPULAN DATA ASINKRON')}</span>
                 <span className="text-green-400 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  LISTENING
+                  {t('processListening', 'MENDENGARKAN')}
                 </span>
               </div>
 
@@ -197,7 +197,7 @@ export default function ProcessSection({ t }) {
               >
                 {apiLogs.length === 0 ? (
                   <div className="text-[9px] text-muted-foreground/40 text-center py-4">
-                    Menghubungkan ke API Geospasial...
+                    {t('processConnecting', 'Menghubungkan ke API geospasial…')}
                   </div>
                 ) : (
                   apiLogs.map((log, i) => (
@@ -233,8 +233,8 @@ export default function ProcessSection({ t }) {
               />
 
               <div className="flex justify-between items-end text-[7px] text-muted-foreground/50 border-t border-border/20 pt-2">
-                <span>TOTAL CALLS: 4 API ENDPOINTS</span>
-                <span>AGGREGATE: 0.92 SEC</span>
+                <span>{t('processTotalCalls', 'TOTAL PANGGILAN: 4 ENDPOINT API')}</span>
+                <span>{t('processAggregate', 'AGREGAT: 0,92 DETIK')}</span>
               </div>
             </motion.div>
           </div>
@@ -249,7 +249,7 @@ export default function ProcessSection({ t }) {
               variants={slideLeft}
               className="w-full lg:w-[45%] flex flex-col"
             >
-              <span className="text-[11px] font-mono text-accent/60 uppercase tracking-widest mb-2 font-bold">TAHAP 03 / DIAGNOSTIC</span>
+              <span className="text-[11px] font-mono text-accent/60 uppercase tracking-widest mb-2 font-bold">{t('processStageDiagnostic', 'TAHAP 03 / DIAGNOSTIK')}</span>
               <h3 className="font-display text-3xl md:text-4xl text-foreground font-medium leading-snug">
                 {t('processStep3Title', '3. Laporan Parameter SNI')}
               </h3>
@@ -261,7 +261,7 @@ export default function ProcessSection({ t }) {
               <div className="mt-8 flex items-center gap-3">
                 <span className="h-6 w-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-[10px] font-bold text-accent">03</span>
                 <div className="h-[1px] w-24 bg-border/60" />
-                <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-mono">LAPORAN GEOLOGI</span>
+                <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-mono">{t('processReport', 'LAPORAN GEOLOGI')}</span>
               </div>
             </motion.div>
 
@@ -282,7 +282,7 @@ export default function ProcessSection({ t }) {
               </div>
               <div className="absolute inset-0 border border-white/5 rounded-2xl pointer-events-none" />
               <div className="absolute top-3 left-3 bg-[#0a0705]/95 border border-accent/20 rounded px-2.5 py-1 text-[8px] font-mono tracking-wider text-accent backdrop-blur-sm">
-                SNI COMPLIANT RAG REPORT DRAWER
+                {t('processReportDrawer', 'PANEL LAPORAN BERBASIS SNI')}
               </div>
             </motion.div>
           </div>

@@ -1,32 +1,20 @@
-# --- Stage 1: Build the React Frontend ---
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
+# S.A.F.E House backend container.
+# The frontend is deployed separately (Vercel); this image runs the
+# canonical FastAPI service only.
+FROM python:3.12-slim
 
-# Copy dependencies first for caching
-COPY frontend/package*.json ./
-RUN npm ci
-
-# Copy source and build
-COPY frontend/ ./
-RUN npm run build
-
-# --- Stage 2: Prepare the Backend and Final Image ---
-FROM node:20-alpine
 WORKDIR /app
 
-# Copy backend dependencies
-COPY backend/package*.json ./backend/
-RUN npm ci --prefix backend --only=production
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8000
 
-# Copy backend source
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
 COPY backend/ ./backend/
 
-# Copy built frontend assets from Stage 1
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+WORKDIR /app/backend
+EXPOSE 8000
 
-# Expose port (Cloud Run will override this using the PORT env var)
-ENV PORT=3001
-EXPOSE 3001
-
-# Start the unified application
-CMD ["npm", "--prefix", "backend", "start"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

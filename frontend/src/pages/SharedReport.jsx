@@ -6,6 +6,7 @@ import { getSharedReport } from '../services/api';
 import { SafeScoreCard } from '../components/cards/SafeScoreCard';
 import { RadarCard } from '../components/cards/RadarCard';
 import { AddressCard } from '../components/cards/AddressCard';
+import { useT } from '../hooks/useTranslation';
 
 /**
  * Halaman audit publik — /laporan/:slug.
@@ -16,17 +17,20 @@ import { AddressCard } from '../components/cards/AddressCard';
  */
 export default function SharedReport() {
   const { slug } = useParams();
+  const t = useT();
   const [state, setState] = useState({ status: 'loading', data: null, error: null });
 
   useEffect(() => {
     let alive = true;
+    // Reset the async view when the route slug changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState({ status: 'loading', data: null, error: null });
     getSharedReport(slug)
       .then((data) => {
         if (!alive) return;
         // Judul dinamis untuk berbagi sosial dan tab peramban.
         if (data?.address) {
-          document.title = `Audit Risiko ${data.address.split(',')[0]} — S.A.F.E House`;
+          document.title = `${t('report.locationAudit')} ${data.address.split(',')[0]} — S.A.F.E House`;
         }
         setState({ status: 'ready', data, error: null });
       })
@@ -37,7 +41,7 @@ export default function SharedReport() {
     return () => {
       alive = false;
     };
-  }, [slug]);
+  }, [slug, t]);
 
   return (
     <div className="min-h-screen bg-bg text-text-primary">
@@ -49,9 +53,9 @@ export default function SharedReport() {
           </Link>
           <Link
             to="/app"
-            className="btn-press rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-bg"
+            className="btn-press inline-flex min-h-[44px] items-center rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-bg"
           >
-            Buat Audit
+            {t('report.createAudit')}
           </Link>
         </div>
       </header>
@@ -60,20 +64,20 @@ export default function SharedReport() {
         {state.status === 'loading' && (
           <div className="flex flex-col items-center justify-center py-24 text-text-muted">
             <Loader2 className="mb-3 h-6 w-6 animate-spin text-accent" />
-            <p className="text-sm">Memuat laporan…</p>
+            <p className="text-sm">{t('report.loading')}</p>
           </div>
         )}
 
         {state.status === 'error' && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <AlertTriangle className="mb-3 h-8 w-8 text-risk-moderate" />
-            <h1 className="mb-1 font-display text-lg font-semibold">Laporan tidak ditemukan</h1>
+            <h1 className="mb-1 font-display text-lg font-semibold">{t('report.notFound')}</h1>
             <p className="mb-6 max-w-sm text-sm text-text-muted">{state.error}</p>
             <Link
               to="/app"
-              className="btn-press inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-bg"
+              className="btn-press inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-bg"
             >
-              Buat audit sendiri <ArrowRight className="h-4 w-4" />
+              {t('report.createOwn')} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         )}
@@ -87,6 +91,7 @@ export default function SharedReport() {
 }
 
 function ReportBody({ property }) {
+  const t = useT();
   const g = property.geotech || {};
   const h = property.hazard || {};
   const fault = g.nearest_fault || {};
@@ -98,7 +103,7 @@ function ReportBody({ property }) {
         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
         <div>
           <h1 className="font-display text-lg font-semibold leading-tight">
-            Audit Risiko Lokasi
+            {t('report.locationAudit')}
           </h1>
           <p className="text-sm text-text-secondary">{property.address}</p>
           <p className="mt-0.5 font-data text-xs text-text-muted">
@@ -110,74 +115,72 @@ function ReportBody({ property }) {
       <SafeScoreCard property={property} />
 
       <div>
-        <SectionLabel>Analisis Risiko</SectionLabel>
+        <SectionLabel>{t('report.riskAnalysis')}</SectionLabel>
         <RadarCard propertyA={property} />
       </div>
 
       {/* Key technical figures */}
       <div>
-        <SectionLabel>Ringkasan Geoteknik</SectionLabel>
+        <SectionLabel>{t('report.geotechSummary')}</SectionLabel>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Stat label="FS Likuefaksi" value={g.fs} sub={g.status} />
-          <Stat label="Kelas Situs" value={g.site_class} sub={g.vs30 ? `${g.vs30} m/s` : '—'} />
-          <Stat label="PGA Desain" value={g.pga} sub={`Fa ${g.fa ?? '—'}`} />
+          <Stat label={t('report.liquefactionFs')} value={g.fs} sub={g.status} />
+          <Stat label={t('report.siteClass')} value={g.site_class} sub={g.vs30 ? `${g.vs30} m/s` : '—'} />
+          <Stat label={t('report.designPga')} value={g.pga} sub={`Fa ${g.fa ?? '—'}`} />
           <Stat
-            label="Sesar Terdekat"
+            label={t('report.nearestFault')}
             value={fault.distance_km != null ? `${fault.distance_km} km` : '—'}
             sub={fault.name}
           />
           <Stat
-            label="Banjir"
+            label={t('report.flood')}
             value={h.flood_label?.split(' ')[0] || '—'}
           />
           <Stat
-            label="Tsunami"
+            label={t('report.tsunami')}
             value={h.tsunami || '—'}
           />
         </div>
       </div>
 
       <div>
-        <SectionLabel>Lokasi</SectionLabel>
+        <SectionLabel>{t('report.location')}</SectionLabel>
         <AddressCard property={property} />
       </div>
 
       {/* Honest note when data was missing */}
       {property.sources_failed?.length > 0 && (
         <p className="rounded-lg border border-[rgba(255,210,170,0.1)] bg-[rgba(255,210,170,0.03)] px-3 py-2 text-xs text-text-muted">
-          Sebagian sumber data tidak tersedia saat audit ini dibuat
+          {t('report.sourcesUnavailable')}
           ({property.sources_failed.join(', ')}). Angka terkait ditandai sebagai
-          tidak diketahui, bukan aman.
+          {' '}{t('report.unknownNotSafe')}
         </p>
       )}
 
       {property.audit_status && property.audit_status !== 'valid' && (
         <p className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-300">
           Audit {property.audit_status}; confidence {property.confidence ?? 0}%.
-          Hasil ini belum merupakan penilaian engineering final.
+          {' '}{t('report.notFinal')}
         </p>
       )}
 
       {/* Upvote-loop CTA */}
       <div className="mt-2 rounded-2xl border border-accent/20 bg-accent/5 p-5 text-center">
         <h2 className="mb-1 font-display text-base font-semibold">
-          Cek risiko properti Anda sendiri
+          {t('report.checkYourProperty')}
         </h2>
         <p className="mx-auto mb-4 max-w-md text-sm text-text-secondary">
-          Banjir, likuefaksi, stabilitas tanah, dan kegempaan — dari satu titik
-          koordinat, dalam dua menit. Gratis.
+          {t('report.ctaDescription')}
         </p>
         <Link
           to="/app"
-          className="btn-press inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-bg"
+          className="btn-press inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-bg"
         >
-          Mulai Audit <ArrowRight className="h-4 w-4" />
+          {t('report.startAudit')} <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
 
       <p className="pb-8 pt-2 text-center text-[11px] text-text-muted">
-        Audit ini adalah penyaringan awal (desk study), bukan pengganti uji
-        tanah lapangan. Sumber: InaRISK BNPB, USGS, Open-Meteo, PuSGeN.
+        {t('report.disclaimer')} InaRISK BNPB, USGS, Open-Meteo, PuSGeN.
       </p>
     </div>
   );

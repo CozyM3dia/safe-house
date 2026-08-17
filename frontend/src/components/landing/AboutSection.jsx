@@ -75,7 +75,7 @@ export default function AboutSection({ t }) {
             {/* laser scanner beam */}
             <div className="absolute top-0 inset-x-0 h-0.5 bg-accent/40 shadow-[0_0_12px_rgba(212,149,106,0.7)] animate-scanning" />
             <div className="absolute top-3 left-3 bg-[#0a0705]/95 border border-accent/20 rounded px-2.5 py-1 text-[8px] font-mono tracking-wider text-accent backdrop-blur-sm">
-              RAG GEO-DIAGNOSTIC VISUALIZATION
+              {t('aboutMapLabel', 'PETA RISIKO BERBASIS DATA TERBUKA')}
             </div>
           </div>
         </motion.div>
@@ -135,7 +135,7 @@ export default function AboutSection({ t }) {
                   <line x1="0" y1="45" x2="200" y2="45" stroke="rgba(255,210,170,0.05)" strokeDasharray="3,3" />
                 </svg>
                 <div className="text-[7px] font-mono text-muted-foreground/50 text-right mt-1">
-                  TAP TO TRIGGER EARTHQUAKE SIMULATION
+                  {t('aboutLocalPrompt', 'PILIH TITIK UNTUK MELIHAT RISIKO LOKAL')}
                 </div>
               </div>
             </div>
@@ -264,7 +264,7 @@ export default function AboutSection({ t }) {
                   </h3>
                 </div>
                 <p className="mt-3 text-xs md:text-sm text-muted-foreground leading-relaxed font-body">
-                  {t('aboutFactorGeotechDesc', 'Mengestimasi kelas situs tanah Vs30, menghitung Factor of Safety (FS) likuifaksi tanah secara asinkron, dan mengevaluasi kemiringan lereng.')}
+                  {t('aboutFactorGeotechDesc', 'Mengestimasi kelas situs tanah Vs30, menghitung Factor of Safety (FS) likuefaksi tanah secara asinkron, dan mengevaluasi kemiringan lereng.')}
                 </p>
               </div>
 

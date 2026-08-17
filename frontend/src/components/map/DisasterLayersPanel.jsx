@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, ChevronRight, GitBranch, Info } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { useT } from '../../hooks/useTranslation';
 import { cn } from '../../lib/utils';
+import { MapLegend } from './MapLegend';
 import { INARISK_HAZARDS } from '../../lib/hazardOverlay';
 
 export function DisasterLayersPanel() {
+  const t = useT();
   const [collapsed, setCollapsed] = useState(true);
   const [leftPanelWasAutoClosed, setLeftPanelWasAutoClosed] = useState(false);
   const {
@@ -20,7 +23,7 @@ export function DisasterLayersPanel() {
   } = useAppStore();
 
   return (
-    <div className="fixed right-4 top-20 z-[25] flex items-start gap-2 pointer-events-auto">
+    <div className="pointer-events-auto fixed right-2 top-20 z-[25] flex items-start gap-2 sm:right-4">
       {/* Retractable Container */}
       <AnimatePresence initial={false}>
         {!collapsed && !chatExpanded && (
@@ -29,7 +32,7 @@ export function DisasterLayersPanel() {
             animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
             exit={{ opacity: 0, x: 24, scale: 0.97, filter: 'blur(4px)' }}
             transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
-            className="w-72 rounded-2xl border border-white/8 bg-bg-surface/90 backdrop-blur-xl p-4 shadow-glass-lg flex flex-col"
+            className="flex w-[min(18rem,calc(100vw-1rem))] flex-col rounded-2xl border border-white/8 bg-bg-surface/90 p-4 shadow-glass-lg backdrop-blur-xl"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/8 mb-3">
@@ -37,9 +40,9 @@ export function DisasterLayersPanel() {
                 <Layers className="h-4 w-4 text-accent" />
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-text-primary">
-                    Tampilan Peta
+                    {t('panel.mapView')}
                   </h3>
-                  <p className="mt-0.5 text-[8px] text-text-muted">Kontrol layer referensi</p>
+                  <p className="mt-0.5 text-[8px] text-text-muted">{t('panel.mapLayerControls')}</p>
                 </div>
               </div>
               {(() => {
@@ -48,7 +51,7 @@ export function DisasterLayersPanel() {
                   INARISK_HAZARDS.filter((h) => overlays[h.key]).length;
                 return activeCount > 0 ? (
                   <span className="rounded-md border border-accent/30 bg-accent/10 px-1.5 py-1 text-[8px] font-bold uppercase tracking-wider text-accent">
-                    {activeCount} aktif
+                    {activeCount} {t('status.active')}
                   </span>
                 ) : null;
               })()}
@@ -57,8 +60,8 @@ export function DisasterLayersPanel() {
             {/* Base Map Style Picker */}
             <div className="flex rounded-lg bg-white/[0.03] p-0.5 border border-white/6">
               {[
-                { id: 'street', label: 'Biasa' },
-                { id: 'satellite', label: 'Satelit' },
+                { id: 'street', label: t('panel.street') },
+                { id: 'satellite', label: t('panel.satellite') },
               ].map((style) => {
                 const isActive = baseMapStyle === style.id;
                 return (
@@ -67,7 +70,7 @@ export function DisasterLayersPanel() {
                     type="button"
                     onClick={() => setBaseMapStyle(style.id)}
                     className={cn(
-                      "flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all text-center",
+                      "flex min-h-[44px] flex-1 items-center justify-center rounded-md py-1.5 text-center text-[10px] font-bold transition-all",
                       isActive
                         ? "bg-accent/15 text-accent shadow-sm border border-accent/20"
                         : "text-text-muted hover:text-text-primary border border-transparent"
@@ -97,7 +100,7 @@ export function DisasterLayersPanel() {
                       aria-pressed={active}
                       onClick={() => toggleOverlay(h.key)}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
+                        'flex min-h-[44px] w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
                         active
                           ? 'border-accent/45 bg-accent/10'
                           : 'border-white/6 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.04]'
@@ -141,8 +144,8 @@ export function DisasterLayersPanel() {
                 type="button"
                 aria-pressed={overlays.faults}
                 onClick={() => toggleOverlay('faults')}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
+                  className={cn(
+                    'flex min-h-[44px] w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
                   overlays.faults
                     ? 'border-[#b86f63]/45 bg-[#b86f63]/10'
                     : 'border-white/6 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.04]'
@@ -201,6 +204,8 @@ export function DisasterLayersPanel() {
                 </div>
               )}
             </div>
+
+            <MapLegend />
           </motion.div>
         )}
       </AnimatePresence>
@@ -224,12 +229,13 @@ export function DisasterLayersPanel() {
             }
           }}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-2xl border bg-bg-surface/90 backdrop-blur-xl shadow-glass-lg transition-all",
+            "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border bg-bg-surface/90 backdrop-blur-xl shadow-glass-lg transition-all",
             collapsed
               ? "border-white/8 text-text-secondary hover:text-accent hover:border-accent/40"
               : "border-accent/40 text-accent"
           )}
-          title={collapsed ? 'Tampilan Peta' : 'Tutup Panel'}
+          title={collapsed ? t('panel.mapView') : t('panel.closeMapPanel')}
+          aria-label={collapsed ? t('panel.mapView') : t('panel.closeMapPanel')}
         >
           {collapsed ? <Layers className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
