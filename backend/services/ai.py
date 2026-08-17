@@ -674,6 +674,36 @@ def audit_fingerprint(audit: AuditResult, lang: str) -> str:
 
 # ── Gemini transport ────────────────────────────────────────────────
 
+_shared_client: Optional[httpx.AsyncClient] = None
+
+
+def _get_shared_ai_client() -> httpx.AsyncClient:
+    global _shared_client
+    if _shared_client is None or _shared_client.is_closed:
+        timeout_s = float(os.getenv("AI_TIMEOUT_SECONDS", "35"))
+        _shared_client = httpx.AsyncClient(
+            timeout=timeout_s,
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
+        )
+    return _shared_client
+
+
+def _get_thinking_config() -> Optional[dict[str, Any]]:
+    """Determine thinking config. Budget of 0 disables internal thinking for ultra-fast generation."""
+    level = os.getenv("AI_THINKING_LEVEL", "low").lower().strip()
+    if level in ("0", "off", "none", "disable", "disabled", "instant", "fast", "low", "minimal"):
+        return {"thinkingBudget": 0}
+    if level in ("medium", "med"):
+        return {"thinkingBudget": 512}
+    if level in ("high", "max"):
+        return {"thinkingBudget": 1024}
+    try:
+        val = int(level)
+        return {"thinkingBudget": max(0, val)}
+    except ValueError:
+        return {"thinkingBudget": 0}
+
+
 async def _post_gemini_model(
     payload: dict[str, Any],
     model: str,
@@ -694,11 +724,25 @@ async def _post_gemini_model(
     url = f"{GEMINI_API_ROOT}/{model}:generateContent"
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
 
-    owns_client = client is None
-    request_client = client or httpx.AsyncClient(timeout=timeout_s)
+    owns_client = False
+    if client is not None:
+        request_client = client
+    else:
+        request_client = _get_shared_ai_client()
+
     try:
         response = await request_client.post(url, json=payload, headers=headers)
         status = response.status_code
+
+        # If 400 and thinkingConfig was passed, retry once without thinkingConfig
+        if status == 400 and isinstance(payload.get("generationConfig"), dict) and "thinkingConfig" in payload["generationConfig"]:
+            retry_payload = json.loads(json.dumps(payload))
+            retry_payload["generationConfig"].pop("thinkingConfig", None)
+            retry_resp = await request_client.post(url, json=retry_payload, headers=headers)
+            if retry_resp.status_code < 400:
+                return retry_resp.json()
+            status = retry_resp.status_code
+            response = retry_resp
 
         if status >= 400:
             log.warning("Gemini %s returned %s", model, status)
@@ -786,17 +830,22 @@ async def generate_with_fallback(
 
     chain = model_chain()
 
+    generation_config: dict[str, Any] = {
+        "temperature": temperature,
+        "maxOutputTokens": max_output_tokens,
+        "responseMimeType": "application/json",
+        "responseJsonSchema": response_schema,
+    }
+    thinking_cfg = _get_thinking_config()
+    if thinking_cfg is not None:
+        generation_config["thinkingConfig"] = thinking_cfg
+
     gemini_payload = {
         "systemInstruction": {"parts": [{"text": system_instruction}]},
         "contents": [
             {"role": "user", "parts": [{"text": json.dumps(user_payload, ensure_ascii=False)}]},
         ],
-        "generationConfig": {
-            "temperature": temperature,
-            "maxOutputTokens": max_output_tokens,
-            "responseMimeType": "application/json",
-            "responseJsonSchema": response_schema,
-        },
+        "generationConfig": generation_config,
     }
 
     models_to_try = [
