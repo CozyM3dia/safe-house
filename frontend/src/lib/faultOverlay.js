@@ -111,8 +111,8 @@ export const FAULT_TRACE_SEGMENTS = [
 export const FAULT_OVERLAY_STYLE = {
   color: '#b86f63',
   weight: 3,
-  opacity: 0.72,
-  dashArray: null,
+  opacity: 0.85,
+  dashArray: '6, 6',
   lineCap: 'round',
   lineJoin: 'round',
 };

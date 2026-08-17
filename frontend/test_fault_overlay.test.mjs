@@ -23,8 +23,8 @@ test('fault overlay covers Indonesian reference corridors without overpowering t
   }
 
   assert.equal(FAULT_OVERLAY_STYLE.weight, 3);
-  assert.equal(FAULT_OVERLAY_STYLE.opacity, 0.72);
-  assert.equal(FAULT_OVERLAY_STYLE.dashArray, null);
+  assert.equal(FAULT_OVERLAY_STYLE.opacity, 0.85);
+  assert.equal(FAULT_OVERLAY_STYLE.dashArray, '6, 6');
   assert.equal(getFaultTraceSegments(), FAULT_TRACE_SEGMENTS);
 });
 

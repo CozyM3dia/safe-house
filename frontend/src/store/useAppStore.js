@@ -18,6 +18,7 @@ export const useAppStore = create(
       currentAiAbortController: null,
       mode: 'audit', // 'audit' | 'battle'
       selectingBattlePin: false,
+      pendingAudit: null, // { lat: number, lng: number, isBattlePin?: boolean }
       auditDrawerOpen: false,
       leftPanelOpen: true,
       cmdPaletteOpen: false,
@@ -73,8 +74,18 @@ export const useAppStore = create(
         set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
       setAuditDrawer: (open) => set({ auditDrawerOpen: open }),
       setCmdPalette: (open) => set({ cmdPaletteOpen: open }),
-      setMode: (mode) => set({ mode, selectingBattlePin: false, battleReportContent: null, battleReportMeta: null, battleReportLoading: false }),
+      setMode: (mode) => set({ mode, selectingBattlePin: false, battleReportContent: null, battleReportMeta: null, battleReportLoading: false, pendingAudit: null }),
       setSelectingBattlePin: (v) => set({ selectingBattlePin: v }),
+      setPendingAudit: (pendingAudit) => set({ pendingAudit }),
+      confirmPendingAudit: () => {
+        const { pendingAudit, processLocation } = get();
+        if (pendingAudit) {
+          const { lat, lng, isBattlePin } = pendingAudit;
+          set({ pendingAudit: null });
+          processLocation(lat, lng, isBattlePin);
+        }
+      },
+      cancelPendingAudit: () => set({ pendingAudit: null }),
       setSimulatedPga: (v) => set({ simulatedPga: v }),
       setBaseMapStyle: (style) => set({ baseMapStyle: style }),
       setChatExpanded: (chatExpanded) => set({ chatExpanded }),
@@ -303,6 +314,7 @@ export const useAppStore = create(
           loading: false,
           aiLoading: false,
           simulatedPga: null,
+          pendingAudit: null,
           auditDrawerOpen: false,
           battleReportContent: null,
           battleReportMeta: null,
