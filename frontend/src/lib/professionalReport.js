@@ -5,17 +5,22 @@ import {
   executiveSummary, liquefactionParagraph, conclusionRecommendations,
 } from './reportTemplates.js';
 
-// ── Palet dokumen putih formal ──────────────────────────────────
-const INK = [31, 27, 24];       // teks utama
-const MUTED = [110, 96, 80];    // teks sekunder
-const ACCENT = [150, 90, 55];   // aksen mocha gelap (untuk cetak)
-const LINE = [210, 200, 188];
-const SAFE = [21, 128, 61];
-const MOD = [180, 120, 20];
-const DANGER = [190, 40, 40];
+// ── Palet "Modern Scientific" (dokumen putih formal) ────────────────
+// Slate untuk struktur & teks, teal sbg satu aksen, semaphore utk risiko.
+const INK = [28, 37, 51];       // slate-900 — teks utama
+const MUTED = [100, 116, 139];  // slate-500 — teks sekunder
+const FAINT = [148, 163, 184];  // slate-400 — label kecil
+const HAIR = [226, 232, 240];   // slate-200 — garis rambut
+const STRUCT = [51, 65, 85];    // slate-700 — kop/kepala tabel
+const ACCENT = [13, 148, 136];  // teal-600 — penanda seksi
+const PANEL = [248, 250, 252];  // slate-50 — panel/isian tabel
+const SAFE = [5, 150, 105];
+const MOD = [217, 119, 6];
+const DANGER = [220, 38, 38];
 
-const PAGE = { w: 210, h: 297, m: 18 };
+const PAGE = { w: 210, h: 297, m: 20 };
 const CONTENT_W = PAGE.w - PAGE.m * 2;
+const PT2MM = 0.352778;
 
 function riskRGB(score) {
   if (score >= 70) return SAFE;
@@ -23,57 +28,174 @@ function riskRGB(score) {
   return DANGER;
 }
 
+// Versi terang (untuk isian panel skor) — campur warna risiko dgn putih.
+function tint(rgb, amt = 0.9) {
+  return rgb.map((c) => Math.round(c + (255 - c) * amt));
+}
+
 function slugify(s) {
   return String(s || 'lokasi').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 }
 
-// Header + footer untuk halaman isi (bukan sampul).
-function decoratePage(doc, reportNo, pageNo, dateStr) {
-  doc.setDrawColor(...LINE);
-  doc.setLineWidth(0.3);
-  // kop
-  doc.line(PAGE.m, 14, PAGE.w - PAGE.m, 14);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(...MUTED);
-  doc.text('S.A.F.E House — Laporan Audit Risiko Geoteknik & Lingkungan', PAGE.m, 11);
-  doc.setFont('helvetica', 'normal');
-  doc.text(reportNo, PAGE.w - PAGE.m, 11, { align: 'right' });
-  // footer
-  doc.line(PAGE.m, PAGE.h - 14, PAGE.w - PAGE.m, PAGE.h - 14);
-  doc.setFontSize(6.5).setTextColor(...MUTED);
-  doc.text('Desk study berbasis data publik — bukan pengganti penyelidikan tanah lapangan.', PAGE.m, PAGE.h - 10);
-  doc.text(`Halaman ${pageNo} · dibuat ${dateStr}`, PAGE.w - PAGE.m, PAGE.h - 10, { align: 'right' });
+function lineH(sizePt, factor = 1.28) {
+  return sizePt * PT2MM * factor;
 }
 
-// Judul section, kembalikan Y setelahnya.
+// ── Kop + footer halaman isi ────────────────────────────────────────
+function decoratePage(doc, ctx) {
+  doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...STRUCT);
+  doc.text('S.A.F.E HOUSE', PAGE.m, 12);
+  doc.setFont('helvetica', 'normal').setTextColor(...MUTED);
+  doc.text('Laporan Audit Risiko Geoteknik & Lingkungan', PAGE.m + 26, 12);
+  doc.text(ctx.reportNo, PAGE.w - PAGE.m, 12, { align: 'right' });
+  doc.setDrawColor(...HAIR).setLineWidth(0.3);
+  doc.line(PAGE.m, 14.5, PAGE.w - PAGE.m, 14.5);
+
+  doc.line(PAGE.m, PAGE.h - 13, PAGE.w - PAGE.m, PAGE.h - 13);
+  doc.setFontSize(6.5).setTextColor(...FAINT);
+  doc.text('Desk study — bukan pengganti penyelidikan tanah lapangan.', PAGE.m, PAGE.h - 9);
+  doc.text(`Hal. ${ctx.page} · ${ctx.dateStr}`, PAGE.w - PAGE.m, PAGE.h - 9, { align: 'right' });
+}
+
+// Judul seksi: penanda nomor (kotak teal) + judul + garis rambut penuh.
 function sectionTitle(doc, num, title, y) {
-  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...ACCENT);
-  doc.text(`${num}. ${title}`, PAGE.m, y);
-  doc.setDrawColor(...ACCENT).setLineWidth(0.4);
-  doc.line(PAGE.m, y + 1.5, PAGE.m + 6, y + 1.5);
-  return y + 7;
+  if (num) {
+    doc.setFillColor(...ACCENT).roundedRect(PAGE.m, y - 4, 6.5, 6.5, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(255, 255, 255);
+    doc.text(String(num), PAGE.m + 3.25, y + 0.6, { align: 'center' });
+  }
+  doc.setFont('helvetica', 'bold').setFontSize(11.5).setTextColor(...INK);
+  doc.text(title, PAGE.m + (num ? 10 : 0), y + 0.5);
+  doc.setDrawColor(...HAIR).setLineWidth(0.3);
+  doc.line(PAGE.m, y + 5, PAGE.w - PAGE.m, y + 5);
+  return y + 11;
 }
 
-// Paragraf wrap, kembalikan Y baru.
+// Paragraf; kembalikan Y baru dgn leading benar.
 function paragraph(doc, text, y, opts = {}) {
-  const size = opts.size || 9;
+  const size = opts.size || 9.5;
   doc.setFont('helvetica', opts.bold ? 'bold' : 'normal').setFontSize(size).setTextColor(...(opts.color || INK));
-  const lines = doc.splitTextToSize(text, CONTENT_W);
-  doc.text(lines, PAGE.m, y);
-  return y + lines.length * (size * 0.42) + 2.5;
+  const lines = doc.splitTextToSize(text, opts.width || CONTENT_W);
+  const lh = lineH(size);
+  lines.forEach((ln, i) => doc.text(ln, PAGE.m + (opts.indent || 0), y + i * lh));
+  return y + lines.length * lh + (opts.gap ?? 2.5);
 }
 
-// Cek ruang; bila kurang, halaman baru + dekorasi. Kembalikan Y.
+// Butir berpeluru: bulatan aksen + teks menggantung rata.
+function bullet(doc, text, y, opts = {}) {
+  const size = opts.size || 9.5;
+  const x = PAGE.m;
+  doc.setFillColor(...(opts.dot || ACCENT)).circle(x + 1, y - 1.1, 0.7, 'F');
+  doc.setFont('helvetica', 'normal').setFontSize(size).setTextColor(...INK);
+  const lines = doc.splitTextToSize(text, CONTENT_W - 5);
+  const lh = lineH(size);
+  lines.forEach((ln, i) => doc.text(ln, x + 5, y + i * lh));
+  return y + lines.length * lh + 2;
+}
+
 function ensureSpace(doc, y, need, ctx) {
   if (y + need > PAGE.h - 20) {
     doc.addPage();
     ctx.page += 1;
-    decoratePage(doc, ctx.reportNo, ctx.page, ctx.dateStr);
-    return 22;
+    decoratePage(doc, ctx);
+    return 24;
   }
   return y;
 }
 
-export async function exportProfessionalReport(property, lang = 'id') {
+// Tabel bergaya "thin lines": kepala slate lembut, baris garis rambut.
+function reportTable(doc, y, opts) {
+  autoTable(doc, {
+    startY: y,
+    margin: { left: PAGE.m, right: PAGE.m },
+    head: opts.head,
+    body: opts.body,
+    theme: 'plain',
+    headStyles: {
+      fillColor: PANEL, textColor: STRUCT, fontStyle: 'bold', fontSize: 8.5,
+      lineWidth: { bottom: 0.4 }, lineColor: STRUCT, cellPadding: { top: 2.2, bottom: 2.2, left: 3, right: 3 },
+    },
+    bodyStyles: {
+      textColor: INK, fontSize: 8.8, lineWidth: { bottom: 0.2 }, lineColor: HAIR,
+      cellPadding: { top: 2, bottom: 2, left: 3, right: 3 },
+    },
+    columnStyles: opts.columnStyles || {},
+    styles: { font: 'helvetica', overflow: 'linebreak' },
+  });
+  return doc.lastAutoTable.finalY;
+}
+
+// ── Sampul ──────────────────────────────────────────────────────────
+function renderCover(doc, property, ctx, score) {
+  const rc = riskRGB(score);
+  // Pita atas
+  doc.setFillColor(...STRUCT).rect(0, 0, PAGE.w, 4, 'F');
+
+  // Wordmark
+  doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(...STRUCT);
+  doc.text('S.A.F.E HOUSE', PAGE.m, 30);
+  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED);
+  doc.text('Spatial Analyst for Flood & Environment', PAGE.m, 34.5);
+
+  // Judul
+  doc.setFont('helvetica', 'bold').setFontSize(23).setTextColor(...INK);
+  const title = doc.splitTextToSize('Laporan Audit Risiko Geoteknik & Lingkungan', CONTENT_W);
+  title.forEach((ln, i) => doc.text(ln, PAGE.m, 62 + i * lineH(23)));
+  doc.setFont('helvetica', 'normal').setFontSize(11).setTextColor(...ACCENT);
+  doc.text('Desk Study Berbasis Data Publik Terverifikasi', PAGE.m, 62 + title.length * lineH(23) + 5);
+
+  // Panel skor
+  const panelY = 108, panelH = 34;
+  doc.setFillColor(...tint(rc, 0.92)).roundedRect(PAGE.m, panelY, CONTENT_W, panelH, 2.5, 2.5, 'F');
+  doc.setDrawColor(...rc).setLineWidth(0.5).roundedRect(PAGE.m, panelY, CONTENT_W, panelH, 2.5, 2.5, 'S');
+  doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...MUTED);
+  doc.text('SKOR KESELAMATAN S.A.F.E', PAGE.m + 8, panelY + 10);
+  // angka + suffix pada baseline sama
+  const baseline = panelY + 26;
+  doc.setFont('helvetica', 'bold').setFontSize(34).setTextColor(...rc);
+  doc.text(String(score), PAGE.m + 8, baseline);
+  const numW = doc.getTextWidth(String(score));
+  doc.setFontSize(13).setTextColor(...MUTED);
+  doc.text('/100', PAGE.m + 8 + numW + 2, baseline);
+  // label risiko (chip kanan)
+  const label = riskLabel(score);
+  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...rc);
+  doc.text(label, PAGE.w - PAGE.m - 8, baseline, { align: 'right' });
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED);
+  doc.text(`Keyakinan data ${property.confidence ?? 0}%`, PAGE.w - PAGE.m - 8, panelY + 10, { align: 'right' });
+
+  // Metadata (label kiri / nilai kanan, garis rambut antar baris)
+  let my = panelY + panelH + 16;
+  const meta = [
+    ['Lokasi', property.address || '—'],
+    ['Koordinat', `${formatNum(property.lat, '', 5)}, ${formatNum(property.lon, '', 5)}`],
+    ['Nomor Laporan', ctx.reportNo],
+    ['Tanggal Terbit', ctx.dateStr],
+    ['Status Audit', String(property.audit_status || 'valid')],
+  ];
+  meta.forEach(([k, v]) => {
+    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...FAINT);
+    doc.text(k.toUpperCase(), PAGE.m, my);
+    doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor(...INK);
+    const vLines = doc.splitTextToSize(v, CONTENT_W - 48);
+    vLines.forEach((ln, i) => doc.text(ln, PAGE.m + 48, my + i * lineH(9.5)));
+    const rowH = Math.max(lineH(9.5) * vLines.length, 6) + 3;
+    doc.setDrawColor(...HAIR).setLineWidth(0.2);
+    doc.line(PAGE.m, my + rowH - 3, PAGE.w - PAGE.m, my + rowH - 3);
+    my += rowH + 1.5;
+  });
+
+  // Kaki sampul
+  doc.setDrawColor(...STRUCT).setLineWidth(0.3);
+  doc.line(PAGE.m, PAGE.h - 24, PAGE.w - PAGE.m, PAGE.h - 24);
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED);
+  doc.text('Disiapkan oleh S.A.F.E House', PAGE.m, PAGE.h - 18);
+  doc.setTextColor(...FAINT).setFontSize(7);
+  doc.text('Audit risiko geoteknik & lingkungan properti Indonesia', PAGE.m, PAGE.h - 13.5);
+}
+
+// ── Bangun dokumen (dipisah dari save agar bisa diinspeksi) ─────────
+export function buildReportDoc(property, lang = 'id') {
   if (!property || !Number.isFinite(property.safe_score)) {
     throw new Error('Laporan hanya dapat dibuat dari audit dengan skor backend yang valid.');
   }
@@ -85,65 +207,38 @@ export async function exportProfessionalReport(property, lang = 'id') {
   const ctx = { reportNo, dateStr, page: 1 };
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  doc.setLineHeightFactor(1.15);
 
-  // ── SAMPUL ──
-  doc.setFillColor(250, 247, 243).rect(0, 0, PAGE.w, PAGE.h, 'F');
-  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...ACCENT);
-  doc.text('S.A.F.E HOUSE', PAGE.m, 40);
-  doc.setDrawColor(...ACCENT).setLineWidth(0.5).line(PAGE.m, 44, PAGE.m + 30, 44);
+  renderCover(doc, property, ctx, score);
 
-  doc.setFontSize(24).setTextColor(...INK);
-  doc.text(doc.splitTextToSize('LAPORAN AUDIT RISIKO GEOTEKNIK & LINGKUNGAN', CONTENT_W), PAGE.m, 70);
-  doc.setFont('helvetica', 'normal').setFontSize(11).setTextColor(...MUTED);
-  doc.text('(Desk Study Berbasis Data Publik)', PAGE.m, 90);
-
-  // blok info sampul
-  const infoY = 120;
-  const rows = [
-    ['Lokasi', property.address || '—'],
-    ['Koordinat', `${formatNum(property.lat, '', 5)}, ${formatNum(property.lon, '', 5)}`],
-    ['No. Laporan', reportNo],
-    ['Tanggal', dateStr],
-    ['Status Audit', `${property.audit_status || 'valid'} (confidence ${property.confidence ?? 0}%)`],
-  ];
-  autoTable(doc, {
-    startY: infoY,
-    margin: { left: PAGE.m, right: PAGE.m },
-    body: rows,
-    theme: 'plain',
-    styles: { font: 'helvetica', fontSize: 10, textColor: INK, cellPadding: 2 },
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40, textColor: MUTED }, 1: { cellWidth: CONTENT_W - 40 } },
-  });
-
-  // skor besar di sampul
-  const rc = riskRGB(score);
-  doc.setFont('helvetica', 'bold').setFontSize(40).setTextColor(...rc);
-  doc.text(`${score}`, PAGE.m, 215);
-  doc.setFontSize(12).setTextColor(...MUTED);
-  doc.text(`/100 — ${riskLabel(score)}`, PAGE.m + 26, 215);
-
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED);
-  doc.text('Disiapkan oleh S.A.F.E House · Audit risiko geoteknik properti Indonesia', PAGE.m, PAGE.h - 20);
-
-  // ── HALAMAN ISI ──
+  // ── Halaman isi ──
   doc.addPage();
   ctx.page = 2;
-  decoratePage(doc, reportNo, ctx.page, dateStr);
-  let y = 24;
+  decoratePage(doc, ctx);
+  let y = 26;
 
-  // Ringkasan Eksekutif
+  // Ringkasan Eksekutif (lead, tanpa nomor)
   const es = executiveSummary(property);
-  y = sectionTitle(doc, 'A', 'Ringkasan Eksekutif', y);
-  y = paragraph(doc, es.headline, y, { bold: true });
-  es.findings.forEach((f) => { y = paragraph(doc, `• ${f}`, y); });
-  y = paragraph(doc, `Rekomendasi: ${es.recommendation}`, y, { color: ACCENT });
-  y += 3;
+  y = sectionTitle(doc, null, 'Ringkasan Eksekutif', y);
+  y = paragraph(doc, es.headline, y, { bold: true, size: 10.5, gap: 3.5 });
+  es.findings.forEach((f) => { y = bullet(doc, f, y); });
+  y += 1.5;
+  // kotak rekomendasi ringkas
+  {
+    const recLines = doc.splitTextToSize(es.recommendation, CONTENT_W - 10);
+    const boxH = recLines.length * lineH(9.5) + 9;
+    doc.setFillColor(...tint(ACCENT, 0.93)).roundedRect(PAGE.m, y, CONTENT_W, boxH, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...ACCENT);
+    doc.text('REKOMENDASI RINGKAS', PAGE.m + 5, y + 6);
+    doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor(...INK);
+    recLines.forEach((ln, i) => doc.text(ln, PAGE.m + 5, y + 11 + i * lineH(9.5)));
+    y += boxH + 6;
+  }
 
   // 1. Informasi Lokasi
-  y = ensureSpace(doc, y, 50, ctx);
-  y = sectionTitle(doc, '1', 'Informasi Lokasi', y);
-  autoTable(doc, {
-    startY: y, margin: { left: PAGE.m, right: PAGE.m },
+  y = ensureSpace(doc, y, 55, ctx);
+  y = sectionTitle(doc, 1, 'Informasi Lokasi', y);
+  y = reportTable(doc, y, {
     body: [
       ['Alamat', property.address || '—'],
       ['Lintang (Lat)', formatNum(property.lat, '', 5)],
@@ -151,24 +246,19 @@ export async function exportProfessionalReport(property, lang = 'id') {
       ['Elevasi', `${formatNum(property.elevation ?? g.elevation_m, 'm', 0)}${g.elevation_assumed ? ' (diasumsikan)' : ''}`],
       ['Kota terdekat', g.nearest_city || '—'],
     ],
-    theme: 'grid',
-    styles: { font: 'helvetica', fontSize: 9, textColor: INK, cellPadding: 1.8, lineColor: LINE },
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45, textColor: MUTED } },
-  });
-  y = doc.lastAutoTable.finalY + 6;
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 46, textColor: MUTED }, 1: { cellWidth: CONTENT_W - 46 } },
+  }) + 8;
 
   // 2. Metodologi
-  y = ensureSpace(doc, y, 40, ctx);
-  y = sectionTitle(doc, '2', 'Metodologi & Dasar Acuan', y);
-  y = paragraph(doc, 'Laporan ini disusun sebagai desk study menggunakan data geospasial publik terverifikasi. Analisis kegempaan mengacu pada SNI 1726:2019 (Tata cara perencanaan ketahanan gempa untuk struktur bangunan gedung dan non-gedung), sedangkan potensi likuefaksi mengacu pada SNI 8460:2017 (Persyaratan perancangan geoteknik). Sumber data meliputi USGS (topografi/seismik), InaRISK BNPB (bahaya banjir/longsor/gempa), dan PuSGeN 2024 (geometri sesar aktif).', y);
-  y = paragraph(doc, 'Batasan: parameter bersifat regional (resolusi peta nasional) dan tidak menggantikan pengujian tanah lapangan (sondir/boring). Nilai yang tidak tersedia ditampilkan sebagai "—".', y, { color: MUTED, size: 8 });
-  y += 3;
+  y = ensureSpace(doc, y, 45, ctx);
+  y = sectionTitle(doc, 2, 'Metodologi & Dasar Acuan', y);
+  y = paragraph(doc, 'Laporan ini disusun sebagai desk study menggunakan data geospasial publik terverifikasi. Analisis kegempaan mengacu pada SNI 1726:2019 (Tata cara perencanaan ketahanan gempa untuk struktur bangunan gedung dan non-gedung); potensi likuefaksi mengacu pada SNI 8460:2017 (Persyaratan perancangan geoteknik). Sumber data meliputi USGS, InaRISK BNPB, dan PuSGeN 2024.', y);
+  y = paragraph(doc, 'Batasan: parameter bersifat regional (resolusi peta nasional) dan tidak menggantikan pengujian tanah lapangan (sondir/boring). Nilai yang tidak tersedia ditampilkan sebagai "—".', y, { color: MUTED, size: 8.5, gap: 4 });
 
   // 3. Parameter Seismik
-  y = ensureSpace(doc, y, 60, ctx);
-  y = sectionTitle(doc, '3', 'Parameter Seismik (SNI 1726:2019)', y);
-  autoTable(doc, {
-    startY: y, margin: { left: PAGE.m, right: PAGE.m },
+  y = ensureSpace(doc, y, 65, ctx);
+  y = sectionTitle(doc, 3, 'Parameter Seismik (SNI 1726:2019)', y);
+  y = reportTable(doc, y, {
     head: [['Parameter', 'Nilai', 'Keterangan']],
     body: [
       ['Vs30', formatNum(g.vs30, 'm/s', 0), 'Kecepatan gelombang geser 30 m teratas'],
@@ -178,36 +268,29 @@ export async function exportProfessionalReport(property, lang = 'id') {
       ['PGA permukaan', formatNum(g.pga_surface, 'g', 3), 'PGA di permukaan tanah'],
       ['T0 resonansi', formatNum(g.t0_resonance, 's', 2), 'Perioda alami tanah'],
     ],
-    theme: 'striped',
-    headStyles: { fillColor: ACCENT, textColor: [255, 255, 255], fontSize: 9 },
-    styles: { font: 'helvetica', fontSize: 8.5, textColor: INK, cellPadding: 1.8, lineColor: LINE },
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 42 }, 1: { cellWidth: 30 } },
-  });
-  y = doc.lastAutoTable.finalY + 6;
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 44 }, 1: { cellWidth: 30, halign: 'right' } },
+  }) + 8;
 
   // 4. Likuefaksi
   y = ensureSpace(doc, y, 40, ctx);
-  y = sectionTitle(doc, '4', 'Potensi Likuefaksi', y);
-  y = paragraph(doc, liquefactionParagraph(g.fs, g.status), y);
-  y += 3;
+  y = sectionTitle(doc, 4, 'Potensi Likuefaksi', y);
+  y = paragraph(doc, liquefactionParagraph(g.fs, g.status), y, { gap: 4 });
 
   // 5. Banjir & Lingkungan
-  y = ensureSpace(doc, y, 30, ctx);
-  y = sectionTitle(doc, '5', 'Bahaya Banjir & Lingkungan', y);
+  y = ensureSpace(doc, y, 32, ctx);
+  y = sectionTitle(doc, 5, 'Bahaya Banjir & Lingkungan', y);
   {
     const floodVal = property.hazard?.flood ?? property.hazard?.banjir ?? property.environment?.flood;
     const floodText = (floodVal === null || floodVal === undefined)
       ? 'Tidak terdapat data indeks bahaya banjir pada titik ini menurut InaRISK BNPB (umumnya berarti lokasi berada di luar zona rawan banjir yang dipetakan).'
       : `Indeks bahaya banjir (InaRISK BNPB): ${formatNum(floodVal, '', 2)}. Semakin tinggi indeks (mendekati 1,0) semakin besar potensi bahaya banjir.`;
-    y = paragraph(doc, floodText, y);
+    y = paragraph(doc, floodText, y, { gap: 4 });
   }
-  y += 3;
 
   // 6. Seismotektonik
   y = ensureSpace(doc, y, 55, ctx);
-  y = sectionTitle(doc, '6', 'Seismotektonik', y);
-  autoTable(doc, {
-    startY: y, margin: { left: PAGE.m, right: PAGE.m },
+  y = sectionTitle(doc, 6, 'Seismotektonik', y);
+  y = reportTable(doc, y, {
     head: [['Fitur', 'Nama', 'Jarak']],
     body: [
       ['Sesar aktif', g.nearest_fault?.name || '—', formatNum(g.nearest_fault?.distance_km, 'km', 1)],
@@ -215,58 +298,53 @@ export async function exportProfessionalReport(property, lang = 'id') {
       ['Megathrust', g.nearest_megathrust?.name || '—', formatNum(g.nearest_megathrust?.distance_km, 'km', 1)],
       ['Garis pantai', g.nearest_coast?.name || '—', formatNum(g.nearest_coast?.distance_km, 'km', 1)],
     ],
-    theme: 'striped',
-    headStyles: { fillColor: ACCENT, textColor: [255, 255, 255], fontSize: 9 },
-    styles: { font: 'helvetica', fontSize: 8.5, textColor: INK, cellPadding: 1.8, lineColor: LINE },
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 }, 2: { cellWidth: 28 } },
-  });
-  y = doc.lastAutoTable.finalY + 6;
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 42 }, 2: { cellWidth: 28, halign: 'right' } },
+  }) + 8;
 
   // 7. Kesimpulan & Rekomendasi
-  y = ensureSpace(doc, y, 50, ctx);
-  y = sectionTitle(doc, '7', 'Kesimpulan & Rekomendasi', y);
+  y = ensureSpace(doc, y, 45, ctx);
+  y = sectionTitle(doc, 7, 'Kesimpulan & Rekomendasi', y);
   conclusionRecommendations(property).forEach((r) => {
-    y = ensureSpace(doc, y, 14, ctx);
-    y = paragraph(doc, `• ${r}`, y);
+    y = ensureSpace(doc, y, 16, ctx);
+    y = bullet(doc, r, y);
   });
   y += 3;
 
   // 8. Sumber Data
-  y = ensureSpace(doc, y, 40, ctx);
-  y = sectionTitle(doc, '8', 'Sumber Data', y);
+  y = ensureSpace(doc, y, 42, ctx);
+  y = sectionTitle(doc, 8, 'Sumber Data', y);
   {
     const prov = g.provenance || {};
     const body = Object.keys(prov).length
       ? Object.entries(prov).map(([k, v]) => [k, String(v)])
       : [['—', 'Provenance tidak tersedia']];
-    autoTable(doc, {
-      startY: y, margin: { left: PAGE.m, right: PAGE.m },
+    y = reportTable(doc, y, {
       head: [['Parameter', 'Sumber']],
       body,
-      theme: 'grid',
-      headStyles: { fillColor: MUTED, textColor: [255, 255, 255], fontSize: 8.5 },
-      styles: { font: 'helvetica', fontSize: 8, textColor: INK, cellPadding: 1.5, lineColor: LINE },
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
-    });
-    y = doc.lastAutoTable.finalY + 4;
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 56 } },
+    }) + 5;
     if ((property.sources_failed || []).length) {
-      y = paragraph(doc, `Sumber tidak tersedia saat audit: ${property.sources_failed.join(', ')}.`, y, { color: DANGER, size: 8 });
+      y = paragraph(doc, `Sumber tidak tersedia saat audit: ${property.sources_failed.join(', ')}.`, y, { color: DANGER, size: 8.5 });
     }
   }
-  y += 3;
+  y += 4;
 
   // Penampik
-  y = ensureSpace(doc, y, 42, ctx);
-  doc.setDrawColor(...DANGER).setLineWidth(0.5);
-  doc.setFillColor(252, 245, 243);
-  const discLines = doc.splitTextToSize(
-    'PENAMPIK (DISCLAIMER): Laporan ini merupakan desk study berbasis data publik beresolusi regional dan BUKAN pengganti penyelidikan tanah lapangan (sondir/boring). Laporan ini BUKAN dokumen resmi Persetujuan Bangunan Gedung (PBG) tanpa verifikasi oleh ahli geoteknik bersertifikat (SKA). S.A.F.E House tidak bertanggung jawab atas keputusan konstruksi yang diambil tanpa pengujian lapangan dan tinjauan ahli.',
-    CONTENT_W - 8
-  );
-  const boxH = discLines.length * 3.8 + 8;
-  doc.rect(PAGE.m, y, CONTENT_W, boxH, 'FD');
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...INK);
-  doc.text(discLines, PAGE.m + 4, y + 5);
+  y = ensureSpace(doc, y, 46, ctx);
+  const discText = 'Laporan ini merupakan desk study berbasis data publik beresolusi regional dan BUKAN pengganti penyelidikan tanah lapangan (sondir/boring). Laporan ini BUKAN dokumen resmi Persetujuan Bangunan Gedung (PBG) tanpa verifikasi oleh ahli geoteknik bersertifikat (SKA). S.A.F.E House tidak bertanggung jawab atas keputusan konstruksi yang diambil tanpa pengujian lapangan dan tinjauan ahli.';
+  const discLines = doc.splitTextToSize(discText, CONTENT_W - 12);
+  const boxH = discLines.length * lineH(8) + 12;
+  doc.setFillColor(...tint(DANGER, 0.95)).roundedRect(PAGE.m, y, CONTENT_W, boxH, 2, 2, 'F');
+  doc.setDrawColor(...DANGER).setLineWidth(0.3).roundedRect(PAGE.m, y, CONTENT_W, boxH, 2, 2, 'S');
+  doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...DANGER);
+  doc.text('PENAMPIK / DISCLAIMER', PAGE.m + 6, y + 6.5);
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...INK);
+  discLines.forEach((ln, i) => doc.text(ln, PAGE.m + 6, y + 11.5 + i * lineH(8)));
 
+  return doc;
+}
+
+export async function exportProfessionalReport(property, lang = 'id') {
+  const doc = buildReportDoc(property, lang);
   doc.save(`Laporan-SAFE-${slugify(property.address)}.pdf`);
 }
