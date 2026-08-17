@@ -53,9 +53,10 @@ test('buildExportUrl requests a png32 image export in 3857 via exportImage', () 
   assert.match(url, /f=image/);
 });
 
-test('indexToRainbow ramps blue (low) → green (mid) → red (high)', () => {
-  assert.equal(dominant(indexToRainbow(0)), 'b'); // rendah = biru
-  assert.equal(dominant(indexToRainbow(0.5)), 'g'); // sedang = hijau
+test('indexToRainbow ramps green (low) → yellow (mid) → red (high)', () => {
+  assert.equal(dominant(indexToRainbow(0)), 'g'); // rendah = hijau
+  const [r, g, b] = indexToRainbow(0.5); // sedang = kuning (r & g tinggi, b rendah)
+  assert.ok(r > 150 && g > 150 && b < 100);
   assert.equal(dominant(indexToRainbow(1)), 'r'); // tinggi = merah
   // clamp di luar rentang
   assert.deepEqual(indexToRainbow(-1), indexToRainbow(0));

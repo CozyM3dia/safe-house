@@ -86,10 +86,11 @@ export function buildExportUrl(serviceUrl, bbox) {
   return `${serviceUrl}/exportImage?bbox=${bbox}&${params.toString()}`;
 }
 
-// ── Rainbow color ramp untuk indeks bahaya (0..1) ─────────────────
+// ── Color ramp indeks bahaya (0..1) ───────────────────────────────
 // InaRISK ImageServer merender indeks sebagai grayscale (0=hitam, 1=putih).
-// Recolor client-side jadi rainbow biar magnitudo jelas: biru = rendah,
-// merah = tinggi. Ramp yang sama dipakai raster (LUT) dan legenda peta.
+// Recolor client-side jadi traffic-light biar magnitudo jelas:
+// hijau = rendah, kuning = sedang, merah = tinggi (hue 120°→0°).
+// Ramp yang sama dipakai raster (LUT) dan legenda peta.
 function clamp01(v) {
   return Math.max(0, Math.min(1, v));
 }
@@ -104,9 +105,9 @@ export function hslToRgb(h, s, l) {
   return [f(0), f(8), f(4)].map((x) => Math.round(x * 255));
 }
 
-// Indeks bahaya 0..1 → warna rainbow (hue 240° biru → 0° merah).
+// Indeks bahaya 0..1 → hijau (rendah) → kuning (sedang) → merah (tinggi).
 export function indexToRainbow(t) {
-  return hslToRgb(240 * (1 - clamp01(t)), 0.85, 0.5);
+  return hslToRgb(120 * (1 - clamp01(t)), 0.9, 0.45);
 }
 
 // LUT 256 entri (nilai grayscale 0..255 → [r,g,b]) untuk recolor tile cepat.
