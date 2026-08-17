@@ -238,7 +238,14 @@ export const useAppStore = create(
             toast.dismiss(toastId);
             return;
           }
-          console.error('processLocation failed', e);
+          const isExpectedAuditRejection =
+            e.cause?.response?.status === 422 ||
+            /lokasi .* (perairan|lahan bangunan)|di luar cakupan/i.test(e.message || '');
+          if (isExpectedAuditRejection) {
+            console.info('processLocation rejected', e.message);
+          } else {
+            console.error('processLocation failed', e);
+          }
           toast.error(e.message || 'Gagal memproses lokasi', { id: toastId });
           set({ loading: false });
         }

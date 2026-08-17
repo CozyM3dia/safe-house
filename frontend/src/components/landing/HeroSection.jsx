@@ -63,14 +63,17 @@ export default function HeroSection({ t }) {
         className="mt-6 flex items-center gap-4 justify-center"
       >
         <button
+          type="button"
           onClick={() => navigate('/app')}
-          className="rounded-full px-6 py-2.5 text-sm font-semibold font-body bg-primary text-primary-foreground hover:bg-primary/90 transition-all btn-press shadow-glow/10 active:scale-[0.97]"
+          className="min-h-[44px] rounded-full px-6 py-2.5 text-sm font-semibold font-body bg-primary text-primary-foreground hover:bg-primary/90 transition-all btn-press shadow-glow/10 active:scale-[0.97]"
         >
           {t('heroCTA', 'Coba Gratis')}
         </button>
         <button
+          type="button"
           onClick={() => navigate('/app')}
-          className="h-10 w-10 flex items-center justify-center rounded-full border-0 bg-background/80 backdrop-blur-md shadow-[0_2px_12px_rgba(0,0,0,0.25)] hover:bg-background transition-all active:scale-[0.95]"
+          aria-label={t('heroPlay', 'Lihat demo S.A.F.E House')}
+          className="flex h-11 w-11 items-center justify-center rounded-full border-0 bg-background/80 backdrop-blur-md shadow-[0_2px_12px_rgba(0,0,0,0.25)] hover:bg-background transition-all active:scale-[0.95]"
         >
           <svg className="h-3.5 w-3.5 fill-foreground text-foreground translate-x-0.5" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />

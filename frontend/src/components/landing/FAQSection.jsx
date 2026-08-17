@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { Plus } from "lucide-react";
@@ -35,7 +34,7 @@ export default function FAQSection({ t }) {
       question: t("faqQ4", "Bagaimana cara kerja simulasi PGA dan gempa di peta?"),
       answer: t(
         "faqA4",
-        "Pengguna dapat memilih titik koordinat apa saja di Indonesia. Sistem akan menghitung percepatan tanah (PGA) berdasarkan model redaman gempa, memperkirakan respon seismik lokal (Vs30), dan menganalisis potensi likuifaksi asinkron secara langsung."
+        "Pengguna dapat memilih titik koordinat apa saja di Indonesia. Sistem akan menghitung percepatan tanah (PGA) berdasarkan model redaman gempa, memperkirakan respon seismik lokal (Vs30), dan menganalisis potensi likuefaksi asinkron secara langsung."
       ),
     },
     {
@@ -86,7 +85,7 @@ export default function FAQSection({ t }) {
           <p className="mt-4 text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed font-body">
             {t(
               "faqSub",
-              "Temukan jawaban cepat atas pertanyaan seputar audit geologi, data spasial, dan keandalan sistem audit kognitif S.A.F.E House."
+              "Temukan jawaban cepat atas pertanyaan seputar audit geologi, data spasial, dan batasan analisis risiko S.A.F.E House."
             )}
           </p>
         </motion.div>

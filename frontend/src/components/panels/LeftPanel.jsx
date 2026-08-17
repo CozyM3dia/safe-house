@@ -39,7 +39,6 @@ export function LeftPanel() {
   const loading = useAppStore((s) => s.loading);
   const mode = useAppStore((s) => s.mode);
   const setAuditDrawer = useAppStore((s) => s.setAuditDrawer);
-  const setChatExpanded = useAppStore((s) => s.setChatExpanded);
   const runBattleReportAction = useAppStore((s) => s.runBattleReportAction);
   const battleReportContent = useAppStore((s) => s.battleReportContent);
   const battleReportLoading = useAppStore((s) => s.battleReportLoading);
@@ -53,7 +52,7 @@ export function LeftPanel() {
           exit={{ x: -440, opacity: 0 }}
           transition={{ type: 'spring', damping: 26, stiffness: 220 }}
           data-tour="left-panel"
-          className="glass fixed left-4 top-[72px] bottom-4 z-20 flex w-[380px] flex-col overflow-hidden rounded-2xl"
+          className="glass fixed left-2 top-[72px] bottom-4 z-20 flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl sm:left-4 sm:w-[380px] sm:max-w-none"
         >
           <div className="flex-1 overflow-y-auto scrollbar-none">
             <AnimatePresence mode="wait">
@@ -72,7 +71,6 @@ export function LeftPanel() {
                   <PopulatedState
                     propertyA={propertyA}
                     onOpenDrawer={() => setAuditDrawer(true)}
-                    onOpenChat={() => setChatExpanded(true)}
                   />
                 </motion.div>
               )}
@@ -223,7 +221,7 @@ function SkeletonState() {
   );
 }
 
-function PopulatedState({ propertyA, onOpenDrawer, onOpenChat }) {
+function PopulatedState({ propertyA, onOpenDrawer }) {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
   const aiLoading = useAppStore((s) => s.aiLoading);

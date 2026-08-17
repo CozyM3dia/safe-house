@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Toaster } from 'sonner';
@@ -14,7 +14,6 @@ import { CommandPalette } from './components/command/CommandPalette';
 import { ErrorFallback } from './components/feedback/ErrorFallback';
 import { LoadingBeam } from './components/feedback/LoadingBeam';
 import { DisasterLayersPanel } from './components/map/DisasterLayersPanel';
-import { MapLegend } from './components/map/MapLegend';
 import { useAppStore } from './store/useAppStore';
 import { OnboardingTour } from './components/onboarding/OnboardingTour';
 
@@ -64,9 +63,6 @@ function AppShell() {
 
       {/* z-25: Overlay Layer Panel — MUST be outside MapArea's z-0 stacking context */}
       <DisasterLayersPanel />
-
-      {/* z-20: Dynamic Map Overlays Legend */}
-      <MapLegend />
 
       {/* z-20: ChatbotFab + expand */}
       <ChatbotFab />

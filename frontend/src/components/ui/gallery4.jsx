@@ -130,12 +130,15 @@ const Gallery4 = ({ title, description, items }) => {
           {scrollSnaps.map((_, index) => (
             <button
               key={index}
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                currentSlide === index ? "bg-accent w-8" : "bg-white/10 w-2.5 hover:bg-white/30"
-              }`}
+              type="button"
               onClick={() => carouselApi?.scrollTo(index)}
               aria-label={`Go to slide ${index + 1}`}
-            />
+              className="group flex h-11 w-11 items-center justify-center rounded-full"
+            >
+              <span className={`block h-2.5 rounded-full transition-all duration-300 ${
+                currentSlide === index ? "bg-accent w-8" : "bg-white/10 w-2.5 group-hover:bg-white/30"
+              }`} />
+            </button>
           ))}
         </div>
       </div>

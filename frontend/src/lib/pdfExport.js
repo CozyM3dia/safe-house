@@ -53,7 +53,7 @@ export function canExportPdf(property) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
-function setColor(pdf, rgb, alpha) {
+function setColor(pdf, rgb) {
   pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
 }
 
@@ -455,7 +455,7 @@ function drawSoilVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, setPag
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(8);
   setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'LIQUEFACTION FACTOR OF SAFETY (FS)' : 'FAKTOR KEAMANAN LIKUIFAKSI (FS)', M + 5, fsY);
+  pdf.text(isEn ? 'LIQUEFACTION FACTOR OF SAFETY (FS)' : 'FAKTOR KEAMANAN LIKUEFAKSI (FS)', M + 5, fsY);
 
   const fsText = `FS = ${fs.toFixed(2)} (${fs < 1.0 ? (isEn ? 'CRITICAL' : 'RAWAN') : (isEn ? 'SAFE' : 'AMAN')})`;
   const fsClr = fs < 1.0 ? C.danger : C.safe;
@@ -1248,7 +1248,7 @@ function drawBattleDashboardPage(pdf, propA, propB, scoreA, scoreB, lang) {
     ['PGA Base', `${propA.seismic?.pgaBase ?? '-'}g`, `${propB.seismic?.pgaBase ?? '-'}g`],
     ['PGA Surface', `${propA.seismic?.pgaSurface?.toFixed(3) ?? '-'}g`, `${propB.seismic?.pgaSurface?.toFixed(3) ?? '-'}g`],
     [lang === 'en' ? 'Nearest Fault' : 'Sesar Terdekat', `${propA.seismic?.faultName ?? '-'} (${propA.seismic?.faultDist ?? '-'} km)`, `${propB.seismic?.faultName ?? '-'} (${propB.seismic?.faultDist ?? '-'} km)`],
-    [lang === 'en' ? 'Liquefaction FS' : 'FS Likuifaksi', propA.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-', propB.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-'],
+    [lang === 'en' ? 'Liquefaction FS' : 'FS Likuefaksi', propA.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-', propB.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-'],
     [lang === 'en' ? 'Tsunami Risk' : 'Risiko Tsunami', `${propA.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propA.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`, `${propB.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propB.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`],
     [lang === 'en' ? 'Air Quality (AQI)' : 'Kualitas Udara (AQI)', `${propA.compressedPayload?.env_extras?.aqi ?? '-'} (PM2.5: ${propA.compressedPayload?.env_extras?.pm25 ?? '-'})`, `${propB.compressedPayload?.env_extras?.aqi ?? '-'} (PM2.5: ${propB.compressedPayload?.env_extras?.pm25 ?? '-'})`],
   ];
@@ -1349,6 +1349,6 @@ export async function exportElementToPdf(element, filename = 'SAFE_Audit_Report.
     pdf.save(filename);
   } catch (err) {
     console.error('[S.A.F.E] html2canvas export failed:', err);
-    throw new Error('PDF export gagal — coba gunakan tombol Export utama.');
+    throw new Error('PDF export gagal — coba gunakan tombol Export utama.', { cause: err });
   }
 }

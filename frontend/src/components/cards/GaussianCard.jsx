@@ -15,7 +15,7 @@ function generateSpectrum(pga) {
   const ts = sd1 / sds;         // Transition period (0.6s)
 
   for (let t = 0; t <= 3.0; t += 0.1) {
-    let sa = 0;
+    let sa;
     if (t < t0) {
       sa = sds * (0.4 + 0.6 * (t / t0));
     } else if (t <= ts) {
@@ -65,7 +65,7 @@ export function GaussianCard({ property }) {
 
       {/* Clean, Simple Chart */}
       <div className="h-20 w-full px-1.5 pb-2">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 80 }}>
           <AreaChart data={data} margin={{ top: 2, right: 2, left: -32, bottom: -5 }}>
             <defs>
               <linearGradient id="simple-spectrum-grad" x1="0" y1="0" x2="0" y2="1">

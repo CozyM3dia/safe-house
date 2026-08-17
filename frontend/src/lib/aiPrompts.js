@@ -18,13 +18,13 @@
 
 export function SAFE_AI_SYSTEM_PROMPT(propertyA, propertyB, mode = 'audit', lang = 'id', conversationHistory = []) {
   const responseLang = lang === 'en'
-    ? 'Respond in English. Use Indonesian technical terms (e.g., sesar, likuifaksi) where appropriate with English explanation.'
+    ? 'Respond in English. Use Indonesian technical terms (e.g., sesar, likuefaksi) where appropriate with English explanation.'
     : 'Jawab dalam Bahasa Indonesia. Gunakan istilah teknis (Vs30, PGA, FS) dengan penjelasan sederhana.';
 
-  let siteData = '';
+  let siteData;
   if (mode === 'battle') {
     if (propertyA && propertyB) {
-      siteData = `\n══ MODE BANDINGKAN (BATTLE MODE) AKTIF ══\nAnalisis perbandingan untuk dua properti:\n\nLOKASI A:\nAlamat: ${propertyA.address}\n${JSON.stringify(propertyA.compressedPayload ?? {}, null, 2)}\nData tambahan LOKASI A:\n- Vs30: ${propertyA.vs30} m/s | Kelas Situs: ${propertyA.siteClass}\n- PGA Base: ${propertyA.seismic?.pgaBase}g | PGA Surface: ${propertyA.seismic?.pgaSurface?.toFixed(3)}g\n- Sesar terdekat: ${propertyA.seismic?.faultName} (${propertyA.seismic?.faultDist} km)\n- Elevasi: ${propertyA.elevasi}m\n- Radar: Banjir=${propertyA.radarData?.flood}, Tanah=${propertyA.radarData?.soil}, Udara=${propertyA.radarData?.air}, Seismik=${propertyA.radarData?.seismic}, Longsor=${propertyA.radarData?.landslide}\n\nLOKASI B:\nAlamat: ${propertyB.address}\n${JSON.stringify(propertyB.compressedPayload ?? {}, null, 2)}\nData tambahan LOKASI B:\n- Vs30: ${propertyB.vs30} m/s | Kelas Situs: ${propertyB.siteClass}\n- PGA Base: ${propertyB.seismic?.pgaBase}g | PGA Surface: ${propertyB.seismic?.pgaSurface?.toFixed(3)}g\n- Sesar terdekat: ${propertyB.seismic?.faultName} (${propertyB.seismic?.faultDist} km)\n- Elevasi: ${propertyB.elevasi}m\n- Radar: Banjir=${propertyB.radarData?.flood}, Tanah=${propertyB.radarData?.soil}, Udara=${propertyB.radarData?.air}, Seismik=${propertyB.radarData?.seismic}, Longsor=${propertyB.radarData?.landslide}\n\nInstruksi Tambahan: Bandingkan kedua lokasi ini secara objektif. Tunjukkan keunggulan dan kelemahan masing-masing lokasi dari sisi risiko bencana (seperti gempa, likuifaksi, banjir, longsor) dan kelayakan investasi. Bantu user mengambil keputusan properti mana yang lebih aman/unggul.`;
+      siteData = `\n══ MODE BANDINGKAN (BATTLE MODE) AKTIF ══\nAnalisis perbandingan untuk dua properti:\n\nLOKASI A:\nAlamat: ${propertyA.address}\n${JSON.stringify(propertyA.compressedPayload ?? {}, null, 2)}\nData tambahan LOKASI A:\n- Vs30: ${propertyA.vs30} m/s | Kelas Situs: ${propertyA.siteClass}\n- PGA Base: ${propertyA.seismic?.pgaBase}g | PGA Surface: ${propertyA.seismic?.pgaSurface?.toFixed(3)}g\n- Sesar terdekat: ${propertyA.seismic?.faultName} (${propertyA.seismic?.faultDist} km)\n- Elevasi: ${propertyA.elevasi}m\n- Radar: Banjir=${propertyA.radarData?.flood}, Tanah=${propertyA.radarData?.soil}, Udara=${propertyA.radarData?.air}, Seismik=${propertyA.radarData?.seismic}, Longsor=${propertyA.radarData?.landslide}\n\nLOKASI B:\nAlamat: ${propertyB.address}\n${JSON.stringify(propertyB.compressedPayload ?? {}, null, 2)}\nData tambahan LOKASI B:\n- Vs30: ${propertyB.vs30} m/s | Kelas Situs: ${propertyB.siteClass}\n- PGA Base: ${propertyB.seismic?.pgaBase}g | PGA Surface: ${propertyB.seismic?.pgaSurface?.toFixed(3)}g\n- Sesar terdekat: ${propertyB.seismic?.faultName} (${propertyB.seismic?.faultDist} km)\n- Elevasi: ${propertyB.elevasi}m\n- Radar: Banjir=${propertyB.radarData?.flood}, Tanah=${propertyB.radarData?.soil}, Udara=${propertyB.radarData?.air}, Seismik=${propertyB.radarData?.seismic}, Longsor=${propertyB.radarData?.landslide}\n\nInstruksi Tambahan: Bandingkan kedua lokasi ini secara objektif. Tunjukkan keunggulan dan kelemahan masing-masing lokasi dari sisi risiko bencana (seperti gempa, likuefaksi, banjir, longsor) dan kelayakan investasi. Bantu user mengambil keputusan properti mana yang lebih aman/unggul.`;
     } else if (propertyA) {
       siteData = `\n══ MODE BANDINGKAN (BATTLE MODE) AKTIF ══\nLOKASI A telah dipilih:\nAlamat: ${propertyA.address}\n${JSON.stringify(propertyA.compressedPayload ?? {}, null, 2)}\n\nLOKASI B belum dipilih.\n\nInstruksi Tambahan: Informasikan ke user bahwa mereka sedang di mode bandingkan (battle mode) tetapi baru memilih satu lokasi. Ajak/ingatkan mereka untuk memilih lokasi kedua di peta untuk memulai perbandingan.`;
     } else {
@@ -59,8 +59,8 @@ YOUR EXPERTISE DOMAINS (12 Pillars of Analysis)
      * SE: WAJIB pondasi dalam (bored pile/tiang pancang) hingga lapisan keras, min kedalaman 15-25m. Biaya Rp 800rb-1.5jt per meter
      * SD: Pondasi dalam disarankan di zona seismik >0.3g. Foot plate/cakar ayam untuk bangunan 1-2 lantai jika PGA <0.3g
      * SC: Pondasi dangkal (foot plate, batu kali) cukup untuk bangunan 1-3 lantai
-   - Likuifaksi: FS < 1.0 = RAWAN KRITIS (tanah bisa "mencair" saat gempa). FS 1.0-1.2 = Perlu mitigasi. FS > 1.2 = Aman
-   - Contoh nyata likuifaksi Indonesia: Palu 2018 (Balaroa & Petobo), Yogya 2006, Padang 2009
+   - Likuefaksi: FS < 1.0 = RAWAN KRITIS (tanah bisa "mencair" saat gempa). FS 1.0-1.2 = Perlu mitigasi. FS > 1.2 = Aman
+   - Contoh nyata likuefaksi Indonesia: Palu 2018 (Balaroa & Petobo), Yogya 2006, Padang 2009
 
 2. 🌋 SEISMIK & TEKTONIK
    - Indonesia = Ring of Fire, 3 lempeng utama (Indo-Australia, Eurasia, Pasifik)
@@ -100,7 +100,7 @@ YOUR EXPERTISE DOMAINS (12 Pillars of Analysis)
    - Risiko geologis MENURUNKAN nilai properti 10-40%
    - Zona sesar aktif < 5km: depreciation 25-40%
    - Zona banjir rutin: depreciation 15-30%
-   - Zona likuifaksi: sulit mendapat KPR/kredit dari beberapa bank
+   - Zona likuefaksi: sulit mendapat KPR/kredit dari beberapa bank
    - Area subsidence (Jakarta Utara): properti bisa TIDAK LAYAK HUNI dalam 10-20 tahun
    - TIPS: Selalu cek status tanah (HGB/SHM), IMB/PBG, dan kesesuaian RTRW sebelum beli
 
@@ -170,7 +170,7 @@ CAPABILITIES — Hal yang BISA kamu bantu:
 - Rekomendasi pondasi & struktur bangunan
 - Estimasi biaya mitigasi & konstruksi
 - Konsultasi investasi properti dari sisi risiko geologis
-- Penjelasan data teknis (Vs30, PGA, likuifaksi, dll)
+- Penjelasan data teknis (Vs30, PGA, likuefaksi, dll)
 - Perbandingan risiko antar lokasi
 - Rekomendasi asuransi properti
 - Panduan kesiapsiagaan bencana

@@ -37,19 +37,18 @@ class LocationClassification:
 
 _WATER_TYPES = {"sea", "ocean", "bay", "strait", "water"}
 _WATER_WORDS = {"ocean", "sea", "laut", "selat", "strait", "bay", "teluk", "samudra"}
+# Only signals tied to a concrete physical feature count as evidence of land.
+# Administrative-only fields such as city/county/postcode are deliberately
+# excluded because reverse geocoders often return their nearest centroid for
+# an open-water coordinate.
 _LAND_ADDRESS_KEYS = {
     "amenity",
     "building",
-    "city",
-    "city_district",
-    "county",
     "house_number",
     "industrial",
     "island",
     "landuse",
-    "municipality",
     "neighbourhood",
-    "postcode",
     "railway",
     "road",
     "shop",
