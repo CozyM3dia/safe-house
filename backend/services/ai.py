@@ -1120,7 +1120,7 @@ async def generate_narrative(
             system_instruction=_NARRATIVE_SYSTEM_INSTRUCTION,
             user_payload=prompt,
             response_schema=_narrative_schema(),
-            max_output_tokens=1536,
+            max_output_tokens=3072,
             temperature=0.2,
             client=client,
         )
