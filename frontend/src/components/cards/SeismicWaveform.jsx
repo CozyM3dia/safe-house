@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { Waves } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle } from '../ui/card';
-import { riskHex } from '../../lib/utils';
 
 /**
  * Generate a pseudo-realistic seismograph waveform.

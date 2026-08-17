@@ -7,7 +7,7 @@ function tokenize(text) {
   if (!text) return [];
   return text
     .toLowerCase()
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, " ")
+    .replace(/[.,\x2f#!$%^&*;:{}=_`~()?"'-]/g, " ")
     .split(/\s+/)
     .filter(word => word.length > 2); // Filter out short stop-words
 }

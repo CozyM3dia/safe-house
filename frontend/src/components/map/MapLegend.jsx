@@ -1,13 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../../store/useAppStore";
-import { cn } from "../../lib/utils";
+import { useT } from "../../hooks/useTranslation";
 import { Info, Map, Droplets, GitBranch } from "lucide-react";
 import { rainbowGradientCss, HAZARD_RAMP_STOPS } from "../../lib/hazardOverlay";
 
-// Bar legenda rainbow — warnanya identik dengan raster (ramp yang sama).
+// Bar legenda — warnanya identik dengan raster (ramp yang sama).
 const RAINBOW_CSS = rainbowGradientCss(12);
 
 export function MapLegend() {
+  const t = useT();
   const overlays = useAppStore((s) => s.overlays);
 
   const showFloodLegend = overlays.flood;
@@ -27,17 +28,13 @@ export function MapLegend() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 15, scale: 0.95 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className={cn(
-            "fixed left-4 bottom-24 z-[20] pointer-events-auto",
-            "w-56 rounded-2xl border border-white/8 bg-bg-surface/90 backdrop-blur-xl p-4 shadow-glass-lg",
-            "flex flex-col gap-3 font-body select-none"
-          )}
+          className="mt-4 flex flex-col gap-3 border-t border-white/8 pt-3 font-body select-none"
         >
           {/* Header */}
           <div className="flex items-center gap-1.5 border-b border-white/6 pb-2">
             <Info size={12} className="text-accent" />
             <span className="text-[9px] font-bold tracking-wider uppercase text-text-muted">
-              Legenda Peta
+              {t('panel.mapLegend')}
             </span>
           </div>
 
@@ -94,24 +91,24 @@ export function MapLegend() {
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-1">
                 <Map size={10} className="text-green-400" />
-                <span className="text-[10px] font-bold text-text-primary">Tutupan Lahan</span>
+                <span className="text-[10px] font-bold text-text-primary">{t('panel.landCover')}</span>
               </div>
               <div className="grid grid-cols-2 gap-1.5 pt-1">
                 <div className="flex items-center gap-1.5 rounded bg-white/[0.02] border border-white/5 px-2 py-1">
                   <div className="w-2.5 h-2.5 rounded bg-slate-400 border border-slate-500/20 shrink-0" />
-                  <span className="text-[8px] font-bold text-text-secondary truncate">Urban</span>
+                  <span className="text-[8px] font-bold text-text-secondary truncate">{t('panel.urban')}</span>
                 </div>
                 <div className="flex items-center gap-1.5 rounded bg-white/[0.02] border border-white/5 px-2 py-1">
                   <div className="w-2.5 h-2.5 rounded bg-green-500 border border-green-600/20 shrink-0" />
-                  <span className="text-[8px] font-bold text-text-secondary truncate">Hutan</span>
+                  <span className="text-[8px] font-bold text-text-secondary truncate">{t('panel.forest')}</span>
                 </div>
                 <div className="flex items-center gap-1.5 rounded bg-white/[0.02] border border-white/5 px-2 py-1">
                   <div className="w-2.5 h-2.5 rounded bg-yellow-600 border border-yellow-700/20 shrink-0" />
-                  <span className="text-[8px] font-bold text-text-secondary truncate">Tani</span>
+                  <span className="text-[8px] font-bold text-text-secondary truncate">{t('panel.farming')}</span>
                 </div>
                 <div className="flex items-center gap-1.5 rounded bg-white/[0.02] border border-white/5 px-2 py-1">
                   <div className="w-2.5 h-2.5 rounded bg-sky-500 border border-sky-600/20 shrink-0" />
-                  <span className="text-[8px] font-bold text-text-secondary truncate">Air</span>
+                  <span className="text-[8px] font-bold text-text-secondary truncate">{t('panel.water')}</span>
                 </div>
               </div>
             </div>

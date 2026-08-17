@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-import { generateNarrative, runAudit } from '../services/api';
+import { generateBattleReport, generateNarrative, runAudit } from '../services/api';
 
 export const useAppStore = create(
   persist(
@@ -24,6 +24,7 @@ export const useAppStore = create(
       chatExpanded: false,
       simulatedPga: null,
       battleReportContent: null,
+      battleReportMeta: null,
       battleReportLoading: false,
 
       // ─── Map Overlays & RAG Documents ──────────────────────────
@@ -40,6 +41,7 @@ export const useAppStore = create(
         znt: false,
         landcover: false,
         population: false,
+        faults: false,
       },
       overlayOpacities: {
         flood: 0.65,
@@ -53,6 +55,7 @@ export const useAppStore = create(
         znt: 0.65,
         landcover: 0.65,
         population: 0.65,
+        faults: 0.34,
       },
       uploadedDocuments: [],
 
@@ -70,7 +73,7 @@ export const useAppStore = create(
         set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
       setAuditDrawer: (open) => set({ auditDrawerOpen: open }),
       setCmdPalette: (open) => set({ cmdPaletteOpen: open }),
-      setMode: (mode) => set({ mode, selectingBattlePin: false, battleReportContent: null, battleReportLoading: false }),
+      setMode: (mode) => set({ mode, selectingBattlePin: false, battleReportContent: null, battleReportMeta: null, battleReportLoading: false }),
       setSelectingBattlePin: (v) => set({ selectingBattlePin: v }),
       setSimulatedPga: (v) => set({ simulatedPga: v }),
       setBaseMapStyle: (style) => set({ baseMapStyle: style }),
@@ -210,7 +213,11 @@ export const useAppStore = create(
                 if (get().currentAiAbortController !== abortController) return;
                 set((state) => ({
                   propertyA: state.propertyA
-                    ? { ...state.propertyA, aiReport, narrative: aiReport }
+                    ? {
+                        ...state.propertyA,
+                        aiReport,
+                        narrative: aiReport,
+                      }
                     : state.propertyA,
                   aiLoading: false,
                 }));
@@ -238,20 +245,55 @@ export const useAppStore = create(
             toast.dismiss(toastId);
             return;
           }
-          console.error('processLocation failed', e);
+          const isExpectedAuditRejection =
+            e.cause?.response?.status === 422 ||
+            /lokasi .* (perairan|lahan bangunan)|di luar cakupan/i.test(e.message || '');
+          if (isExpectedAuditRejection) {
+            console.info('processLocation rejected', e.message);
+          } else {
+            console.error('processLocation failed', e);
+          }
           toast.error(e.message || 'Gagal memproses lokasi', { id: toastId });
           set({ loading: false });
         }
       },
 
       // ─── Battle report ─────────────────────────────────────────
-      // Mode Battle memerlukan lapis AI, yang ditunda sampai tahap 6.
-      // Lihat spec bagian 13 — sengaja tidak dikerjakan dulu.
-      runBattleReport: async () => null,
+      runBattleReport: async () => {
+        const { propertyA, propertyB, lang, battleReportLoading } = get();
+        if (battleReportLoading) return null;
+        if (!propertyA || !propertyB) {
+          toast.error(lang === 'en' ? 'Select two audited locations first.' : 'Pilih dua lokasi yang sudah diaudit terlebih dahulu.');
+          return null;
+        }
 
-      runBattleReportAction: async () => {
-        toast.info('Mode perbandingan akan hadir setelah lapis AI aktif.');
+        const toastId = toast.loading(
+          lang === 'en' ? 'Generating comparison report…' : 'Membuat laporan perbandingan…'
+        );
+        set({ battleReportLoading: true, battleReportContent: null, battleReportMeta: null });
+
+        try {
+          const result = await generateBattleReport(propertyA, propertyB, lang);
+          set({
+            battleReportContent: result.report,
+            battleReportMeta: result.metadata,
+            battleReportLoading: false,
+            auditDrawerOpen: true,
+          });
+          toast.success(
+            lang === 'en' ? 'Battle report ready' : 'Laporan perbandingan siap',
+            { id: toastId, duration: 3000 }
+          );
+          return result;
+        } catch (error) {
+          console.error('runBattleReport failed', error);
+          set({ battleReportLoading: false });
+          toast.error(error.message || (lang === 'en' ? 'Battle report failed' : 'Laporan perbandingan gagal'), { id: toastId });
+          return null;
+        }
       },
+
+      runBattleReportAction: () => get().runBattleReport(),
 
       // ─── Reset ─────────────────────────────────────────────────
       reset: () =>
@@ -263,6 +305,7 @@ export const useAppStore = create(
           simulatedPga: null,
           auditDrawerOpen: false,
           battleReportContent: null,
+          battleReportMeta: null,
           battleReportLoading: false,
           mode: 'audit',
         }),

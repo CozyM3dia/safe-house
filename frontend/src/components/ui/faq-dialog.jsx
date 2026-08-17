@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Dialog,
   DialogClose,
@@ -16,6 +15,8 @@ export function FaqDialog() {
     <Dialog>
       <DialogTrigger asChild>
         <button 
+          type="button"
+          aria-haspopup="dialog"
           style={{
             background: "none",
             border: "none",
@@ -24,6 +25,8 @@ export function FaqDialog() {
             textDecoration: "underline",
             cursor: "pointer",
             marginTop: "12px",
+            minHeight: "44px",
+            padding: "0 8px",
             fontFamily: "Inter, sans-serif"
           }}
         >

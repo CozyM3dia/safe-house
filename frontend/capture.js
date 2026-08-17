@@ -1,6 +1,4 @@
 import puppeteer from 'puppeteer';
-import { promises as fs } from 'fs';
-import path from 'path';
 
 (async () => {
   console.log("Starting browser automation...");

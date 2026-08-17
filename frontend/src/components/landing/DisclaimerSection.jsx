@@ -3,10 +3,10 @@ import { ShieldAlert } from 'lucide-react';
 
 export default function DisclaimerSection({ t }) {
   const sources = [
-    { name: 'InaRISK BNPB', role: 'Bencana Mikro & Kerentanan Spasial', desc: 'Badan Nasional Penanggulangan Bencana' },
-    { name: 'PVMBG', role: 'Sesar Aktif & Kawasan Vulkanik (KRB)', desc: 'Pusat Vulkanologi dan Mitigasi Bencana Geologi' },
-    { name: 'BMKG', role: 'Katalis Seismik & Peak Ground Acceleration', desc: 'Badan Meteorologi Klimatologi dan Geofisika' },
-    { name: 'USGS Catalog', role: 'Historis Kekuatan Gempa Bumi regional', desc: 'United States Geological Survey' },
+    { name: 'InaRISK BNPB', role: t('sourceInaRole', 'Bencana Mikro & Kerentanan Spasial'), desc: t('sourceInaDesc', 'Badan Nasional Penanggulangan Bencana') },
+    { name: 'PVMBG', role: t('sourcePvmRole', 'Sesar Aktif & Kawasan Vulkanik (KRB)'), desc: t('sourcePvmDesc', 'Pusat Vulkanologi dan Mitigasi Bencana Geologi') },
+    { name: 'BMKG', role: t('sourceBmkgRole', 'Katalis Seismik & Peak Ground Acceleration'), desc: t('sourceBmkgDesc', 'Badan Meteorologi Klimatologi dan Geofisika') },
+    { name: 'USGS Catalog', role: t('sourceUsgsRole', 'Historis Kekuatan Gempa Bumi regional'), desc: t('sourceUsgsDesc', 'United States Geological Survey') },
   ];
 
   const fadeUp = {
@@ -47,7 +47,7 @@ export default function DisclaimerSection({ t }) {
             {t('disclaimerHeading', 'Sumber Data Geospasial Nasional & Global')}
           </h2>
           <p className="mt-4 text-xs md:text-sm text-muted-foreground leading-relaxed font-body">
-            S.A.F.E House memetakan koordinat mikro Anda secara langsung ke basis data spasial resmi yang dikelola pemerintah Indonesia dan lembaga kegempaan global.
+            {t('disclaimerIntro', 'S.A.F.E House memetakan koordinat mikro Anda secara langsung ke basis data spasial resmi yang dikelola pemerintah Indonesia dan lembaga kegempaan global.')}
           </p>
 
           {/* List of Data partners - asymmetric visual tags with staggered entrance */}
@@ -98,7 +98,7 @@ export default function DisclaimerSection({ t }) {
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-bold text-foreground font-body uppercase tracking-wider">
-                  DISCLAIMER PROFESSIONAL
+                  {t('disclaimerProfessional', 'DISCLAIMER PROFESIONAL')}
                 </h4>
                 <p className="mt-3.5 text-xs md:text-sm text-muted-foreground leading-relaxed font-body">
                   {t('disclaimerText', 'Analisis kami menggunakan data publik dari BNPB InaRISK, BMKG, PVMBG, USGS, dan OpenStreetMap. Laporan diagnostik awal berbasis AI ini TIDAK menggantikan uji tanah laboratorium atau survei geoteknik profesional langsung di lapangan. Konsultasikan dengan ahli struktur berlisensi sebelum mengambil keputusan finansial final.')}
@@ -109,37 +109,37 @@ export default function DisclaimerSection({ t }) {
             {/* Quick check indicators showing what we DO and do NOT do */}
             <div className="mt-8 pt-8 border-t border-border/50 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <span className="text-[9px] font-mono text-accent uppercase tracking-wider font-semibold">MENDUKUNG DIAGNOSIS</span>
+                <span className="text-[9px] font-mono text-accent uppercase tracking-wider font-semibold">{t('disclaimerSupports', 'MENDUKUNG DIAGNOSIS')}</span>
                 <ul className="text-[10px] text-muted-foreground/95 flex flex-col gap-1.5 font-body">
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400/80 animate-pulse" />
-                    Pencocokan zona KRB vulkanik
+                    {t('disclaimerSupport1', 'Pencocokan zona KRB vulkanik')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400/80" />
-                    Deteksi sesar aktif &lt; 20 km
+                    {t('disclaimerSupport2', 'Deteksi sesar aktif < 20 km')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400/80" />
-                    PGA & Likuifaksi Factor of Safety
+                    {t('disclaimerSupport3', 'PGA & Factor of Safety likuefaksi')}
                   </li>
                 </ul>
               </div>
               
               <div className="flex flex-col gap-2">
-                <span className="text-[9px] font-mono text-muted-foreground/60 uppercase tracking-wider font-semibold">TIDAK MENGGANTIKAN</span>
+                <span className="text-[9px] font-mono text-muted-foreground/60 uppercase tracking-wider font-semibold">{t('disclaimerDoesNotReplace', 'TIDAK MENGGANTIKAN')}</span>
                 <ul className="text-[10px] text-muted-foreground/75 flex flex-col gap-1.5 font-body">
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400/80" />
-                    Uji penetrasi tanah (SPT/CPT)
+                    {t('disclaimerLimit1', 'Uji penetrasi tanah (SPT/CPT)')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400/80" />
-                    Sertifikasi Laik Fungsi (SLF)
+                    {t('disclaimerLimit2', 'Sertifikasi Laik Fungsi (SLF)')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400/80" />
-                    Desain fondasi sipil rinci
+                    {t('disclaimerLimit3', 'Desain fondasi sipil rinci')}
                   </li>
                 </ul>
               </div>

@@ -48,7 +48,7 @@ function AnimatedPlaceholder() {
     "Analyze soil stability..."
   ] : [
     "Tanya S.A.F.E AI...",
-    "Cek risiko likuifaksi area ini...",
+    "Cek risiko likuefaksi area ini...",
     "Berapa skor S.A.F.E properti ini?",
     "Apakah lokasi ini rawan banjir?",
     "Analisis stabilitas tanahnya..."
@@ -158,7 +158,7 @@ export function ChatbotFab() {
         initial={{ y: 30, opacity: 0, scale: 0.96 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
         transition={{ delay: 0.3, type: 'spring', damping: 22, stiffness: 200 }}
-        className="fixed bottom-5 right-5 z-[35] w-[340px]"
+        className="fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[340px]"
       >
         <div className="bezel-outer">
           <div className="bezel-inner relative overflow-hidden bg-bg-surface/90 backdrop-blur-xl border border-white/8 shadow-glass-lg rounded-2xl">
@@ -171,8 +171,9 @@ export function ChatbotFab() {
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-xl bg-accent/15 border border-accent/30 hover:bg-accent/25 hover:scale-[1.03] transition-all cursor-pointer shadow-[0_0_8px_rgba(212,149,106,0.1)]"
-                title="Buka Chatbot"
+                aria-label={t('chat.open')}
+                className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/15 shadow-[0_0_8px_rgba(212,149,106,0.1)] transition-all hover:scale-[1.03] hover:bg-accent/25"
+                title={t('chat.open')}
               >
                 <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
               </button>
@@ -183,6 +184,7 @@ export function ChatbotFab() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  aria-label={t('chat.placeholder')}
                   onFocus={() => setExpanded(true)}
                   className="w-full border-none bg-transparent text-xs text-text-primary focus:outline-none relative z-10"
                 />
@@ -196,8 +198,10 @@ export function ChatbotFab() {
               <button
                 type="button"
                 onClick={() => send()}
+                aria-label={t('chat.send')}
+                disabled={!input.trim() || loading}
                 className={cn(
-                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300 cursor-pointer',
+                  'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full transition-all duration-300',
                   input.trim()
                     ? 'bg-accent text-[#0f0b08] hover:scale-105 shadow-[0_0_8px_rgba(212,149,106,0.4)]'
                     : 'bg-white/[0.04] text-text-muted cursor-not-allowed'
@@ -214,8 +218,10 @@ export function ChatbotFab() {
           <motion.button
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
+            type="button"
             onClick={() => setExpanded(true)}
-            className="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-bg shadow-[0_0_8px_rgba(212,149,106,0.6)] border border-[#0f0b08] cursor-pointer"
+            aria-label={t('chat.open')}
+            className="absolute -left-2 -top-2 flex min-h-7 min-w-7 items-center justify-center rounded-full border border-[#0f0b08] bg-accent text-[9px] font-bold text-bg shadow-[0_0_8px_rgba(212,149,106,0.6)]"
           >
             {messages.filter((m) => m.role === 'assistant').length}
           </motion.button>
@@ -231,7 +237,7 @@ export function ChatbotFab() {
       animate={{ x: 0, opacity: 1, scale: 1 }}
       exit={{ x: 420, opacity: 0, scale: 0.98 }}
       transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-      className="glass-strong fixed bottom-4 right-4 top-[72px] z-[35] flex w-[380px] flex-col overflow-hidden rounded-3xl border border-white/8 bg-bg-surface/95 backdrop-blur-xl shadow-glass-xl"
+      className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-3xl border border-white/8 bg-bg-surface/95 backdrop-blur-xl shadow-glass-xl sm:left-auto sm:right-4 sm:w-[380px]"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/8 px-5 py-4 bg-white/[0.015]">
@@ -250,9 +256,11 @@ export function ChatbotFab() {
           </div>
         </div>
         <button
+          type="button"
           onClick={() => setExpanded(false)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted hover:bg-white/8 hover:text-text-primary transition-colors cursor-pointer"
-          title="Minimize"
+          aria-label={t('chat.minimize')}
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary"
+          title={t('chat.minimize')}
         >
           <ChevronDown className="h-4.5 w-4.5" />
         </button>
@@ -319,9 +327,10 @@ export function ChatbotFab() {
           <div className="flex flex-wrap gap-2">
             {(lang === 'en' ? SUGGESTED_PROMPTS_EN : SUGGESTED_PROMPTS_ID).slice(0, 4).map((s) => (
               <button
+                type="button"
                 key={s}
                 onClick={() => send(s)}
-                className="rounded-xl border border-white/6 bg-white/[0.02] px-3 py-2 text-[10px] text-text-secondary hover:border-accent/40 hover:bg-accent/[0.03] hover:text-accent hover:scale-[1.01] transition-all duration-300 flex items-center gap-1.5 shadow-sm text-left leading-normal cursor-pointer"
+                className="min-h-[44px] rounded-xl border border-white/6 bg-white/[0.02] px-3 py-2 text-left text-[10px] leading-normal text-text-secondary shadow-sm transition-all duration-300 hover:scale-[1.01] hover:border-accent/40 hover:bg-accent/[0.03] hover:text-accent"
               >
                 <span className="text-accent/60 select-none text-[8px]">✦</span>
                 <span>{s}</span>
@@ -342,6 +351,7 @@ export function ChatbotFab() {
                   value={input}
                   onChange={(e) => { setInput(e.target.value); adjustHeight(); }}
                   onKeyDown={handleKeyDown}
+                  aria-label={t('chat.placeholder')}
                   className="w-full resize-none rounded-[13px] rounded-b-none border-none bg-transparent px-4 py-3.5 text-xs leading-[1.4] text-text-primary placeholder:text-transparent focus:outline-none"
                   rows={1}
                 />
@@ -361,8 +371,10 @@ export function ChatbotFab() {
               <button
                 type="button"
                 onClick={() => send()}
+                aria-label={t('chat.send')}
+                disabled={!input.trim() || loading}
                 className={cn(
-                  'flex h-7 w-7 items-center justify-center rounded-full transition-all duration-300 cursor-pointer',
+                  'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition-all duration-300',
                   input.trim()
                     ? 'bg-accent text-[#0f0b08] hover:scale-105 shadow-[0_0_10px_rgba(212,149,106,0.5)]'
                     : 'bg-white/[0.04] text-text-muted cursor-not-allowed'
@@ -380,6 +392,7 @@ export function ChatbotFab() {
 
 // ─── Message Bubble ─────────────────────────────────────────────────
 function MessageBubble({ role, content, citations, followUps, onFollowUpClick, loading }) {
+  const t = useT();
   const isUser = role === 'user';
   return (
     <motion.div
@@ -431,7 +444,7 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
               {citations && citations.length > 0 && (
                 <div className="mt-3 border-t border-white/8 pt-2.5 flex flex-col gap-1.5">
                   <span className="text-[8px] font-bold text-accent tracking-[0.15em] uppercase select-none">
-                    SUMBER DATA ({citations.length}):
+                    {t('chat.sources')} ({citations.length}):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {citations.map((c, idx) => (
@@ -456,7 +469,7 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
       {!isUser && followUps && followUps.length > 0 && (
         <div className="max-w-[85%] flex flex-col gap-1.5 mt-1.5 pl-1">
           <p className="text-[8px] font-bold tracking-[0.15em] text-accent uppercase select-none">
-            PERTANYAAN LANJUTAN:
+            {t('chat.followUps')}:
           </p>
           <div className="flex flex-col gap-1.5">
             {followUps.map((q, idx) => (
@@ -464,7 +477,8 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
                 key={idx}
                 onClick={() => !loading && onFollowUpClick(q)}
                 disabled={loading}
-                className="w-full text-left rounded-xl border border-white/6 bg-white/[0.01] px-3.5 py-2 text-[10px] text-text-secondary hover:border-accent/40 hover:bg-accent/[0.03] hover:text-accent hover:translate-x-0.5 transition-all duration-300 flex items-center justify-between shadow-sm cursor-pointer"
+                aria-label={q}
+                className="flex min-h-[44px] w-full items-center justify-between rounded-xl border border-white/6 bg-white/[0.01] px-3.5 py-2 text-left text-[10px] text-text-secondary shadow-sm transition-all duration-300 hover:translate-x-0.5 hover:border-accent/40 hover:bg-accent/[0.03] hover:text-accent cursor-pointer"
               >
                 <span className="flex-1 pr-2">{q}</span>
                 <span className="text-accent text-xs font-bold leading-none select-none">→</span>

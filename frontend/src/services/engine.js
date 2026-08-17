@@ -1,10 +1,10 @@
 import axios from 'axios';
+import { ACTIVE_FAULTS } from '../lib/faultOverlay.js';
+export { ACTIVE_FAULTS } from '../lib/faultOverlay.js';
 
 // Legacy engine kept only for migration fixtures. Secrets and provider calls
 // belong in the backend; never read VITE_* API keys in browser code.
-const GEMINI_API_KEY = '';
 const OPENROUTER_API_KEY = '';
-export const MAPS_API_KEY = '';
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -15,68 +15,6 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // Coverage: Sumatra, Java, Bali, NTB, NTT, Kalimantan, Sulawesi,
 //           Maluku, Papua — all major tectonic features
 // ═══════════════════════════════════════════════════════════════════
-
-export const ACTIVE_FAULTS = [
-    // ── SUMATRA (Great Sumatran Fault segments) ──
-    { name: "Sesar Aceh (NAD)", coords: [5.550, 95.320] },
-    { name: "Sesar Seulimeum (Aceh)", coords: [5.420, 95.680] },
-    { name: "Sesar Tripa (Aceh Barat)", coords: [3.800, 96.500] },
-    { name: "Sesar Renun (Sumut)", coords: [2.700, 98.500] },
-    { name: "Sesar Toru (Sumut)", coords: [1.600, 99.000] },
-    { name: "Sesar Angkola (Tapanuli)", coords: [1.200, 99.300] },
-    { name: "Sesar Barumun (Sumut)", coords: [1.000, 99.800] },
-    { name: "Sesar Sumpur (Sumbar)", coords: [-0.400, 100.400] },
-    { name: "Sesar Sianok (Bukittinggi)", coords: [-0.300, 100.370] },
-    { name: "Sesar Suliti (Sumbar)", coords: [-1.100, 101.100] },
-    { name: "Sesar Dikit (Kerinci)", coords: [-1.800, 101.300] },
-    { name: "Sesar Ketaun (Bengkulu)", coords: [-3.300, 102.100] },
-    { name: "Sesar Musi (Bengkulu)", coords: [-3.700, 102.800] },
-    { name: "Sesar Kumering (Sumsel)", coords: [-4.400, 103.800] },
-    { name: "Semangko Timur (Lampung)", coords: [-5.480, 104.720] },
-    { name: "Semangko Barat (Lampung)", coords: [-5.500, 104.650] },
-    { name: "Sesar Tarahan (Bandar Lampung)", coords: [-5.510, 105.320] },
-
-    // ── JAVA ──
-    { name: "Sesar Cimandiri (Jabar)", coords: [-6.800, 106.700] },
-    { name: "Sesar Lembang (Bandung)", coords: [-6.780, 107.600] },
-    { name: "Sesar Baribis-Kendeng (Jabar-Jateng)", coords: [-6.900, 108.500] },
-    { name: "Sesar Opak (Yogyakarta)", coords: [-7.870, 110.400] },
-    { name: "Sesar Grindulu (Pacitan)", coords: [-8.200, 111.100] },
-    { name: "Sesar Pasuruan (Jatim)", coords: [-7.650, 112.900] },
-    { name: "Sesar Kendeng (Jatim)", coords: [-7.300, 112.000] },
-    { name: "Sesar Lasem (Jateng)", coords: [-6.700, 111.400] },
-
-    // ── BALI & NUSA TENGGARA ──
-    { name: "Sesar Seririt (Bali Utara)", coords: [-8.200, 114.900] },
-    { name: "Flores Back-Arc Thrust", coords: [-8.200, 121.500] },
-    { name: "Sesar Busur Belakang Flores", coords: [-8.100, 122.400] },
-
-    // ── SULAWESI ──
-    { name: "Sesar Palu-Koro (Sulteng)", coords: [-0.900, 119.850] },
-    { name: "Sesar Matano (Sulsel)", coords: [-2.500, 121.400] },
-    { name: "Sesar Lawanopo (Sultra)", coords: [-3.500, 122.000] },
-    { name: "Sesar Walanae (Sulsel)", coords: [-3.800, 120.200] },
-    { name: "Sesar Gorontalo (Gorontalo)", coords: [0.500, 123.000] },
-    { name: "Sesar Minahasa (Sulut)", coords: [1.300, 124.800] },
-
-    // ── KALIMANTAN ──
-    { name: "Sesar Meratus (Kalsel)", coords: [-3.200, 115.800] },
-    { name: "Sesar Mangkalihat (Kaltim)", coords: [1.000, 118.000] },
-    { name: "Sesar Tarakan (Kaltara)", coords: [3.300, 117.600] },
-    { name: "Sesar Adang (Kaltim)", coords: [0.200, 117.500] },
-
-    // ── MALUKU ──
-    { name: "Sesar Sorong-Kawa (Maluku)", coords: [-3.300, 128.200] },
-    { name: "Sesar Sula (Maluku Utara)", coords: [-1.800, 125.500] },
-    { name: "Sesar Ambon (Maluku)", coords: [-3.700, 128.200] },
-
-    // ── PAPUA ──
-    { name: "Sesar Sorong (Papua Barat)", coords: [-0.870, 131.300] },
-    { name: "Sesar Ransiki (Papua Barat)", coords: [-1.500, 134.200] },
-    { name: "Sesar Yapen (Papua)", coords: [-1.800, 136.200] },
-    { name: "Sesar Mamberamo (Papua)", coords: [-3.000, 138.500] },
-    { name: "Sesar Jayapura (Papua)", coords: [-2.530, 140.700] },
-];
 
 export const VOLCANOES = [
     // ── SUMATRA ──
@@ -402,107 +340,13 @@ const calcLiquefaction = (lat, lon, elevasi) => {
 
     let fs = csr > 0 ? parseFloat((crr / csr).toFixed(2)) : 10.0;
 
-    let riskScore = 0;
+    let riskScore;
     if (fs < 0.5) riskScore = 95;
     else if (fs < 1.0) riskScore = 80;
     else if (fs < 1.2) riskScore = 50;
     else riskScore = 10;
 
     return { fs, vs30, siteClass, pga, riskScore, fa, pgaSurface, nearestCity: regional.city };
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// GOOGLE STREET VIEW AI VISION INTEGRATION
-// ═══════════════════════════════════════════════════════════════════
-
-const arrayBufferToBase64 = (buffer) => {
-    const bytes = new Uint8Array(buffer);
-    const chunks = [];
-    const chunkSize = 8192;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize)));
-    }
-    return btoa(chunks.join(''));
-};
-
-// Street View Analysis using backend proxy and Gemini Multimodal API
-export const runStreetViewAnalysis = async (lat, lon, address = '') => {
-    const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true';
-    if (!USE_BACKEND) {
-        console.log("[S.A.F.E] Street View analysis bypassed in frontend-only mode.");
-        return null;
-    }
-    const backendBase = import.meta.env.PROD ? '' : 'http://localhost:3001';
-    try {
-        // 1. Check if Street View is available at this location
-        const checkRes = await axios.get(`${backendBase}/api/streetview/check?lat=${lat}&lon=${lon}`);
-        if (!checkRes.data?.available) {
-            console.log("[S.A.F.E] Street View is not available at this location.");
-            return null;
-        }
-
-        // 2. Fetch images for 4 headings (North, East, South, West) to get a full 360 view
-        const headings = [0, 90, 180, 270];
-        const imagesParts = [];
-
-        for (const heading of headings) {
-            try {
-                const imgRes = await axios.get(`${backendBase}/api/streetview/image?lat=${lat}&lon=${lon}&heading=${heading}`);
-                if (imgRes.data?.base64) {
-                    imagesParts.push({
-                        inlineData: {
-                            mimeType: imgRes.data.mimeType || 'image/jpeg',
-                            data: imgRes.data.base64
-                        }
-                    });
-                }
-            } catch (errImg) {
-                console.warn(`[S.A.F.E] Failed to fetch Street View image for heading ${heading}:`, errImg.message);
-            }
-        }
-
-        if (imagesParts.length === 0) {
-            return null;
-        }
-
-        // 3. Construct Gemini prompt for micro-environment analysis
-        const prompt = `You are a Geophysics & Civil Engineering Inspector analyzing 360-degree Street View panoramas for property audit.
-Address/Location: ${address}
-Coordinates: ${lat}, ${lon}
-
-Examine the provided street view images and write a detailed, professional micro-environmental analysis (120-150 words).
-Focus on:
-1. Road Width & Access: Is it wide enough for fire trucks/emergency vehicles?
-2. Building Density & Construction Quality: Are nearby buildings robust, masonry, or informal?
-3. Infrastructure & Utilities: Overhead cables condition, drainage gutters cleanliness and depth.
-4. Topography & Greenery: Slope, signs of erosion, land support, trees/vegetation.
-
-Write the output in Indonesian. Keep it concise, professional, and clear for a home buyer. Do not mention "image 1", "image 2" or "the prompt" in your analysis. Present it as a unified visual analysis report.`;
-
-        // 4. Call Gemini proxy with the images and prompt
-        const payload = {
-            model: GEMINI_MODEL,
-            contents: [{
-                role: "user",
-                parts: [
-                    { text: prompt },
-                    ...imagesParts
-                ]
-            }],
-            generationConfig: {
-                maxOutputTokens: 500,
-                temperature: 0.4
-            }
-        };
-
-        const response = await axios.post(`${backendBase}/api/ai/gemini`, payload, { timeout: 30000 });
-        const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        return text?.trim() || null;
-
-    } catch (e) {
-        console.warn("[S.A.F.E] Street View analysis failed:", e.message || e);
-        return null;
-    }
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -738,7 +582,7 @@ export const fetchGeospatialData = async (lat, lon) => {
 
 export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = null, maxOutputTokens = 2048, temperature = 0.4, signal = null) => {
     const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true';
-    const backendBase = import.meta.env.PROD ? '' : 'http://localhost:3001';
+    const backendBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
 
     // Helper functions for each stage to avoid code duplication
     const tryBackendGemini = async () => {
@@ -754,29 +598,6 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
         const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) return text;
         throw new Error("Empty response from backend Gemini proxy");
-    };
-
-    const tryFreeLLMAPI = async () => {
-        const adjustedSysPrompt = responseMimeType === 'application/json' 
-            ? `${sysPrompt}\n\nIMPORTANT: Respond ONLY with a valid JSON object. Do not include markdown code blocks, backticks, or any conversational text. Return raw JSON.`
-            : sysPrompt;
-        
-        const payload = {
-            model: "auto",
-            messages: [
-                { role: "system", content: adjustedSysPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            temperature: temperature
-        };
-        if (responseMimeType === 'application/json') {
-            payload.response_format = { type: "json_object" };
-        }
-        
-        const response = await axios.post(`${backendBase}/api/ai/freellmapi`, payload, { timeout: 30000, signal });
-        const text = response.data?.choices?.[0]?.message?.content;
-        if (text) return text;
-        throw new Error("Empty response from FreeLLMAPI proxy");
     };
 
     const tryBackendOpenRouter = async () => {
@@ -856,7 +677,7 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
             if (status === 429 || status === 503) {
                 console.warn(`Rate limited (${status}), retrying in ${retryDelay}ms...`);
                 await new Promise(r => setTimeout(r, retryDelay));
-                if (signal?.aborted) throw new Error('canceled');
+                if (signal?.aborted) throw new Error('canceled', { cause: e });
                 return await fn();
             }
             throw e;
@@ -870,14 +691,7 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
             return await withRateLimitRetry(tryBackendGemini);
         } catch (e) {
             if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
-            console.warn("Backend Gemini failed, trying FreeLLMAPI...", e.message || e);
-        }
-
-        try {
-            return await tryFreeLLMAPI();
-        } catch (e) {
-            if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
-            console.warn("FreeLLMAPI failed, trying backend OpenRouter...", e.message || e);
+            console.warn("Backend Gemini failed, trying backend OpenRouter...", e.message || e);
         }
 
         try {
@@ -908,18 +722,18 @@ export const callAIRobust = async (sysPrompt, userPrompt, responseMimeType = nul
     } catch (e) {
         if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
         console.error("All AI Models failed to respond.", e.message || e);
-        throw new Error("All AI models failed");
+        throw new Error("All AI models failed", { cause: e });
     }
 };
 
-export const callAI = async (sysPrompt, userPrompt, useOpenRouter = false, signal = null) => {
+export const callAI = async (sysPrompt, userPrompt, signal = null) => {
     return callAIRobust(sysPrompt, userPrompt, null, 4096, 0.5, signal);
 };
 
 // ═══════════════════════════════════════════════════════════════════
 // CALL 1 — FAST summary cards (no knowledge base, tiny output ~350 tok)
 // Returns: { geoStabilityExplanation, seismicExplanation,
-//            floodEnvExplanation, microAnalysis, streetViewUsed }
+//            floodEnvExplanation, microAnalysis }
 // ═══════════════════════════════════════════════════════════════════
 
 export const generateSummaryCards = async (propertyData, lang = 'id', signal = null) => {
@@ -947,15 +761,13 @@ export const generateSummaryCards = async (propertyData, lang = 'id', signal = n
 - "geoStabilityExplanation": 1-2 sentences on Vs30/site-class/liquefaction
 - "seismicExplanation": 1-2 sentences on PGA/nearest fault name & distance
 - "floodEnvExplanation": 1-2 sentences on flood risk/AQI/elevation
-- "microAnalysis": 50-60 word paragraph on micro-environment (urban density, drainage, road access). Start with "(Preliminary Analysis — Street View scan in progress...)"
-- "streetViewUsed": false
+- "microAnalysis": 50-60 word paragraph on micro-environment (urban density, drainage, road access).
 Respond ONLY with valid JSON. No markdown blocks.`
         : `Anda adalah S.A.F.E AI, konsultan risiko geofisika untuk Indonesia. Berikan objek JSON dengan TEPAT 4 field berikut (Bahasa Indonesia, ringkas):
-- "geoStabilityExplanation": 1-2 kalimat tentang Vs30/kelas situs/likuifaksi
+- "geoStabilityExplanation": 1-2 kalimat tentang Vs30/kelas situs/likuefaksi
 - "seismicExplanation": 1-2 kalimat tentang PGA/nama sesar terdekat & jaraknya
 - "floodEnvExplanation": 1-2 kalimat tentang risiko banjir/AQI/elevasi
-- "microAnalysis": paragraf 50-60 kata tentang mikro lingkungan (kepadatan urban, drainase, akses jalan). Mulai dengan "(Analisis Awal — Pemindaian Street View sedang berjalan...)"
-- "streetViewUsed": false
+- "microAnalysis": paragraf 50-60 kata tentang mikro lingkungan (kepadatan urban, drainase, akses jalan).
 Balas HANYA dengan JSON valid. Tanpa markdown blocks.`;
 
     try {
@@ -963,7 +775,6 @@ Balas HANYA dengan JSON valid. Tanpa markdown blocks.`;
         const text = await callAIRobust(sysPrompt, JSON.stringify(slimPayload), 'application/json', 1500, 0.3, signal);
         const start = text.indexOf('{'); const end = text.lastIndexOf('}');
         const result = JSON.parse(start !== -1 ? text.substring(start, end + 1) : text);
-        result.streetViewUsed = false;
         return result;
     } catch (e) {
         if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
@@ -978,7 +789,7 @@ Balas HANYA dengan JSON valid. Tanpa markdown blocks.`;
             aiError: true, offline: isOffline,
             geoStabilityExplanation: isEnglish 
                 ? `Site analysis shows ${vsText}. Liquefaction risk is estimated at ${liqText}.`
-                : `Analisis situs menunjukkan ${vsText}. Potensi likuifaksi diestimasi pada ${liqText}.`,
+                : `Analisis situs menunjukkan ${vsText}. Potensi likuefaksi diestimasi pada ${liqText}.`,
             seismicExplanation: isEnglish
                 ? `Regional PGA is ${slimPayload.pga}g. ${faultText}`
                 : `Nilai PGA regional adalah ${slimPayload.pga}g. ${faultText}`,
@@ -988,7 +799,6 @@ Balas HANYA dengan JSON valid. Tanpa markdown blocks.`;
             microAnalysis: isEnglish
                 ? "(Offline Mode) AI analysis unavailable. Relying on rule-based geospatial inference."
                 : "(Mode Luring) Analisis AI awan tidak tersedia. Menggunakan inferensi geospasial berbasis aturan lokal.",
-            streetViewUsed: false,
         };
     }
 };
@@ -1014,7 +824,7 @@ export const generateDetailedReport = async (propertyData, lang = 'id', signal =
         '### ANALISIS GEOTEKNIK (Kondisi Tanah)',
         'Jelaskan kondisi tanah dengan bahasa yang mudah dipahami:',
         '- Nilai Vs30: tanah ini sekeras batu, padat, atau selunak lumpur? Apa artinya untuk fondasi bangunan?',
-        '- Risiko likuifaksi (tanah yang "meleleh" saat gempa): nilai FS-nya berapa dan artinya apa? Jika FS < 1.0 jelaskan bahaya konkretnya.',
+        '- Risiko likuefaksi (tanah yang "meleleh" saat gempa): nilai FS-nya berapa dan artinya apa? Jika FS < 1.0 jelaskan bahaya konkretnya.',
         '- Jenis fondasi yang dibutuhkan â€” dangkal atau perlu tiang pancang? Estimasi biaya tambahan fondasi dalam jika diperlukan.',
         '- Perbandingan kondisi tanah ini dengan wilayah sekitarnya.',
         '',
@@ -1053,7 +863,7 @@ export const generateDetailedReport = async (propertyData, lang = 'id', signal =
         'Apa yang wajib dipenuhi bangunan di lokasi ini:',
         '- SNI 1726:2019 (Desain Gempa): zona seismik dan beban desain yang berlaku untuk lokasi ini',
         '- SNI 2847:2019 (Beton Bertulang): persyaratan khusus untuk kelas situs tanah ini',
-        '- Jika ada risiko likuifaksi (FS < 1.0): sistem fondasi yang diwajibkan dan estimasi biaya tambahan',
+        '- Jika ada risiko likuefaksi (FS < 1.0): sistem fondasi yang diwajibkan dan estimasi biaya tambahan',
         '- Perizinan yang perlu dicek sebelum membeli atau membangun (IMB, KRK, dll.)',
         '',
         '---',
@@ -1194,7 +1004,6 @@ ${reportTemplate}`;
         if (axios.isCancel(e) || e.name === 'CanceledError' || signal?.aborted) throw e;
         console.warn('[S.A.F.E] Detailed report failed:', e.message);
         
-        const d = propertyData.compressedPayload ?? propertyData;
         const fallbackText = lang === 'en' 
             ? `## S.A.F.E AI Detailed Report Unavailable\n\nThe AI service encountered an error while generating the full report (${e.message}). However, you can rely on the summary cards above for the core risk assessment.`
             : `## Laporan Lengkap S.A.F.E AI Tidak Tersedia\n\nLayanan AI mengalami kendala saat menghasilkan laporan lengkap (${e.message}). Namun, Anda tetap dapat mengandalkan kartu ringkasan di atas untuk penilaian risiko utama.`;
@@ -1208,12 +1017,8 @@ ${reportTemplate}`;
 
 export const generateSiteAuditReport = async (propertyData, lang = 'id', signal = null) => {
     const isEnglish = lang === 'en';
-    const streetViewContext = isEnglish
-        ? `\n\nMICRO ENVIRONMENT: Use your knowledge of Indonesian geography, the address provided, elevation data, and the nearby_env features to write an intelligent micro-environmental inference. Include typical characteristics of this type of area in Indonesia (urban density, drainage quality, road access conditions). A real Street View visual scan will be appended after this report is shown to the user.`
-        : `\n\nMICRO ENVIRONMENT: Gunakan pengetahuan Anda tentang geografi Indonesia, alamat yang diberikan, data elevasi, dan fitur nearby_env untuk menulis inferensi mikro-lingkungan yang cerdas. Sertakan karakteristik umum area jenis ini di Indonesia (kepadatan urban, kualitas drainase, kondisi akses jalan). Pemindaian Street View visual nyata akan ditambahkan setelah laporan ini ditampilkan kepada pengguna.`;
-
     const langInstruction = isEnglish
-        ? 'IMPORTANT: Write ALL output in English. Use Indonesian place names and technical terms (e.g., sesar, likuifaksi) where standard, but all explanations, headers, and narrative must be in English.'
+        ? 'IMPORTANT: Write ALL output in English. Use Indonesian place names and technical terms (e.g., sesar, likuefaksi) where standard, but all explanations, headers, and narrative must be in English.'
         : 'IMPORTANT: Tulis SEMUA output dalam Bahasa Indonesia. Gunakan istilah teknis (Vs30, PGA, FS) dengan penjelasan sederhana.';
 
     const sysPrompt = `You are S.A.F.E AI, a senior Geophysics & Property Risk Consultant specializing in Indonesian geology (SNI 1726:2019, SNI 2847:2019).
@@ -1229,14 +1034,13 @@ EVALUATION CRITERIA:
 - Cross-reference with regional profiles (Bandung=Lembang, Yogya=Opak, Jakarta Utara=subsidence, Palu=liquefaction)
 - Flood: check nearby_env for waterways, elevation for coastal/rob risk
 - AQI: note Kalimantan haze season Jun-Oct if relevant
-${streetViewContext}
+Mulai dengan ringkasan kondisi mikro-lingkungan yang didukung data audit.
 
 Return JSON with these fields (${isEnglish ? 'English' : 'Bahasa Indonesia'}):
 - "geoStabilityExplanation": 1-2 sentences on Vs30/liquefaction/site class
 - "seismicExplanation": 1-2 sentences on PGA/fault distance/fault name
 - "floodEnvExplanation": 1-2 sentences on flood/tsunami/AQI
-- "microAnalysis": 100-150 word paragraph on micro-environment (building density, drainage, road access, topography). ${isEnglish ? 'Start with "(Preliminary Analysis -- Street View scan in progress...)"' : 'Start with "(Analisis Awal -- Pemindaian Street View sedang berjalan...)"'}
-- "streetViewUsed": false
+- "microAnalysis": 100-150 word paragraph on micro-environment (building density, drainage, road access, topography).
 - "detailedReport": Concise markdown report (~600 words max)
 
 IMPORTANT: Do NOT use emoji or special unicode characters (like box-drawing lines) in the output. Use only plain ASCII text for headings and separators. Use markdown --- for horizontal rules.
@@ -1259,7 +1063,6 @@ Respond ONLY with valid JSON. Do not include markdown blocks like \`\`\`json.`;
         }
 
         let result = JSON.parse(jsonStr);
-        result.streetViewUsed = false;
         return result;
     } catch(e) {
         if (axios.isCancel(e) || e.name === 'CanceledError' || (signal && signal.aborted)) throw e;
@@ -1271,14 +1074,14 @@ Respond ONLY with valid JSON. Do not include markdown blocks like \`\`\`json.`;
         const d = propertyData.compressedPayload ?? propertyData;
         const fallbackReport = isEnglish 
         ? `# S.A.F.E AUDIT REPORT (OFFLINE MODE)\n\n### GEOTECHNICAL\n- **Vs30**: ${d.liquefaction_analysis?.vs30_est} m/s (${d.liquefaction_analysis?.site_class})\n- **Liquefaction FS**: ${d.liquefaction_analysis?.fs_score}\n\n### SEISMIC\n- **PGA**: ${d.liquefaction_analysis?.pga_surface}g\n- **Nearest Fault**: ${d.seismotectonic?.nearest_fault?.name} (${(d.seismotectonic?.nearest_fault?.distance/1000).toFixed(1)} km)\n\n### ENVIRONMENT\n- **Elevation**: ${d.elevasi}m\n- **Flood Risk**: ${d.flood_hazard}\n- **AQI**: ${d.env_extras?.aqi}\n\n*Note: This is a rule-based fallback report because external AI APIs are unreachable.*`
-        : `# LAPORAN AUDIT S.A.F.E (MODE LURING)\n\n### GEOTEKNIK (TANAH)\n- **Vs30 (Kekerasan Tanah)**: ${d.liquefaction_analysis?.vs30_est} m/s (Kelas ${d.liquefaction_analysis?.site_class})\n- **Likuifaksi FS**: ${d.liquefaction_analysis?.fs_score} (${d.liquefaction_analysis?.status})\n\n### SEISMIK (GEMPA)\n- **PGA Permukaan**: ${d.liquefaction_analysis?.pga_surface}g\n- **Sesar Terdekat**: ${d.seismotectonic?.nearest_fault?.name} berjarak ${(d.seismotectonic?.nearest_fault?.distance/1000).toFixed(1)} km\n\n### LINGKUNGAN & BANJIR\n- **Elevasi**: ${d.elevasi} mdpl\n- **Risiko Banjir**: ${d.flood_hazard}\n- **Kualitas Udara (AQI)**: ${d.env_extras?.aqi}\n\n*Catatan: Ini adalah laporan prosedural darurat (rule-based) karena koneksi ke server AI terputus atau batas kuota habis.*`;
+        : `# LAPORAN AUDIT S.A.F.E (MODE LURING)\n\n### GEOTEKNIK (TANAH)\n- **Vs30 (Kekerasan Tanah)**: ${d.liquefaction_analysis?.vs30_est} m/s (Kelas ${d.liquefaction_analysis?.site_class})\n- **Likuefaksi FS**: ${d.liquefaction_analysis?.fs_score} (${d.liquefaction_analysis?.status})\n\n### SEISMIK (GEMPA)\n- **PGA Permukaan**: ${d.liquefaction_analysis?.pga_surface}g\n- **Sesar Terdekat**: ${d.seismotectonic?.nearest_fault?.name} berjarak ${(d.seismotectonic?.nearest_fault?.distance/1000).toFixed(1)} km\n\n### LINGKUNGAN & BANJIR\n- **Elevasi**: ${d.elevasi} mdpl\n- **Risiko Banjir**: ${d.flood_hazard}\n- **Kualitas Udara (AQI)**: ${d.env_extras?.aqi}\n\n*Catatan: Ini adalah laporan prosedural darurat (rule-based) karena koneksi ke server AI terputus atau batas kuota habis.*`;
 
         return {
             aiError: true, offline: _offline,
             geoStabilityExplanation: "Gagal terhubung ke AI. Menggunakan mode luring.",
             seismicExplanation: "Gagal terhubung ke AI. Menggunakan mode luring.",
             floodEnvExplanation: "Gagal terhubung ke AI. Menggunakan mode luring.",
-            microAnalysis: null, streetViewUsed: false,
+            microAnalysis: null,
             detailedReport: fallbackReport
         };
     }
@@ -1317,7 +1120,7 @@ Practical advice for the buyer -- which property to choose and what to prepare b
 Conclude with disclaimer.` : `
 
 ### HEAD-TO-HEAD COMPARISON
-Markdown table comparing: Vs30, Elevasi, Likuifaksi FS, PGA Surface, Jarak Patahan, Risiko Banjir, Risiko Tsunami. Use simple words (e.g. "Tanah Lunak" not "Site Class SE").
+Markdown table comparing: Vs30, Elevasi, Likuefaksi FS, PGA Surface, Jarak Patahan, Risiko Banjir, Risiko Tsunami. Use simple words (e.g. "Tanah Lunak" not "Site Class SE").
 
 ### ENVIRONMENTAL CONTRAST
 Compare distance to faults (NAME the faults), flooding risks, and regional hazard history in 2-3 sentences.
@@ -1410,7 +1213,7 @@ Berdasarkan data geospasial, perbandingan langsung kedua properti disajikan di b
 |--------|-----------|-----------|
 | Vs30 (m/s) | ${vs30A} | ${vs30B} |
 | Elevasi (m) | ${elevA} | ${elevB} |
-| Likuifaksi FS | ${fsA} | ${fsB} |
+| Likuefaksi FS | ${fsA} | ${fsB} |
 | PGA Permukaan (g) | ${pgaA} | ${pgaB} |
 | Sesar Terdekat | ${faultA?.name ?? '-'} (${faultDistA}) | ${faultB?.name ?? '-'} (${faultDistB}) |
 | Risiko Banjir | ${floodA} | ${floodB} |

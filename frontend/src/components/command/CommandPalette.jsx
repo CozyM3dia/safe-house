@@ -5,6 +5,7 @@ import { Search, Clock, Star, MapPin, Loader2, X, Sparkles } from 'lucide-react'
 import axios from 'axios';
 
 import { useAppStore } from '../../store/useAppStore';
+import { useT } from '../../hooks/useTranslation';
 
 const PHOTON = 'https://photon.komoot.io/api/';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
@@ -80,31 +81,34 @@ export function CommandPalette() {
   const favorites = useAppStore((s) => s.favorites);
   const processLocation = useAppStore((s) => s.processLocation);
   const startOnboarding = useAppStore((s) => s.startOnboarding);
+  const t = useT();
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const timerRef = useRef(null);
-  const abortRef = useRef(null);
 
-  // Reset query & results when palette closes
-  useEffect(() => {
-    if (!open) {
-      setQuery('');
+  const closePalette = () => {
+    setOpen(false);
+    setQuery('');
+    setResults([]);
+    setSearching(false);
+  };
+
+  const handleQueryChange = (value) => {
+    setQuery(value);
+    if (!value.trim()) {
       setResults([]);
       setSearching(false);
+    } else {
+      setSearching(true);
     }
-  }, [open]);
+  };
 
   // Debounced geocoding with abort on new keystroke
   useEffect(() => {
     clearTimeout(timerRef.current);
-    if (!query.trim()) {
-      setResults([]);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
+    if (!query.trim()) return;
     timerRef.current = setTimeout(async () => {
       const data = await geocode(query);
       setResults(data);
@@ -114,7 +118,7 @@ export function CommandPalette() {
   }, [query]);
 
   const handleSelect = (item) => {
-    setOpen(false);
+    closePalette();
     // Small delay so the palette close animation plays before map moves
     setTimeout(() => processLocation(item.lat, item.lng), 100);
   };
@@ -122,7 +126,7 @@ export function CommandPalette() {
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      setOpen(false);
+      closePalette();
     }
   };
 
@@ -135,7 +139,7 @@ export function CommandPalette() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-[40] flex items-start justify-center bg-bg/60 backdrop-blur-sm pt-[13vh]"
-          onClick={() => setOpen(false)}
+          onClick={closePalette}
           onKeyDown={handleKeyDown}
         >
           <motion.div
@@ -150,22 +154,24 @@ export function CommandPalette() {
               shouldFilter={false} — disable cmdk's built-in text filter.
               We handle filtering ourselves via Nominatim geocoding.
             */}
-            <Command shouldFilter={false} label="Cari lokasi">
+            <Command shouldFilter={false} label={t('cmd.label')}>
               {/* Search input row */}
               <div className="flex items-center gap-3 border-b border-white/8 px-4">
                 <Search className="h-4 w-4 shrink-0 text-text-muted" />
                 <Command.Input
                   autoFocus
                   value={query}
-                  onValueChange={setQuery}
-                  placeholder="Cari lokasi, alamat, atau koordinat…"
+                  onValueChange={handleQueryChange}
+                  placeholder={t('cmd.searchPlaceholder')}
                   className="h-12 flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted focus:outline-none"
                 />
                 {searching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-text-muted" />}
                 {query && !searching && (
                   <button
-                    onClick={() => { setQuery(''); setResults([]); }}
-                    className="rounded p-0.5 text-text-muted hover:text-text-primary transition-colors"
+                    type="button"
+                    onClick={() => handleQueryChange('')}
+                    aria-label={t('cmd.clear')}
+                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded p-0.5 text-text-muted transition-colors hover:text-text-primary"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -179,18 +185,18 @@ export function CommandPalette() {
                 {/* Empty state */}
                 {!searching && query && results.length === 0 && (
                   <Command.Empty className="py-10 text-center text-xs text-text-muted">
-                    Tidak ada hasil untuk &ldquo;{query}&rdquo;
+                    {t('cmd.noResults')} &ldquo;{query}&rdquo;
                   </Command.Empty>
                 )}
                 {!query && favorites.length === 0 && recent.length === 0 && (
                   <Command.Empty className="py-10 text-center text-xs text-text-muted">
-                    Mulai ketik untuk mencari lokasi di Indonesia…
+                    {t('cmd.startTyping')}
                   </Command.Empty>
                 )}
 
                 {/* Favorites — shown when no query */}
                 {!query && favorites.length > 0 && (
-                  <Command.Group heading="Favorit">
+                  <Command.Group heading={t('cmd.favorites')}>
                     {favorites.slice(0, 5).map((item, i) => (
                       <PaletteItem
                         key={`fav-${i}`}
@@ -205,7 +211,7 @@ export function CommandPalette() {
 
                 {/* Recent — shown when no query */}
                 {!query && recent.length > 0 && (
-                  <Command.Group heading="Terakhir dikunjungi">
+                  <Command.Group heading={t('cmd.recent')}>
                     {recent.slice(0, 6).map((item, i) => (
                       <PaletteItem
                         key={`rec-${i}`}
@@ -220,24 +226,24 @@ export function CommandPalette() {
 
                 {/* Actions — shown when no query */}
                 {!query && (
-                  <Command.Group heading="Aksi">
+                  <Command.Group heading={t('cmd.actions')}>
                     <Command.Item
                       value="restart-onboarding-tour"
                       onSelect={() => {
-                        setOpen(false);
+                        closePalette();
                         setTimeout(() => startOnboarding(), 150);
                       }}
                       className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-text-secondary data-[selected=true]:bg-white/8 data-[selected=true]:text-text-primary transition-colors"
                     >
                       <Sparkles className="h-3.5 w-3.5 shrink-0 text-accent" />
-                      <span className="flex-1 truncate leading-snug">Mulai Ulang Tur Onboarding</span>
+                      <span className="flex-1 truncate leading-snug">{t('cmd.restartTour')}</span>
                     </Command.Item>
                   </Command.Group>
                 )}
 
                 {/* Geocoding results */}
                 {query && results.length > 0 && (
-                  <Command.Group heading={`Hasil pencarian (${results.length})`}>
+                  <Command.Group heading={`${t('cmd.results')} (${results.length})`}>
                     {results.map((item, i) => (
                       <PaletteItem
                         key={`res-${i}-${item.lat}`}
@@ -254,9 +260,9 @@ export function CommandPalette() {
               {/* Footer hints */}
               <div className="flex items-center justify-between gap-4 border-t border-white/8 px-4 py-2 text-[10px] text-text-muted">
                 <div className="flex items-center gap-3">
-                  <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">↑↓</kbd> Navigasi</span>
-                  <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">⏎</kbd> Pilih</span>
-                  <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">Esc</kbd> Tutup</span>
+                  <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">↑↓</kbd> {t('cmd.navigate')}</span>
+                  <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">⏎</kbd> {t('cmd.select')}</span>
+                  <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">Esc</kbd> {t('cmd.close')}</span>
                 </div>
                 <span className="font-mono tracking-widest opacity-50">S.A.F.E</span>
               </div>

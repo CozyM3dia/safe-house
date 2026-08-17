@@ -118,9 +118,7 @@ function PropertyOverlay({ property, prefix }) {
   const radar   = property.radarData;
   const payload = property.compressedPayload;
 
-  const overall = useMemo(() => overallRisk(radar), [
-    radar.flood, radar.seismic, radar.soil, radar.landslide, radar.air,
-  ]);
+  const overall = useMemo(() => overallRisk(radar), [radar]);
 
   // Four main risk flags placed at compass offsets
   const flags = useMemo(() => [
@@ -128,7 +126,7 @@ function PropertyOverlay({ property, prefix }) {
     { bearing: 150, icon: '🌋', label: 'SEISMIC',  value: radar.seismic ?? 0 },
     { bearing: 210, icon: '🧱', label: 'SOIL',     value: radar.soil    ?? 0 },
     { bearing: 330, icon: '🌬️', label: 'AQI',      value: radar.air     ?? 0 },
-  ], [radar.flood, radar.seismic, radar.soil, radar.air]);
+  ], [radar]);
 
   const fault   = payload?.seismotectonic?.nearest_fault;
   const volcano = payload?.seismotectonic?.nearest_volcano;
@@ -147,7 +145,7 @@ function PropertyOverlay({ property, prefix }) {
       ...l,
       points: [[lat, lon], offsetCoord(lat, lon, l.bearing, 480)],
     }));
-  }, [lat, lon, fault?.name, fault?.dist_km, volcano?.name, volcano?.dist_km, tsunami?.risk_level, tsunami?.dist_to_coast_km, tsunami?.nearest_coast]);
+  }, [lat, lon, fault, volcano, tsunami]);
 
   // Optional landslide flag
   const showLandslide = (radar.landslide ?? 0) >= 25;

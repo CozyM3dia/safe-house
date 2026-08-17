@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
-import { Sparkles, HelpCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function OnboardingTour() {
   const t = useT();
@@ -64,6 +64,8 @@ export function OnboardingTour() {
 
   useEffect(() => {
     if (!onboardingActive || !currentStepData?.selector) {
+      // Reset stale spotlight coordinates when the tour switches to a centered step.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetRect(null);
       return;
     }
@@ -116,8 +118,8 @@ export function OnboardingTour() {
     // Set a safe maximum width for the tooltip box
     const tooltipWidth = Math.min(380, window.innerWidth - 32);
     
-    let top = 0;
-    let left = 0;
+    let top;
+    let left;
 
     if (pos === 'bottom') {
       top = targetRect.bottom + space;
@@ -204,8 +206,10 @@ export function OnboardingTour() {
         >
           {/* Close button */}
           <button
+            type="button"
             onClick={stopOnboarding}
-            className="absolute right-4 top-4 rounded-lg p-1 text-text-muted hover:bg-white/8 hover:text-text-primary transition-colors"
+            aria-label={t('accessibility.close')}
+            className="absolute right-3 top-3 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary"
           >
             <X className="h-4 w-4" />
           </button>

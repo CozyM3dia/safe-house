@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Drawer } from 'vaul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, FileText, AlertTriangle, Camera, MapPin, Eye, Swords, Sparkles, Layers, ShieldAlert, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ShieldCheck, ChevronDown, ChevronUp, FileCheck, Scale, Award } from 'lucide-react';
+import { Copy, Check, X, FileText, AlertTriangle, MapPin, Swords, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -70,9 +70,9 @@ function SoilVisual({ property }) {
       {/* Liquefaction Factor of Safety (FS) scale */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Faktor Keamanan Likuifaksi (FS)</span>
+          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Faktor Keamanan Likuefaksi (FS)</span>
           <span className="text-[11px] font-mono font-bold" style={{ color: fs < 1.0 ? '#ef4444' : '#10b981' }}>
-            FS = {fs.toFixed(2)} ({fs < 1.0 ? 'RAWAN LIKUIFAKSI' : 'AMAN'})
+            FS = {fs.toFixed(2)} ({fs < 1.0 ? 'RAWAN LIKUEFAKSI' : 'AMAN'})
           </span>
         </div>
         <div className="relative h-2.5 rounded-full bg-white/5 overflow-hidden">
@@ -280,7 +280,7 @@ const parseMitigations = (content) => {
       }
       if (!title) {
         const linesOfBlock = trimmed.split('\n');
-        title = linesOfBlock[0].replace(/[\*\d\.]/g, '').trim();
+        title = linesOfBlock[0].replace(/[\d.]/g, '').trim();
       }
       
       let action = '';
@@ -340,7 +340,7 @@ const parseMitigations = (content) => {
         // Clean up action text
         action = action.replace(/(?:Estimasi biaya|Estimasi Biaya|Biaya|Cost)\s*:\s*$/i, '')
                       .replace(/(?:Prioritas|Priority)\s*:\s*$/i, '')
-                      .replace(/[,\.\s]+$/, '')
+                       .replace(/[,.\s]+$/, '')
                       .trim();
         
         items.push({
@@ -566,6 +566,12 @@ function CodeSection({ content }) {
   );
 }
 
+function stripMarkdownNode(props) {
+  const { node, ...rest } = props;
+  void node;
+  return rest;
+}
+
 function SectionCard({ title, content, defaultExpanded = false, property }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const { icon: Icon, accentClass, isImportant } = getSectionMeta(title);
@@ -589,6 +595,9 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
       }`}
     >
       <button
+        type="button"
+        aria-expanded={expanded}
+        aria-label={`${expanded ? 'Collapse' : 'Expand'} ${title}`}
         onClick={() => setExpanded(!expanded)}
         className={`flex w-full items-center justify-between px-5 py-4.5 text-left transition-all duration-300 ${
           expanded ? 'bg-white/[0.03]' : 'hover:bg-white/[0.02]'
@@ -634,26 +643,29 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  h4: ({node, ...props}) => <h4 className="text-xs font-bold text-text-primary mt-4 mb-2 uppercase tracking-widest" {...props} />,
-                  p: ({node, ...props}) => <p className="text-xs text-text-secondary leading-relaxed mb-3" {...props} />,
-                  ul: ({node, ...props}) => <ul className="list-none space-y-2 mb-3 pl-1" {...props} />,
-                  li: ({node, ...props}) => (
-                    <li className="flex items-start gap-2 text-xs text-text-secondary leading-relaxed">
-                      <span className="text-accent/60 mt-1 select-none text-[10px] shrink-0">✦</span>
-                      <span>{props.children}</span>
-                    </li>
-                  ),
-                  strong: ({node, ...props}) => <strong className="font-semibold text-text-primary" {...props} />,
-                  table: ({node, ...props}) => (
+                  h4: (props) => <h4 className="text-xs font-bold text-text-primary mt-4 mb-2 uppercase tracking-widest" {...stripMarkdownNode(props)} />,
+                  p: (props) => <p className="text-xs text-text-secondary leading-relaxed mb-3" {...stripMarkdownNode(props)} />,
+                  ul: (props) => <ul className="list-none space-y-2 mb-3 pl-1" {...stripMarkdownNode(props)} />,
+                  li: (props) => {
+                    const cleanProps = stripMarkdownNode(props);
+                    return (
+                      <li className="flex items-start gap-2 text-xs text-text-secondary leading-relaxed">
+                        <span className="text-accent/60 mt-1 select-none text-[10px] shrink-0">✦</span>
+                        <span>{cleanProps.children}</span>
+                      </li>
+                    );
+                  },
+                  strong: (props) => <strong className="font-semibold text-text-primary" {...stripMarkdownNode(props)} />,
+                  table: (props) => (
                     <div className="my-4 overflow-x-auto rounded-xl border border-white/8 bg-white/[0.01] backdrop-blur-md">
-                      <table className="min-w-full divide-y divide-white/8 text-left text-xs" {...props} />
+                      <table className="min-w-full divide-y divide-white/8 text-left text-xs" {...stripMarkdownNode(props)} />
                     </div>
                   ),
-                  thead: ({node, ...props}) => <thead className="bg-white/[0.02]" {...props} />,
-                  tbody: ({node, ...props}) => <tbody className="divide-y divide-white/6" {...props} />,
-                  tr: ({node, ...props}) => <tr className="hover:bg-white/[0.01] transition-colors" {...props} />,
-                  th: ({node, ...props}) => <th className="px-4 py-2.5 font-bold text-accent tracking-wider" {...props} />,
-                  td: ({node, ...props}) => <td className="px-4 py-2 text-text-secondary" {...props} />,
+                  thead: (props) => <thead className="bg-white/[0.02]" {...stripMarkdownNode(props)} />,
+                  tbody: (props) => <tbody className="divide-y divide-white/6" {...stripMarkdownNode(props)} />,
+                  tr: (props) => <tr className="hover:bg-white/[0.01] transition-colors" {...stripMarkdownNode(props)} />,
+                  th: (props) => <th className="px-4 py-2.5 font-bold text-accent tracking-wider" {...stripMarkdownNode(props)} />,
+                  td: (props) => <td className="px-4 py-2 text-text-secondary" {...stripMarkdownNode(props)} />,
                 }}
               >
                 {content}
@@ -680,6 +692,7 @@ export function AuditDrawer() {
   const propertyB = useAppStore((s) => s.propertyB);
   const mode = useAppStore((s) => s.mode);
   const battleReport = useAppStore((s) => s.battleReportContent);
+  const battleReportMeta = useAppStore((s) => s.battleReportMeta);
   const reportRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
@@ -711,19 +724,62 @@ export function AuditDrawer() {
   const drawerSubtitle = isBattle
     ? `${propertyA?.address?.slice(0, 30) ?? '---'} vs ${propertyB?.address?.slice(0, 30) ?? '---'}`
     : (propertyA?.address?.slice(0, 60) ?? '---');
+  const reportGeneratedBy = isBattle
+    ? battleReportMeta?.delivery_mode === 'fallback'
+      ? 'S.A.F.E House deterministic fallback'
+      : battleReportMeta?.model
+        ? `Gemini (${battleReportMeta.model})`
+        : 'Audit deterministik'
+    : (aiReport?.generatedBy || 'Audit deterministik');
 
+  // Vaul 1.1.2 keeps Radix's modal pointer lock active internally even when
+  // its own `modal` option is false. Restore page interaction after the
+  // drawer mounts so elements outside the report can still receive events.
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined;
+
+    const unlockPage = window.setTimeout(() => {
+      document.body.style.pointerEvents = 'auto';
+    }, 0);
+
+    return () => window.clearTimeout(unlockPage);
+  }, [open]);
+
+  // Keep this drawer non-modal so the floating audit chatbot remains usable
+  // while the full report is open. Vaul's modal mode sets body pointer-events
+  // to none, which makes elements outside the drawer look visible but ignore
+  // clicks and focus. The custom backdrop preserves the dimmed presentation
+  // and dismiss behavior without locking the rest of the app.
   return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
+    <Drawer.Root modal={false} open={open} onOpenChange={setOpen}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm" />
-        <Drawer.Content className="glass-strong fixed bottom-0 left-0 right-0 z-30 mt-24 flex h-[78vh] flex-col rounded-t-2xl border-t border-white/10 outline-none">
+        <div
+          aria-hidden="true"
+          data-testid="audit-drawer-backdrop"
+          onClick={() => setOpen(false)}
+          className="pointer-events-auto fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+        />
+        {/* Keep this control outside the drawer stacking context: the chatbot stays interactive above the report, while close remains above both. */}
+        <button
+          type="button"
+          data-testid="audit-drawer-close"
+          aria-label={t('drawer.close')}
+          title={t('drawer.close')}
+          onClick={() => setOpen(false)}
+          className="fixed right-4 top-[calc(22vh+0.75rem)] z-[45] flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-bg-surface/95 text-text-muted shadow-glass-lg transition-colors hover:bg-white/8 hover:text-text-primary sm:right-6"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <Drawer.Content data-testid="audit-drawer" className="glass-strong fixed bottom-0 left-0 right-0 z-30 mt-24 flex h-[78vh] flex-col rounded-t-2xl border-t border-white/10 outline-none">
           <Drawer.Title className="sr-only">{drawerTitle}</Drawer.Title>
+          <Drawer.Description className="sr-only">{drawerSubtitle}</Drawer.Description>
 
           {/* Drag handle */}
           <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-white/14" />
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/8 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-white/8 px-4 py-4 pr-20 sm:px-6 sm:pr-24">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 border border-accent/30">
                 {isBattle
@@ -736,8 +792,8 @@ export function AuditDrawer() {
                   {drawerTitle}
                 </h2>
                 <p className="text-[10px] text-text-muted font-mono tracking-wider flex items-center gap-1.5">
-                  {aiReport?.generatedBy || 'Audit deterministik'}
-                  {aiReport?.deliveryMode && (
+                  {reportGeneratedBy}
+                  {!isBattle && aiReport?.deliveryMode && (
                     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-bold tracking-widest uppercase ${
                       aiReport.deliveryMode === 'live' ? 'bg-risk-safe/10 text-risk-safe border border-risk-safe/20' :
                       aiReport.deliveryMode === 'fallback' ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/20' :
@@ -755,22 +811,12 @@ export function AuditDrawer() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Street View indicator */}
-              {!isBattle && aiReport?.streetViewUsed && (
-                <Badge variant="accent" className="gap-1">
-                  <Camera className="h-3 w-3" />
-                  Street View
-                </Badge>
-              )}
               <Button variant="secondary" size="sm" onClick={handleCopy}>
                 {copied
                   ? <Check className="h-3.5 w-3.5" />
                   : <Copy className="h-3.5 w-3.5" />
                 }
                 {copied ? t('drawer.copied') : t('drawer.copyLink')}
-              </Button>
-              <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -926,29 +972,17 @@ export function AuditDrawer() {
                     </div>
                   )}
 
-                  {/* Micro analysis — enhanced with Street View badge */}
+                  {/* Micro analysis */}
                   {aiReport?.microAnalysis && (
                     <div className="mb-6 rounded-2xl border border-accent/20 bg-accent/[0.02] p-5 relative overflow-hidden" style={{
                       backgroundImage: 'radial-gradient(rgba(212,149,106,0.03) 1px, transparent 1px)',
                       backgroundSize: '16px 16px'
                     }}>
                       <div className="flex items-center gap-2 mb-3">
-                        {aiReport.streetViewUsed ? (
-                          <Badge variant="accent" className="gap-1 shadow-sm">
-                            <Eye className="h-3 w-3" />
-                            {t('drawer.visualAnalysis')}
-                          </Badge>
-                        ) : (
-                          <Badge variant="default" className="gap-1 shadow-sm">
-                            <MapPin className="h-3 w-3" />
-                            {t('drawer.microAnalysis')}
-                          </Badge>
-                        )}
-                        {aiReport.streetViewUsed && (
-                          <span className="text-[9px] text-accent/60 font-mono tracking-wider">
-                            SCAN PANORAMIS 360° (4-ARAH)
-                          </span>
-                        )}
+                        <Badge variant="default" className="gap-1 shadow-sm">
+                          <MapPin className="h-3 w-3" />
+                          {t('drawer.microAnalysis')}
+                        </Badge>
                       </div>
                       <p className="text-xs leading-relaxed text-text-secondary">
                         {aiReport.microAnalysis}

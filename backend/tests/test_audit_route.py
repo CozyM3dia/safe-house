@@ -62,6 +62,32 @@ class AuditRouteIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(422, response.status_code)
         self.assertIn("perairan", response.json()["detail"].lower())
 
+    async def test_distant_administrative_reverse_geocode_is_rejected_as_water(self):
+        # Nominatim can answer an open-water point with the nearest county
+        # centroid. The county field is not proof that the clicked point is
+        # buildable land.
+        administrative_centroid = {
+            **_land_geocode(),
+            "lat": "-5.6326912",
+            "lon": "105.7500599",
+            "type": "county",
+            "category": "place",
+            "display_name": "Sragi, Lampung, Indonesia",
+            "address": {
+                "county": "Sragi",
+                "state": "Lampung",
+                "country": "Indonesia",
+                "country_code": "id",
+            },
+        }
+        raw = _raw_data(geocode=administrative_centroid)
+        raw["weather"]["elevation"] = 0
+
+        response = await self._post(-5.95, 105.75, raw)
+
+        self.assertEqual(422, response.status_code)
+        self.assertIn("perairan", response.json()["detail"].lower())
+
     async def test_foreign_coordinate_is_rejected_by_api(self):
         singapore = {
             **_land_geocode(),

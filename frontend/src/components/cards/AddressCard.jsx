@@ -20,7 +20,9 @@ export function AddressCard({ property }) {
       await navigator.clipboard.writeText(`${lat}, ${lon}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch {
+      setCopied(false);
+    }
   }, [lat, lon]);
 
   if (!property) return null;
@@ -35,8 +37,10 @@ export function AddressCard({ property }) {
           Site Location
         </CardTitle>
         <button
+          type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-mono text-text-muted hover:bg-white/8 hover:text-accent btn-press transition-colors"
+          aria-label={copied ? 'Coordinates copied' : 'Copy coordinates'}
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-mono text-text-muted transition-colors hover:bg-white/8 hover:text-accent btn-press"
           title="Copy coordinates"
         >
           {copied ? <Check className="h-2.5 w-2.5 text-risk-safe" /> : <Copy className="h-2.5 w-2.5" />}

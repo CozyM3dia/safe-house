@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { adaptAuditResult } from '../services/auditAdapter.js';
 
 // ── Color tokens ──────────────────────────────────────────────
 const C = {
@@ -33,6 +34,29 @@ function clampRiskScore(value) {
   return Number.isFinite(numeric) ? Math.max(0, Math.min(100, Math.round(numeric))) : 0;
 }
 
+/**
+ * Keep PDF generation on the same contract as the live audit API.
+ *
+ * The dashboard now stores AuditResult (snake_case), while the legacy PDF
+ * renderer uses a compact camelCase view. Normalize at this boundary so the
+ * renderer cannot silently recalculate a different score or lose provenance.
+ */
+export function normalizePdfProperty(property) {
+  if (!property) return null;
+
+  const alreadyCompact = property.coords && property.radarData && property.compressedPayload;
+  const normalized = alreadyCompact ? { ...property } : adaptAuditResult(property);
+
+  // A live frontend audit may already have the camelCase AI report attached
+  // while the rest of the object is still the backend AuditResult shape.
+  if (property.aiReport?.detailedReport) normalized.aiReport = property.aiReport;
+  if (property.narrative?.detailed_report && !normalized.aiReport?.detailedReport) {
+    normalized.aiReport = adaptAuditResult({ ...property, aiReport: property.narrative }).aiReport;
+  }
+
+  return normalized;
+}
+
 function computeScore(p) {
   if (!Number.isFinite(p?.safeScore)) {
     throw new Error('PDF hanya dapat dibuat dari audit dengan skor backend yang valid.');
@@ -41,19 +65,88 @@ function computeScore(p) {
 }
 
 export function getPdfScore(property) {
-  return computeScore(property);
+  return computeScore(normalizePdfProperty(property));
 }
 
 export function canExportPdf(property) {
+  const normalized = normalizePdfProperty(property);
   return Boolean(
-    property?.auditStatus === 'valid' &&
-    Number.isFinite(property?.safeScore) &&
-    property?.aiReport?.detailedReport
+    (normalized?.auditStatus === 'valid' || normalized?.auditStatus === 'provisional') &&
+    Number.isFinite(normalized?.safeScore) &&
+    normalized?.aiReport?.detailedReport?.trim() &&
+    normalized?.aiReport?.reportLoading !== true &&
+    normalized?.aiReport?.aiError !== true
   );
 }
 
+const PDF_EVIDENCE_LABELS = {
+  location: 'Lokasi',
+  elevation: 'Elevasi',
+  soil: 'Tanah / Vs30',
+  seismic: 'PGA',
+  fault_reference: 'Referensi sesar',
+  flood: 'Banjir',
+  landslide: 'Longsor',
+  subsidence: 'Subsiden',
+  weather: 'Cuaca',
+  soil_moisture: 'Kelembapan tanah',
+  air_quality: 'Kualitas udara',
+  earthquake_history: 'Riwayat gempa',
+  nearby: 'Objek sekitar',
+  tsunami: 'Tsunami',
+  tsunami_map: 'Peta tsunami InaRISK',
+  liquefaction_map: 'Peta likuefaksi InaRISK',
+  volcanic_map: 'Peta letusan gunungapi InaRISK',
+  coastal_map: 'Peta abrasi/gelombang InaRISK',
+};
+
+function uniqueStrings(values) {
+  return [...new Set((Array.isArray(values) ? values : []).filter(Boolean).map(String))];
+}
+
+/**
+ * Summarize only fields already present in AuditResult. These are derived
+ * indicators for transparency, not new official hazard measurements.
+ */
+export function getPdfAuditEvidence(property) {
+  const normalized = normalizePdfProperty(property) || {};
+  const quality = normalized.dataQuality || {};
+  const fields = quality.fields || {};
+  const entries = Object.entries(fields).map(([key, item]) => ({
+    key,
+    label: PDF_EVIDENCE_LABELS[key] || key,
+    status: item?.status || 'unavailable',
+    confidence: Number.isFinite(Number(item?.confidence)) ? Number(item.confidence) : 0,
+    source: item?.source || 'sumber tidak tersedia',
+  }));
+  const count = (status) => entries.filter((entry) => entry.status === status).length;
+  const ai = normalized.aiReport || {};
+
+  return {
+    status: normalized.auditStatus || 'insufficient_data',
+    confidence: Number.isFinite(Number(normalized.confidence)) ? Number(normalized.confidence) : 0,
+    scoreVersion: normalized.scoreVersion || 'unknown',
+    mode: quality.mode || 'unknown',
+    coverageStatus: quality.coverage_status || 'unknown',
+    entries,
+    officialCount: count('official'),
+    estimatedCount: count('model'),
+    referenceCount: count('reference') + count('open_data'),
+    unavailableCount: count('unavailable'),
+    failedSources: uniqueStrings(normalized.sourcesFailed),
+    criticalMissing: uniqueStrings(quality.critical_missing),
+    optionalMissing: uniqueStrings(quality.optional_missing),
+    notScored: uniqueStrings(quality.not_scored),
+    scoreAxes: uniqueStrings(quality.score_axes),
+    aiModel: ai.aiModel || ai.generatedBy || 'Audit deterministik',
+    aiDeliveryMode: ai.deliveryMode || 'unknown',
+    aiSources: uniqueStrings(ai.sources),
+    aiLimitations: uniqueStrings(ai.dataLimitations),
+  };
+}
+
 // ── Helpers ───────────────────────────────────────────────────
-function setColor(pdf, rgb, alpha) {
+function setColor(pdf, rgb) {
   pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
 }
 
@@ -370,6 +463,171 @@ function ensureSpace(pdf, heightNeeded, y, pageNum, W, H, maxY, setPageNum, head
   return y;
 }
 
+function pdfShortText(value, maxLength = 74) {
+  const text = String(value ?? '—').replace(/\s+/g, ' ').trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+}
+
+function evidenceStatusLabel(status, lang) {
+  const labels = lang === 'en'
+    ? { official: 'OFFICIAL', model: 'MODEL', reference: 'REFERENCE', open_data: 'OPEN DATA', unavailable: 'UNAVAILABLE' }
+    : { official: 'RESMI', model: 'MODEL', reference: 'REFERENSI', open_data: 'OPEN DATA', unavailable: 'BELUM TERSEDIA' };
+  return labels[status] || String(status || '—').toUpperCase();
+}
+
+function evidenceStatusColor(status) {
+  if (status === 'official') return C.safe;
+  if (status === 'model') return C.moderate;
+  if (status === 'unavailable') return C.textMuted;
+  return C.blue;
+}
+
+/** Page: Audit evidence and provenance */
+function drawAuditEvidencePage(pdf, property, lang) {
+  const W = pdf.internal.pageSize.getWidth();
+  const H = pdf.internal.pageSize.getHeight();
+  const M = 18;
+  const evidence = getPdfAuditEvidence(property);
+  const isEn = lang === 'en';
+
+  pdf.addPage();
+  pdf.setFillColor(...C.bg);
+  pdf.rect(0, 0, W, H, 'F');
+  drawPageHeader(pdf, W, isEn ? 'AI Audit Evidence' : 'Dasar Audit AI');
+
+  let y = 36;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(13);
+  setColor(pdf, C.textPri);
+  pdf.text(isEn ? 'Audit evidence & data quality' : 'Bukti audit & kualitas data', M, y);
+  y += 6;
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  setColor(pdf, C.textSec);
+  pdf.text(
+    isEn
+      ? 'The deterministic audit is the source of truth; AI explains it and cannot change the score.'
+      : 'Audit deterministik adalah sumber angka; AI hanya menjelaskan dan tidak dapat mengubah skor.',
+    M,
+    y,
+  );
+  y += 10;
+
+  const cards = [
+    ['STATUS', evidence.status.toUpperCase(), evidence.status === 'valid' ? C.safe : C.moderate],
+    ['CONFIDENCE', `${evidence.confidence}%`, C.accent],
+    [isEn ? 'SCORE VERSION' : 'VERSI SKOR', pdfShortText(evidence.scoreVersion, 25), C.blue],
+    [isEn ? 'DATA MODE' : 'MODE DATA', pdfShortText(evidence.mode, 25), C.violet],
+  ];
+  const cardW = (W - M * 2 - 9) / 4;
+  cards.forEach(([label, value, color], index) => {
+    const x = M + index * (cardW + 3);
+    drawRoundedRect(pdf, x, y, cardW, 21, 2.5, C.bgCard);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6);
+    setColor(pdf, C.textMuted);
+    pdf.text(label, x + 4, y + 6);
+    pdf.setFontSize(value.length > 19 ? 6.5 : 9);
+    setColor(pdf, color);
+    pdf.text(value, x + 4, y + 15);
+  });
+  y += 29;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  setColor(pdf, C.textPri);
+  pdf.text(isEn ? 'Field provenance' : 'Provenance setiap field', M, y);
+  y += 7;
+
+  const entries = evidence.entries.slice(0, 18);
+  if (entries.length === 0) {
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(8);
+    setColor(pdf, C.textMuted);
+    pdf.text(isEn ? 'No field-level provenance is available.' : 'Provenance per field belum tersedia.', M, y);
+    y += 10;
+  } else {
+    entries.forEach((entry, index) => {
+      const rowH = 8.5;
+      const rowBg = index % 2 === 0 ? C.bgCard : C.bg;
+      pdf.setFillColor(...rowBg);
+      pdf.rect(M, y - 4, W - M * 2, rowH, 'F');
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7.2);
+      setColor(pdf, C.textPri);
+      pdf.text(pdfShortText(entry.label, 22), M + 3, y + 1);
+
+      const statusColor = evidenceStatusColor(entry.status);
+      pdf.setFontSize(6.2);
+      setColor(pdf, statusColor);
+      pdf.text(evidenceStatusLabel(entry.status, lang), M + 43, y + 1);
+
+      pdf.setFont('helvetica', 'normal');
+      setColor(pdf, C.textSec);
+      pdf.text(`${entry.confidence}%`, M + 77, y + 1);
+      pdf.text(pdfShortText(entry.source, 72), M + 91, y + 1);
+      y += rowH;
+    });
+    if (evidence.entries.length > entries.length) {
+      pdf.setFont('helvetica', 'italic');
+      pdf.setFontSize(6.5);
+      setColor(pdf, C.textMuted);
+      pdf.text(`+ ${evidence.entries.length - entries.length} field lainnya`, M, y + 2);
+      y += 6;
+    }
+  }
+
+  y += 6;
+  const colW = (W - M * 2 - 6) / 2;
+  drawRoundedRect(pdf, M, y, colW, 37, 2.5, C.bgCard);
+  drawRoundedRect(pdf, M + colW + 6, y, colW, 37, 2.5, C.bgCard);
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8);
+  setColor(pdf, C.accent);
+  pdf.text(isEn ? 'Derived screening indicators' : 'Indikator turunan screening', M + 4, y + 7);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7);
+  setColor(pdf, C.textSec);
+  const derivedLines = [
+    `${isEn ? 'Official fields' : 'Field resmi'}: ${evidence.officialCount}`,
+    `${isEn ? 'Model/proxy fields' : 'Field model/proxy'}: ${evidence.estimatedCount}`,
+    `${isEn ? 'Reference/open data' : 'Referensi/open data'}: ${evidence.referenceCount}`,
+    `${isEn ? 'Unavailable fields' : 'Field belum tersedia'}: ${evidence.unavailableCount}`,
+    `${isEn ? 'Scored axes' : 'Sumbu yang dinilai'}: ${evidence.scoreAxes.length || '—'}`,
+  ];
+  derivedLines.forEach((line, index) => pdf.text(pdfShortText(line, 48), M + 4, y + 14 + index * 4.5));
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8);
+  setColor(pdf, C.accent);
+  pdf.text(isEn ? 'AI delivery & limits' : 'Delivery AI & batasan', M + colW + 10, y + 7);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7);
+  setColor(pdf, C.textSec);
+  const aiLines = [
+    `Model: ${pdfShortText(evidence.aiModel, 38)}`,
+    `Delivery: ${String(evidence.aiDeliveryMode).toUpperCase()}`,
+    `${isEn ? 'Sources' : 'Sumber'}: ${pdfShortText(evidence.aiSources.join(', ') || '—', 38)}`,
+    `${isEn ? 'Not scored' : 'Tidak dinilai'}: ${pdfShortText(evidence.notScored.join(', ') || '—', 38)}`,
+    `${isEn ? 'Missing' : 'Belum tersedia'}: ${pdfShortText([...evidence.criticalMissing, ...evidence.optionalMissing].join(', ') || '—', 38)}`,
+  ];
+  aiLines.forEach((line, index) => pdf.text(line, M + colW + 10, y + 14 + index * 4.5));
+
+  y += 45;
+  drawRoundedRect(pdf, M, y, W - M * 2, 19, 2.5, [40, 35, 25]);
+  pdf.setFont('helvetica', 'italic');
+  pdf.setFontSize(7);
+  setColor(pdf, C.moderate);
+  const caveat = isEn
+    ? 'Model/proxy fields are screening indicators, not official hazard-map observations. A field survey remains necessary for final engineering or permitting decisions.'
+    : 'Field model/proxy adalah indikator screening, bukan observasi peta bahaya resmi. Survei lapangan tetap diperlukan untuk keputusan teknik atau perizinan akhir.';
+  pdf.text(pdf.splitTextToSize(caveat, W - M * 2 - 8), M + 4, y + 7);
+
+  drawPageFooter(pdf, W, H, 3);
+}
+
 function drawSoilVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, setPageNum) {
   const M = 18;
   const vs30 = property?.vs30 ?? 180;
@@ -455,7 +713,7 @@ function drawSoilVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, setPag
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(8);
   setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'LIQUEFACTION FACTOR OF SAFETY (FS)' : 'FAKTOR KEAMANAN LIKUIFAKSI (FS)', M + 5, fsY);
+  pdf.text(isEn ? 'LIQUEFACTION FACTOR OF SAFETY (FS)' : 'FAKTOR KEAMANAN LIKUEFAKSI (FS)', M + 5, fsY);
 
   const fsText = `FS = ${fs.toFixed(2)} (${fs < 1.0 ? (isEn ? 'CRITICAL' : 'RAWAN') : (isEn ? 'SAFE' : 'AMAN')})`;
   const fsClr = fs < 1.0 ? C.danger : C.safe;
@@ -733,12 +991,12 @@ function drawEnvironmentVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY,
   return y + 42;
 }
 
-function drawReportPages(pdf, property, lang) {
+function drawReportPages(pdf, property, lang, firstPageNum = 4) {
   const W = pdf.internal.pageSize.getWidth();
   const H = pdf.internal.pageSize.getHeight();
   const M = 18;
   const maxY = H - 22;
-  let pageNum = 3;
+  let pageNum = firstPageNum;
 
   pdf.addPage();
   pdf.setFillColor(...C.bg);
@@ -1042,26 +1300,38 @@ function drawPageFooter(pdf, W, H, pageNum) {
 }
 
 // ── Main Export Function ──────────────────────────────────────
-export async function exportPrintReadyPdf(property, lang = 'id') {
+/** Build the exact PDF document used by the browser download action. */
+export function createAuditPdf(property, lang = 'id') {
   if (!canExportPdf(property)) {
-    throw new Error('PDF belum tersedia: audit harus valid dan laporan AI harus selesai.');
+    throw new Error('PDF belum tersedia: audit harus valid/provisional dengan laporan AI yang selesai.');
   }
 
-  const score = computeScore(property);
+  const normalized = normalizePdfProperty(property);
+  const score = computeScore(normalized);
   const pdf = new jsPDF('p', 'mm', 'a4');
 
   // Page 1: Cover
-  drawCoverPage(pdf, property, score, lang);
+  drawCoverPage(pdf, normalized, score, lang);
 
   // Page 2: Dashboard
   pdf.addPage();
-  drawDashboardPage(pdf, property, score, lang);
+  drawDashboardPage(pdf, normalized, score, lang);
 
-  // Page 3+: AI Report
-  drawReportPages(pdf, property, lang);
+  // Page 3: explicit provenance and AI delivery evidence
+  drawAuditEvidencePage(pdf, normalized, lang);
+
+  // Page 4+: AI Report
+  drawReportPages(pdf, normalized, lang, 4);
+
+  return pdf;
+}
+
+export async function exportPrintReadyPdf(property, lang = 'id') {
+  const pdf = createAuditPdf(property, lang);
+  const normalized = normalizePdfProperty(property);
 
   // Save
-  const addr = (property.address || 'location').split(',')[0].replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30);
+  const addr = (normalized.address || 'location').split(',')[0].replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30);
   pdf.save(`SAFE_Report_${addr}.pdf`);
 }
 
@@ -1248,7 +1518,7 @@ function drawBattleDashboardPage(pdf, propA, propB, scoreA, scoreB, lang) {
     ['PGA Base', `${propA.seismic?.pgaBase ?? '-'}g`, `${propB.seismic?.pgaBase ?? '-'}g`],
     ['PGA Surface', `${propA.seismic?.pgaSurface?.toFixed(3) ?? '-'}g`, `${propB.seismic?.pgaSurface?.toFixed(3) ?? '-'}g`],
     [lang === 'en' ? 'Nearest Fault' : 'Sesar Terdekat', `${propA.seismic?.faultName ?? '-'} (${propA.seismic?.faultDist ?? '-'} km)`, `${propB.seismic?.faultName ?? '-'} (${propB.seismic?.faultDist ?? '-'} km)`],
-    [lang === 'en' ? 'Liquefaction FS' : 'FS Likuifaksi', propA.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-', propB.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-'],
+    [lang === 'en' ? 'Liquefaction FS' : 'FS Likuefaksi', propA.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-', propB.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-'],
     [lang === 'en' ? 'Tsunami Risk' : 'Risiko Tsunami', `${propA.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propA.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`, `${propB.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propB.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`],
     [lang === 'en' ? 'Air Quality (AQI)' : 'Kualitas Udara (AQI)', `${propA.compressedPayload?.env_extras?.aqi ?? '-'} (PM2.5: ${propA.compressedPayload?.env_extras?.pm25 ?? '-'})`, `${propB.compressedPayload?.env_extras?.aqi ?? '-'} (PM2.5: ${propB.compressedPayload?.env_extras?.pm25 ?? '-'})`],
   ];
@@ -1349,6 +1619,6 @@ export async function exportElementToPdf(element, filename = 'SAFE_Audit_Report.
     pdf.save(filename);
   } catch (err) {
     console.error('[S.A.F.E] html2canvas export failed:', err);
-    throw new Error('PDF export gagal — coba gunakan tombol Export utama.');
+    throw new Error('PDF export gagal — coba gunakan tombol Export utama.', { cause: err });
   }
 }

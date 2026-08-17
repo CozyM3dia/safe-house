@@ -29,7 +29,6 @@ export function adaptAuditResult(r) {
           sources: rawNarrative.sources || [],
           dataLimitations: rawNarrative.data_limitations || [],
           generatedBy: rawNarrative.generated_by,
-          streetViewUsed: rawNarrative.street_view_used === true,
           deliveryMode: rawNarrative.metadata?.delivery_mode || 'live',
           aiModel: rawNarrative.metadata?.model || '',
         }

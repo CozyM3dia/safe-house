@@ -28,38 +28,44 @@ export function TopBar() {
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-      className="fixed left-0 right-0 top-0 z-10 flex h-14 items-center justify-between gap-4 border-b border-white/8 bg-bg/80 px-4 backdrop-blur-xl"
+      data-testid="topbar"
+      className="fixed inset-x-0 top-0 z-10 flex h-14 min-w-0 items-center justify-between gap-2 border-b border-white/8 bg-bg/80 px-2 backdrop-blur-xl sm:gap-4 sm:px-4"
     >
       {/* Left: Logo + panel toggle */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-3">
         <button
+          type="button"
           onClick={toggleLeftPanel}
-          title="Toggle panel (L)"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-white/8 hover:text-accent transition-colors"
+          title={t('accessibility.togglePanel')}
+          aria-label={t('accessibility.togglePanel')}
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-accent sm:h-8 sm:min-h-0 sm:w-8 sm:min-w-0"
         >
           {leftPanelOpen
             ? <PanelLeftClose className="h-4 w-4" />
             : <PanelLeftOpen className="h-4 w-4" />}
         </button>
 
-        <div className="flex items-center">
+        <div className="flex min-w-0 items-center">
           <img
             src="/safe_house_logo.png"
             alt="S.A.F.E House"
-            className="h-24 w-auto object-contain -my-6"
+            className="h-14 max-w-[5.5rem] w-auto object-contain sm:h-24 sm:max-w-none sm:-my-6"
           />
         </div>
       </div>
 
       {/* Center: Search trigger */}
       <button
+        type="button"
         data-tour="topbar-search"
         onClick={() => setCmdPalette(true)}
-        className="group flex max-w-md flex-1 items-center gap-2.5 rounded-lg border border-white/8 bg-white/[0.03] px-3.5 py-2 text-left transition-all hover:border-white/16 hover:bg-white/[0.06]"
+        aria-label={t('accessibility.search')}
+        className="group flex min-h-[44px] min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2 text-left transition-all hover:border-white/16 hover:bg-white/[0.06] sm:min-h-0 sm:gap-2.5 sm:px-3.5"
       >
         <Search className="h-3.5 w-3.5 text-text-muted" />
         <span className="flex-1 truncate text-xs text-text-muted">
-          {t('search.placeholder')}
+          <span className="sm:hidden">{t('search.shortPlaceholder')}</span>
+          <span className="hidden sm:inline">{t('search.placeholder')}</span>
         </span>
         <kbd className="hidden sm:inline-flex items-center gap-1 rounded border border-white/12 bg-white/6 px-1.5 py-0.5 font-mono text-[10px] text-text-muted">
           ⌘K
@@ -67,45 +73,51 @@ export function TopBar() {
       </button>
 
       {/* Right: Lang + Mode toggle + Status */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <LanguageSelector />
 
         {/* Segmented mode control */}
         <div data-tour="topbar-mode" className="flex items-center rounded-lg border border-white/8 bg-white/[0.03] p-0.5">
           <button
+            type="button"
             onClick={() => setMode('audit')}
+            title={t('mode.audit')}
+            aria-label={t('mode.audit')}
             className={cn(
-              'flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all',
+              'flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded px-2 text-[11px] font-semibold uppercase tracking-wider transition-all sm:h-7 sm:min-h-0 sm:min-w-0 sm:px-2.5',
               mode === 'audit'
                 ? 'bg-white/10 text-accent shadow-sm border border-white/12'
                 : 'text-text-muted hover:text-text-secondary'
             )}
           >
             <Activity className="h-3 w-3" />
-            {t('mode.audit')}
+            <span className="hidden sm:inline">{t('mode.audit')}</span>
           </button>
           <button
+            type="button"
             onClick={() => setMode('battle')}
+            title={t('mode.battle')}
+            aria-label={t('mode.battle')}
             className={cn(
-              'flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all',
+              'flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded px-2 text-[11px] font-semibold uppercase tracking-wider transition-all sm:h-7 sm:min-h-0 sm:min-w-0 sm:px-2.5',
               mode === 'battle'
                 ? 'bg-white/10 text-accent shadow-sm border border-white/12'
                 : 'text-text-muted hover:text-text-secondary'
             )}
           >
             <Swords className="h-3 w-3" />
-            {t('mode.battle')}
+            <span className="hidden sm:inline">{t('mode.battle')}</span>
           </button>
         </div>
 
-        <Badge data-tour="topbar-status" variant={status.variant}>
+        <Badge data-tour="topbar-status" variant={status.variant} aria-label={status.label} className="min-h-7 px-2 sm:px-2.5">
           <span className={cn(
-            'pulse-dot mr-1',
+            'pulse-dot mr-0 sm:mr-1',
             status.variant === 'safe' ? 'text-risk-safe'
             : status.variant === 'moderate' ? 'text-risk-moderate'
             : 'text-accent'
           )} />
-          {status.label}
+          <span className="hidden sm:inline">{status.label}</span>
         </Badge>
       </div>
     </motion.div>
