@@ -85,3 +85,56 @@ export function buildExportUrl(serviceUrl, bbox) {
   });
   return `${serviceUrl}/exportImage?bbox=${bbox}&${params.toString()}`;
 }
+
+// ── Rainbow color ramp untuk indeks bahaya (0..1) ─────────────────
+// InaRISK ImageServer merender indeks sebagai grayscale (0=hitam, 1=putih).
+// Recolor client-side jadi rainbow biar magnitudo jelas: biru = rendah,
+// merah = tinggi. Ramp yang sama dipakai raster (LUT) dan legenda peta.
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+
+// HSL (h 0..360, s/l 0..1) → [r,g,b] 0..255.
+export function hslToRgb(h, s, l) {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => {
+    const k = (n + h / 30) % 12;
+    return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+  };
+  return [f(0), f(8), f(4)].map((x) => Math.round(x * 255));
+}
+
+// Indeks bahaya 0..1 → warna rainbow (hue 240° biru → 0° merah).
+export function indexToRainbow(t) {
+  return hslToRgb(240 * (1 - clamp01(t)), 0.85, 0.5);
+}
+
+// LUT 256 entri (nilai grayscale 0..255 → [r,g,b]) untuk recolor tile cepat.
+export function buildRainbowLut() {
+  const lut = new Uint8ClampedArray(256 * 3);
+  for (let i = 0; i < 256; i += 1) {
+    const [r, g, b] = indexToRainbow(i / 255);
+    lut[i * 3] = r;
+    lut[i * 3 + 1] = g;
+    lut[i * 3 + 2] = b;
+  }
+  return lut;
+}
+
+// Stop legenda (t, label) — sinkron dengan warna raster.
+export const HAZARD_RAMP_STOPS = [
+  { t: 0, label: 'Rendah' },
+  { t: 0.5, label: 'Sedang' },
+  { t: 1, label: 'Tinggi' },
+];
+
+// CSS linear-gradient dari ramp untuk bar legenda.
+export function rainbowGradientCss(steps = 8) {
+  const parts = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const [r, g, b] = indexToRainbow(t);
+    parts.push(`rgb(${r},${g},${b}) ${Math.round(t * 100)}%`);
+  }
+  return `linear-gradient(to right, ${parts.join(', ')})`;
+}

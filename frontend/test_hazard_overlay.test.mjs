@@ -5,7 +5,13 @@ import {
   INARISK_HAZARDS,
   tileToBbox3857,
   buildExportUrl,
+  indexToRainbow,
+  buildRainbowLut,
+  rainbowGradientCss,
+  HAZARD_RAMP_STOPS,
 } from './src/lib/hazardOverlay.js';
+
+const dominant = ([r, g, b]) => (r >= g && r >= b ? 'r' : g >= r && g >= b ? 'g' : 'b');
 
 test('config covers exactly banjir, longsor, gempa with official services', () => {
   assert.equal(INARISK_HAZARDS.length, 3);
@@ -45,4 +51,29 @@ test('buildExportUrl requests a png32 image export in 3857 via exportImage', () 
   assert.match(url, /imageSR=3857/);
   assert.match(url, /format=png32/);
   assert.match(url, /f=image/);
+});
+
+test('indexToRainbow ramps blue (low) → green (mid) → red (high)', () => {
+  assert.equal(dominant(indexToRainbow(0)), 'b'); // rendah = biru
+  assert.equal(dominant(indexToRainbow(0.5)), 'g'); // sedang = hijau
+  assert.equal(dominant(indexToRainbow(1)), 'r'); // tinggi = merah
+  // clamp di luar rentang
+  assert.deepEqual(indexToRainbow(-1), indexToRainbow(0));
+  assert.deepEqual(indexToRainbow(2), indexToRainbow(1));
+});
+
+test('buildRainbowLut is a 256-entry RGB table matching the ramp ends', () => {
+  const lut = buildRainbowLut();
+  assert.equal(lut.length, 256 * 3);
+  assert.deepEqual([lut[0], lut[1], lut[2]], indexToRainbow(0)); // biru
+  assert.deepEqual([lut[765], lut[766], lut[767]], indexToRainbow(1)); // merah
+});
+
+test('rainbowGradientCss produces a left→right css gradient; stops sync with raster', () => {
+  const css = rainbowGradientCss(4);
+  assert.match(css, /^linear-gradient\(to right,/);
+  assert.match(css, /rgb\(\d+,\d+,\d+\) 0%/);
+  assert.match(css, /rgb\(\d+,\d+,\d+\) 100%/);
+  assert.equal(HAZARD_RAMP_STOPS.length, 3);
+  assert.deepEqual(HAZARD_RAMP_STOPS.map((s) => s.label), ['Rendah', 'Sedang', 'Tinggi']);
 });

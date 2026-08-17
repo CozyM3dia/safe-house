@@ -2,6 +2,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../../store/useAppStore";
 import { cn } from "../../lib/utils";
 import { Info, Map, Droplets, GitBranch } from "lucide-react";
+import { rainbowGradientCss, HAZARD_RAMP_STOPS } from "../../lib/hazardOverlay";
+
+// Bar legenda rainbow — warnanya identik dengan raster (ramp yang sama).
+const RAINBOW_CSS = rainbowGradientCss(12);
 
 export function MapLegend() {
   const overlays = useAppStore((s) => s.overlays);
@@ -37,63 +41,28 @@ export function MapLegend() {
             </span>
           </div>
 
-          {/* Flood Legend */}
-          {showFloodLegend && (
-            <div className="flex flex-col gap-1.5">
+          {/* Hazard rainbow legends — warna sinkron dengan raster InaRISK */}
+          {[
+            { show: showFloodLegend, icon: <Droplets size={10} className="text-cyan-400" />, name: 'Bahaya Banjir' },
+            { show: showLandslideLegend, icon: <span className="text-[11px] leading-none">🏔️</span>, name: 'Bahaya Longsor' },
+            { show: showEarthquakeLegend, icon: <span className="text-[11px] leading-none">🌋</span>, name: 'Bahaya Gempa' },
+          ].filter((h) => h.show).map((h) => (
+            <div key={h.name} className="flex flex-col gap-1.5">
               <div className="flex items-center gap-1">
-                <Droplets size={10} className="text-cyan-400" />
-                <span className="text-[10px] font-bold text-text-primary">Risiko Banjir</span>
+                {h.icon}
+                <span className="text-[10px] font-bold text-text-primary">{h.name}</span>
               </div>
-              <div className="grid grid-cols-3 gap-1 pt-1">
-                <div className="flex flex-col items-center gap-1 rounded bg-white/[0.02] border border-white/5 py-1">
-                  <div className="w-2 h-2 rounded bg-green-500" />
-                  <span className="text-[8px] font-bold text-text-secondary">Rendah</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 rounded bg-white/[0.02] border border-white/5 py-1">
-                  <div className="w-2 h-2 rounded bg-yellow-500" />
-                  <span className="text-[8px] font-bold text-text-secondary">Sedang</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 rounded bg-white/[0.02] border border-white/5 py-1">
-                  <div className="w-2 h-2 rounded bg-red-500" />
-                  <span className="text-[8px] font-bold text-text-secondary">Tinggi</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {showLandslideLegend && (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] leading-none">🏔️</span>
-                <span className="text-[10px] font-bold text-text-primary">Bahaya Longsor</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1 pt-1">
-                {[['Rendah','bg-green-500'],['Sedang','bg-yellow-500'],['Tinggi','bg-red-500']].map(([label,clr]) => (
-                  <div key={label} className="flex flex-col items-center gap-1 rounded bg-white/[0.02] border border-white/5 py-1">
-                    <div className={cn('w-2 h-2 rounded', clr)} />
-                    <span className="text-[8px] font-bold text-text-secondary">{label}</span>
-                  </div>
+              <div
+                className="h-2.5 w-full rounded border border-white/10"
+                style={{ background: RAINBOW_CSS }}
+              />
+              <div className="flex justify-between text-[8px] font-bold text-text-secondary">
+                {HAZARD_RAMP_STOPS.map((s) => (
+                  <span key={s.label}>{s.label}</span>
                 ))}
               </div>
             </div>
-          )}
-
-          {showEarthquakeLegend && (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] leading-none">🌋</span>
-                <span className="text-[10px] font-bold text-text-primary">Bahaya Gempa</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1 pt-1">
-                {[['Rendah','bg-green-500'],['Sedang','bg-yellow-500'],['Tinggi','bg-red-500']].map(([label,clr]) => (
-                  <div key={label} className="flex flex-col items-center gap-1 rounded bg-white/[0.02] border border-white/5 py-1">
-                    <div className={cn('w-2 h-2 rounded', clr)} />
-                    <span className="text-[8px] font-bold text-text-secondary">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          ))}
 
           {/* Divider if both active */}
           {showFloodLegend && showLandCoverLegend && (
