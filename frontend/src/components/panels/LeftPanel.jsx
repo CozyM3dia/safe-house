@@ -157,21 +157,26 @@ function EmptyState() {
         {t('empty.descriptionEnd')}
       </motion.p>
 
-      <motion.div variants={item} className="grid w-full grid-cols-2 gap-2">
-        <FeaturePill icon="📍" label={t('empty.vs30')} />
-        <FeaturePill icon="🌊" label={t('empty.flood')} />
-        <FeaturePill icon="🌋" label={t('empty.fault')} />
-        <FeaturePill icon="🤖" label={t('empty.ai')} />
+      <motion.div variants={item} className="flex w-full flex-col gap-2">
+        <FeatureCard icon="📍" label={t('empty.vs30')} desc={t('empty.vs30desc')} />
+        <FeatureCard icon="🌊" label={t('empty.flood')} desc={t('empty.flooddesc')} />
+        <FeatureCard icon="🌋" label={t('empty.fault')} desc={t('empty.faultdesc')} />
+        <FeatureCard icon="🤖" label={t('empty.ai')} desc={t('empty.aidesc')} />
       </motion.div>
     </motion.div>
   );
 }
 
-function FeaturePill({ icon, label }) {
+function FeatureCard({ icon, label, desc }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2 text-[11px] text-text-secondary hover:border-white/14 hover:bg-white/[0.04] transition-colors">
-      <span>{icon}</span>
-      <span>{label}</span>
+    <div className="flex items-start gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2.5 text-left transition-colors hover:border-accent/25 hover:bg-white/[0.04]">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-white/[0.03] text-sm">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-bold text-text-primary">{label}</p>
+        <p className="mt-0.5 text-[10px] leading-snug text-text-muted">{desc}</p>
+      </div>
     </div>
   );
 }

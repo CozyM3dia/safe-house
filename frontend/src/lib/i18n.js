@@ -52,6 +52,22 @@ const translations = {
   'empty.flood': { id: 'Intel Banjir', en: 'Flood Intel' },
   'empty.fault': { id: 'Jarak patahan', en: 'Fault distance' },
   'empty.ai': { id: 'Audit AI', en: 'AI Audit' },
+  'empty.vs30desc': {
+    id: 'Kelas situs & PGA desain SNI 1726:2019',
+    en: 'SNI 1726:2019 site class & design PGA',
+  },
+  'empty.flooddesc': {
+    id: 'Bahaya banjir nasional dari InaRISK BNPB',
+    en: 'National flood hazard from InaRISK BNPB',
+  },
+  'empty.faultdesc': {
+    id: 'Sesar aktif terdekat (PuSGeN 2024)',
+    en: 'Nearest active fault (PuSGeN 2024)',
+  },
+  'empty.aidesc': {
+    id: 'Ringkasan risiko & rekomendasi berbasis AI',
+    en: 'AI-grounded risk summary & recommendations',
+  },
 
   // ─── Left Panel — Populated State ──────────────────────────────
   'panel.siteAnalysis': { id: 'Analisis Situs', en: 'Site Analysis' },
