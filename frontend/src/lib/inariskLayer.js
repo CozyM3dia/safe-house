@@ -9,8 +9,9 @@ const LUT = buildRainbowLut();
 // indeks bahaya; nodata (alpha 0) tetap transparan. crossOrigin 'anonymous'
 // wajib agar getImageData tidak men-taint canvas (gis.bnpb.go.id kirim CORS).
 const InariskColorLayer = L.GridLayer.extend({
-  initialize(cfg, options) {
+  initialize(cfg, options, onStatus) {
     this._cfg = cfg;
+    this._onStatus = onStatus;
     L.GridLayer.prototype.initialize.call(this, options);
   },
   createTile(coords, done) {
@@ -21,45 +22,97 @@ const InariskColorLayer = L.GridLayer.extend({
     const ctx = tile.getContext('2d');
 
     const bbox = tileToBbox3857({ x: coords.x, y: coords.y, z: coords.z });
-    const url = buildExportUrl(this._cfg.serviceUrl, bbox);
+    const candidates = this._cfg.serviceCandidates?.length
+      ? this._cfg.serviceCandidates
+      : [{ url: this._cfg.serviceUrl, source: 'official' }];
+    let settled = false;
+    let timeoutId;
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        ctx.drawImage(img, 0, 0, size.x, size.y);
-        const id = ctx.getImageData(0, 0, size.x, size.y);
-        const d = id.data;
-        for (let i = 0; i < d.length; i += 4) {
-          if (d[i + 3] < 10) {
-            d[i + 3] = 0; // nodata → transparan
-            continue;
-          }
-          // luminance grayscale = indeks bahaya → LUT rainbow
-          const lum = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) | 0;
-          const p = lum * 3;
-          d[i] = LUT[p];
-          d[i + 1] = LUT[p + 1];
-          d[i + 2] = LUT[p + 2];
+    const tryCandidate = (candidateIndex) => {
+      if (settled) return;
+      const candidate = candidates[candidateIndex];
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      let attemptSettled = false;
+      const clearAttempt = () => window.clearTimeout(timeoutId);
+      const failAttempt = (error) => {
+        if (attemptSettled || settled) return;
+        attemptSettled = true;
+        clearAttempt();
+
+        if (candidateIndex < candidates.length - 1) {
+          const next = candidates[candidateIndex + 1];
+          this._onStatus?.('loading', {
+            source: next.source,
+            serviceUrl: next.url,
+          });
+          tryCandidate(candidateIndex + 1);
+          return;
         }
-        ctx.putImageData(id, 0, 0);
-        done(null, tile);
-      } catch (err) {
-        done(err, tile);
-      }
+
+        settled = true;
+        this._onStatus?.('error', {
+          source: candidate.source,
+          serviceUrl: candidate.url,
+          error,
+        });
+        done(error, tile);
+      };
+
+      img.onload = () => {
+        if (attemptSettled || settled) return;
+        try {
+          ctx.drawImage(img, 0, 0, size.x, size.y);
+          const id = ctx.getImageData(0, 0, size.x, size.y);
+          const d = id.data;
+          for (let i = 0; i < d.length; i += 4) {
+            if (d[i + 3] < 10) {
+              d[i + 3] = 0; // nodata → transparan
+              continue;
+            }
+            // luminance grayscale = indeks bahaya → LUT rainbow
+            const lum = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) | 0;
+            const p = lum * 3;
+            d[i] = LUT[p];
+            d[i + 1] = LUT[p + 1];
+            d[i + 2] = LUT[p + 2];
+          }
+          ctx.putImageData(id, 0, 0);
+          attemptSettled = true;
+          settled = true;
+          clearAttempt();
+          this._onStatus?.('ready', {
+            source: candidate.source,
+            serviceUrl: candidate.url,
+          });
+          done(null, tile);
+        } catch (err) {
+          failAttempt(err);
+        }
+      };
+      img.onerror = () => failAttempt(new Error('InaRISK tile load failed'));
+      timeoutId = window.setTimeout(
+        () => failAttempt(new Error('InaRISK tile load timed out')),
+        8000
+      );
+      img.src = buildExportUrl(candidate.url, bbox);
     };
-    img.onerror = () => done(new Error('InaRISK tile load failed'), tile);
-    img.src = url;
+
+    this._onStatus?.('loading', {
+      source: candidates[0].source,
+      serviceUrl: candidates[0].url,
+    });
+    tryCandidate(0);
 
     return tile;
   },
 });
 
-export function createInariskLayer(cfg, opacity) {
+export function createInariskLayer(cfg, opacity, onStatus) {
   return new InariskColorLayer(cfg, {
     opacity,
     attribution: cfg.attribution,
     zIndex: 350, // di tilePane, di atas basemap; faults pane z430 (di atas)
     className: `inarisk-overlay inarisk-${cfg.key}`,
-  });
+  }, onStatus);
 }

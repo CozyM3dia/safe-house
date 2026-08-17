@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, ChevronRight, GitBranch, Info } from 'lucide-react';
+import { Layers, ChevronRight, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { cn } from '../../lib/utils';
@@ -15,6 +15,9 @@ export function DisasterLayersPanel() {
     baseMapStyle,
     setBaseMapStyle,
     overlays,
+    overlayStatuses,
+    overlaySources,
+    faultLayerSource,
     toggleOverlay,
     chatExpanded,
     setChatExpanded,
@@ -68,6 +71,9 @@ export function DisasterLayersPanel() {
                   <button
                     key={style.id}
                     type="button"
+                    aria-pressed={isActive}
+                    aria-label={`${t('panel.useBasemap')}: ${style.label}`}
+                    title={`${t('panel.useBasemap')}: ${style.label}`}
                     onClick={() => setBaseMapStyle(style.id)}
                     className={cn(
                       "flex min-h-[44px] flex-1 items-center justify-center rounded-md py-1.5 text-center text-[10px] font-bold transition-all",
@@ -86,18 +92,38 @@ export function DisasterLayersPanel() {
             <div className="mt-4 border-t border-white/8 pt-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-text-muted">
-                  Layer bahaya
+                  {t('panel.hazardLayers')}
                 </span>
-                <span className="text-[8px] font-mono text-text-muted">InaRISK BNPB</span>
+                <span className="text-[8px] font-mono text-text-muted">{t('panel.hazardSource')}</span>
               </div>
               <div className="flex flex-col gap-1.5">
                 {INARISK_HAZARDS.map((h) => {
                   const active = overlays[h.key];
+                  const status = overlayStatuses[h.key] || 'idle';
+                  const source = overlaySources[h.key] || 'official';
+                  const isFallback = source === 'fallback';
+                  const statusLabel = status === 'loading'
+                    ? t('panel.layerLoading')
+                    : status === 'error'
+                      ? t('panel.layerUnavailable')
+                      : isFallback && active
+                        ? t('panel.layerFallback')
+                        : active
+                          ? t('panel.layerOn')
+                          : t('panel.layerOff');
+                  const label = t(h.labelKey);
+                  const description = isFallback && h.fallbackDescriptionKey
+                    ? t(h.fallbackDescriptionKey)
+                    : t(h.descriptionKey);
                   return (
                     <button
                       key={h.key}
                       type="button"
+                      data-testid={`overlay-toggle-${h.key}`}
                       aria-pressed={active}
+                      aria-busy={active && status === 'loading'}
+                      aria-label={`${t('panel.toggleLayer')}: ${label}`}
+                      title={`${t('panel.toggleLayer')}: ${label}`}
                       onClick={() => toggleOverlay(h.key)}
                       className={cn(
                         'flex min-h-[44px] w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
@@ -115,16 +141,23 @@ export function DisasterLayersPanel() {
                         {h.icon}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[10px] font-bold text-text-primary">{h.label}</span>
+                        <span className="block text-[10px] font-bold text-text-primary">{label}</span>
                         <span className="mt-0.5 block text-[8px] leading-relaxed text-text-muted">
-                          Peta bahaya {h.label.toLowerCase()} nasional
+                          {description}
                         </span>
                       </span>
-                      <span className={cn(
-                        'rounded-md border px-1.5 py-0.5 text-[8px] font-bold tracking-wider',
-                        active ? 'border-accent/35 text-accent' : 'border-white/8 text-text-muted'
-                      )}>
-                        {active ? 'ON' : 'OFF'}
+                      <span
+                        data-testid={`overlay-status-${h.key}`}
+                        className={cn(
+                          'rounded-md border px-1.5 py-0.5 text-[8px] font-bold tracking-wider',
+                          status === 'error'
+                            ? 'border-risk-danger/35 text-risk-danger'
+                            : isFallback && active
+                              ? 'border-risk-moderate/35 text-risk-moderate'
+                              : active ? 'border-accent/35 text-accent' : 'border-white/8 text-text-muted'
+                        )}
+                      >
+                        {statusLabel}
                       </span>
                     </button>
                   );
@@ -136,16 +169,19 @@ export function DisasterLayersPanel() {
             <div className="mt-4 border-t border-white/8 pt-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-text-muted">
-                  Layer referensi
+                  {t('panel.referenceLayers')}
                 </span>
-                <span className="text-[8px] font-mono text-text-muted">PUSGEN 2024</span>
+                <span className="text-[8px] font-mono text-text-muted">{t('panel.referenceSource')}</span>
               </div>
               <button
                 type="button"
+                data-testid="overlay-toggle-faults"
                 aria-pressed={overlays.faults}
+                aria-label={`${t('panel.toggleLayer')}: ${t('panel.faults')}`}
+                title={`${t('panel.toggleLayer')}: ${t('panel.faults')}`}
                 onClick={() => toggleOverlay('faults')}
-                  className={cn(
-                    'flex min-h-[44px] w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
+                className={cn(
+                  'flex min-h-[44px] w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
                   overlays.faults
                     ? 'border-[#b86f63]/45 bg-[#b86f63]/10'
                     : 'border-white/6 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.04]'
@@ -161,48 +197,34 @@ export function DisasterLayersPanel() {
                 >
                   <GitBranch className="h-3.5 w-3.5" />
                 </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[10px] font-bold text-text-primary">Sesar aktif</span>
-                    <span className="mt-0.5 block text-[8px] leading-relaxed text-text-muted">
-                    Geometri resmi PuSGeN 2024
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-bold text-text-primary">{t('panel.faults')}</span>
+                  <span className="mt-0.5 block text-[8px] leading-relaxed text-text-muted">
+                    {!overlays.faults
+                      ? t('panel.faultsDescription')
+                      : faultLayerSource === 'loading'
+                      ? t('panel.faultsLoadingDescription')
+                      : faultLayerSource === 'official'
+                        ? t('panel.faultsDescription')
+                        : t('panel.faultsFallbackDescription')}
                   </span>
                 </span>
-                <span className={cn(
-                  'rounded-md border px-1.5 py-0.5 text-[8px] font-bold tracking-wider',
-                  overlays.faults
-                    ? 'border-[#b86f63]/35 text-[#d28a7b]'
-                    : 'border-white/8 text-text-muted'
-                )}>
-                  {overlays.faults ? 'ON' : 'OFF'}
+                <span
+                  data-testid="overlay-status-faults"
+                  className={cn(
+                    'rounded-md border px-1.5 py-0.5 text-[8px] font-bold tracking-wider',
+                    overlays.faults
+                      ? 'border-[#b86f63]/35 text-[#d28a7b]'
+                      : 'border-white/8 text-text-muted'
+                  )}
+                >
+                  {overlays.faults
+                    ? faultLayerSource === 'loading'
+                      ? t('panel.layerLoading')
+                      : t('panel.layerOn')
+                    : t('panel.layerOff')}
                 </span>
               </button>
-
-              {overlays.faults && (
-                <div
-                  data-testid="fault-layer-legend"
-                  className="mt-3 rounded-xl border border-[#b86f63]/25 bg-[#b86f63]/[0.06] p-3"
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-[#b86f63]/25 bg-[#b86f63]/10 text-[#d28a7b]">
-                      <Info className="h-3 w-3" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#d28a7b]">
-                        Legenda aktif
-                      </p>
-                      <p className="mt-1 text-[9px] leading-relaxed text-text-secondary">
-                        Garis solid menunjukkan geometri sesar resmi.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-white/6 bg-black/10 px-2.5 py-2">
-                    <span className="mt-1.5 w-8 shrink-0 border-t-2 border-[#b86f63]" aria-hidden="true" />
-                    <span className="text-[8px] leading-relaxed text-text-muted">
-                      Sumber: PuSGeN 2024 melalui InaRISK BNPB
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
             <MapLegend />

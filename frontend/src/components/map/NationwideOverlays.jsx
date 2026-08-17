@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import { useAppStore } from '../../store/useAppStore';
+import { useT } from '../../hooks/useTranslation';
 import { INARISK_HAZARDS } from '../../lib/hazardOverlay';
 import { createInariskLayer } from '../../lib/inariskLayer';
 
@@ -11,17 +12,38 @@ import { createInariskLayer } from '../../lib/inariskLayer';
  */
 function HazardLayer({ cfg }) {
   const map = useMap();
+  const t = useT();
   const enabled = useAppStore((s) => s.overlays[cfg.key]);
   const opacity = useAppStore((s) => s.overlayOpacities[cfg.key] ?? 0.65);
+  const setOverlayStatus = useAppStore((s) => s.setOverlayStatus);
+  const setOverlaySource = useAppStore((s) => s.setOverlaySource);
 
   useEffect(() => {
-    if (!enabled) return undefined;
-    const layer = createInariskLayer(cfg, opacity);
+    if (!enabled) {
+      setOverlayStatus(cfg.key, 'idle');
+      return undefined;
+    }
+
+    let alive = true;
+    setOverlayStatus(cfg.key, 'loading');
+    setOverlaySource(cfg.key, cfg.serviceCandidates?.[0]?.source || 'official');
+    const layer = createInariskLayer(
+      { ...cfg, attribution: t('panel.hazardAttribution') },
+      opacity,
+      (status, meta) => {
+        if (!alive) return;
+        setOverlayStatus(cfg.key, status);
+        setOverlaySource(cfg.key, meta?.source || 'official');
+      }
+    );
     layer.addTo(map);
     return () => {
+      alive = false;
       map.removeLayer(layer);
+      setOverlayStatus(cfg.key, 'idle');
+      setOverlaySource(cfg.key, 'official');
     };
-  }, [map, cfg, enabled, opacity]);
+  }, [map, cfg, enabled, opacity, setOverlayStatus, setOverlaySource, t]);
 
   return null;
 }

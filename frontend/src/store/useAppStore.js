@@ -2,6 +2,23 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { generateBattleReport, generateNarrative, runAudit } from '../services/api';
+import { MAP_OVERLAY_KEYS } from '../lib/hazardOverlay';
+
+const INITIAL_OVERLAYS = Object.fromEntries(
+  MAP_OVERLAY_KEYS.map((key) => [key, false])
+);
+
+const INITIAL_OVERLAY_OPACITIES = Object.fromEntries(
+  MAP_OVERLAY_KEYS.map((key) => [key, key === 'faults' ? 0.34 : 0.65])
+);
+
+const INITIAL_OVERLAY_STATUSES = Object.fromEntries(
+  MAP_OVERLAY_KEYS.map((key) => [key, 'idle'])
+);
+
+const INITIAL_OVERLAY_SOURCES = Object.fromEntries(
+  MAP_OVERLAY_KEYS.map((key) => [key, 'official'])
+);
 
 export const useAppStore = create(
   persist(
@@ -29,35 +46,12 @@ export const useAppStore = create(
       battleReportLoading: false,
 
       // ─── Map Overlays & RAG Documents ──────────────────────────
-      baseMapStyle: 'street', // 'street' | 'satellite' | 'terrain'
-      overlays: {
-        flood: false,
-        landslide: false,
-        fire: false,
-        earthquake: false,
-        tsunami: false,
-        volcano: false,
-        weather: false,
-        rtrw: false,
-        znt: false,
-        landcover: false,
-        population: false,
-        faults: false,
-      },
-      overlayOpacities: {
-        flood: 0.65,
-        landslide: 0.65,
-        fire: 0.65,
-        earthquake: 0.65,
-        tsunami: 0.65,
-        volcano: 0.65,
-        weather: 0.65,
-        rtrw: 0.65,
-        znt: 0.65,
-        landcover: 0.65,
-        population: 0.65,
-        faults: 0.34,
-      },
+      baseMapStyle: 'street', // 'street' | 'satellite'
+      overlays: INITIAL_OVERLAYS,
+      overlayOpacities: INITIAL_OVERLAY_OPACITIES,
+      overlayStatuses: INITIAL_OVERLAY_STATUSES,
+      overlaySources: INITIAL_OVERLAY_SOURCES,
+      faultLayerSource: 'fallback',
       uploadedDocuments: [],
 
       // ─── Onboarding ───────────────────────────────────────────
@@ -89,15 +83,42 @@ export const useAppStore = create(
       setSimulatedPga: (v) => set({ simulatedPga: v }),
       setBaseMapStyle: (style) => set({ baseMapStyle: style }),
       setChatExpanded: (chatExpanded) => set({ chatExpanded }),
+      setOverlayStatus: (key, status) =>
+        set((s) => (
+          Object.prototype.hasOwnProperty.call(s.overlayStatuses, key)
+            ? { overlayStatuses: { ...s.overlayStatuses, [key]: status } }
+            : s
+        )),
+      setOverlaySource: (key, source) =>
+        set((s) => (
+          Object.prototype.hasOwnProperty.call(s.overlaySources, key)
+            ? { overlaySources: { ...s.overlaySources, [key]: source } }
+            : s
+        )),
+      setFaultLayerSource: (faultLayerSource) => set({ faultLayerSource }),
 
       toggleOverlay: (key) =>
-        set((s) => ({
-          overlays: { ...s.overlays, [key]: !s.overlays[key] },
-        })),
+        set((s) => (
+          Object.prototype.hasOwnProperty.call(s.overlays, key)
+            ? {
+                overlays: { ...s.overlays, [key]: !s.overlays[key] },
+                overlayStatuses: {
+                  ...s.overlayStatuses,
+                  [key]: !s.overlays[key] ? 'loading' : 'idle',
+                },
+                overlaySources: {
+                  ...s.overlaySources,
+                  [key]: 'official',
+                },
+              }
+            : s
+        )),
       setOverlayOpacity: (key, val) =>
-        set((s) => ({
-          overlayOpacities: { ...s.overlayOpacities, [key]: val },
-        })),
+        set((s) => (
+          Object.prototype.hasOwnProperty.call(s.overlayOpacities, key)
+            ? { overlayOpacities: { ...s.overlayOpacities, [key]: val } }
+            : s
+        )),
       addUploadedDocument: (name, content) =>
         set((s) => ({
           uploadedDocuments: [

@@ -16,17 +16,17 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (character) => HTML_ESCAPE[character]);
 }
 
-function bindOfficialFaultTooltip(feature, layer) {
+function bindOfficialFaultTooltip(feature, layer, lang) {
   const properties = feature?.properties ?? {};
-  const name = properties.Name || properties.Segment || 'Sesar aktif';
+  const name = properties.Name || properties.Segment || (lang === 'en' ? 'Active fault' : 'Sesar aktif');
   const metadata = [
-    properties.Segment ? `Segmen: ${properties.Segment}` : null,
-    properties.Region ? `Wilayah: ${properties.Region}` : null,
-    properties.Length_km != null ? `Panjang: ${properties.Length_km} km` : null,
+    properties.Segment ? `${lang === 'en' ? 'Segment' : 'Segmen'}: ${properties.Segment}` : null,
+    properties.Region ? `${lang === 'en' ? 'Region' : 'Wilayah'}: ${properties.Region}` : null,
+    properties.Length_km != null ? `${lang === 'en' ? 'Length' : 'Panjang'}: ${properties.Length_km} km` : null,
   ].filter(Boolean).join(' · ');
 
   layer.bindTooltip(
-    `<strong>${escapeHtml(name)}</strong><br /><span>${escapeHtml(metadata || `Geometri ${OFFICIAL_FAULT_SOURCE.dataset}`)}</span>`,
+    `<strong>${escapeHtml(name)}</strong><br /><span>${escapeHtml(metadata || `${lang === 'en' ? 'Geometry' : 'Geometri'} ${OFFICIAL_FAULT_SOURCE.dataset}`)}</span>`,
     {
       className: 'fault-overlay-tooltip',
       direction: 'top',
@@ -56,12 +56,19 @@ function buildFallbackFaultGeoJSON() {
 
 export function FaultOverlay() {
   const enabled = useAppStore((s) => s.overlays.faults);
+  const lang = useAppStore((s) => s.lang);
+  const setFaultLayerSource = useAppStore((s) => s.setFaultLayerSource);
   const [geometry, setGeometry] = useState(() => buildFallbackFaultGeoJSON());
+  const [geometryRevision, setGeometryRevision] = useState(0);
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled) {
+      setFaultLayerSource('fallback');
+      return undefined;
+    }
 
     const controller = new AbortController();
+    setFaultLayerSource('loading');
     fetch(OFFICIAL_FAULT_GEOJSON_URL, {
       signal: controller.signal,
       headers: { Accept: 'application/geo+json' },
@@ -76,15 +83,22 @@ export function FaultOverlay() {
       })
       .then((data) => {
         setGeometry(data);
+        setGeometryRevision((revision) => revision + 1);
+        setFaultLayerSource('official');
       })
       .catch((error) => {
         if (error.name === 'AbortError') return;
         // Keep the local fallback geometry active so fault lines never disappear
+        setGeometry(buildFallbackFaultGeoJSON());
+        setGeometryRevision((revision) => revision + 1);
+        setFaultLayerSource('fallback');
         console.warn('PuSGeN official geometry service offline, using national reference corridor fallback', error);
       });
 
-    return () => controller.abort();
-  }, [enabled]);
+    return () => {
+      controller.abort();
+    };
+  }, [enabled, setFaultLayerSource]);
 
   if (!enabled) return null;
 
@@ -92,10 +106,10 @@ export function FaultOverlay() {
     <Pane name={FAULT_OVERLAY_PANE_NAME} style={{ zIndex: FAULT_OVERLAY_PANE_Z_INDEX }}>
       {geometry && (
         <GeoJSON
-          key={geometry.features?.length || 'faults'}
+          key={`faults-${geometryRevision}`}
           data={geometry}
           style={FAULT_OVERLAY_STYLE}
-          onEachFeature={bindOfficialFaultTooltip}
+          onEachFeature={(feature, layer) => bindOfficialFaultTooltip(feature, layer, lang)}
         />
       )}
     </Pane>

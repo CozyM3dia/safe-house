@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const puppeteer = require('puppeteer');
 
 const APP_URL = process.env.SAFE_HOUSE_APP_URL || 'http://localhost:5173/app';
+const APP_ORIGIN = new URL(APP_URL).origin;
 
 async function run() {
   const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
@@ -15,7 +16,7 @@ async function run() {
     }
 
     const corsHeaders = {
-      'Access-Control-Allow-Origin': 'http://localhost:5173',
+      'Access-Control-Allow-Origin': APP_ORIGIN,
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Headers': 'content-type',
       'Access-Control-Allow-Methods': 'GET, POST',
