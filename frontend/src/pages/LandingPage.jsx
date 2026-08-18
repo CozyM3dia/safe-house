@@ -238,9 +238,9 @@ export default function LandingPage() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 flex items-center justify-between transition-all duration-500">
-          {/* Left: Logo */}
+          {/* Left: Logo + Descriptor */}
           <motion.div 
-            className="flex items-center gap-2 cursor-pointer group" 
+            className="flex items-center gap-3 cursor-pointer group" 
             onClick={() => navigate('/')}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -252,6 +252,14 @@ export default function LandingPage() {
                 alt="S.A.F.E House" 
                 className="h-20 md:h-24 w-auto object-contain -my-5 md:-my-6 transition-all duration-300 group-hover:brightness-110 group-hover:drop-shadow-[0_0_8px_rgba(212,149,106,0.5)]" 
               />
+            </div>
+            <div className="hidden sm:flex flex-col justify-center border-l border-white/10 pl-3 leading-tight">
+              <span className="text-[12px] font-semibold tracking-wide text-text-primary">
+                S.A.F.E House
+              </span>
+              <span className="text-[10px] text-text-muted font-mono tracking-wider">
+                {lang === 'en' ? 'AI Geotechnical & Risk Platform' : 'Platform Audit Geoteknik & Risiko Bencana'}
+              </span>
             </div>
           </motion.div>
 

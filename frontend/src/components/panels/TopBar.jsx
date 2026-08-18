@@ -9,6 +9,7 @@ import { cn } from '../../lib/utils';
 export function TopBar() {
   const t = useT();
   const setCmdPalette = useAppStore((s) => s.setCmdPalette);
+  const lang = useAppStore((s) => s.lang);
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
   const propertyA = useAppStore((s) => s.propertyA);
@@ -31,7 +32,7 @@ export function TopBar() {
       data-testid="topbar"
       className="fixed inset-x-0 top-0 z-10 flex h-14 min-w-0 items-center justify-between gap-2 border-b border-white/8 bg-bg/80 px-2 backdrop-blur-xl sm:gap-4 sm:px-4"
     >
-      {/* Left: Logo + panel toggle */}
+      {/* Left: Logo + descriptor + panel toggle */}
       <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-3">
         <button
           type="button"
@@ -45,12 +46,20 @@ export function TopBar() {
             : <PanelLeftOpen className="h-4 w-4" />}
         </button>
 
-        <div className="flex min-w-0 items-center">
+        <div className="flex min-w-0 items-center gap-2.5">
           <img
             src="/safe_house_logo.png"
             alt="S.A.F.E House"
-            className="h-14 max-w-[5.5rem] w-auto object-contain sm:h-24 sm:max-w-none sm:-my-6"
+            className="h-12 max-w-[5rem] w-auto object-contain sm:h-20 sm:max-w-none sm:-my-5"
           />
+          <div className="hidden xl:flex flex-col justify-center border-l border-white/10 pl-2.5 leading-none">
+            <span className="text-[11px] font-medium tracking-tight text-text-secondary">
+              {lang === 'en' ? 'AI Geotechnical & Risk Platform' : 'Platform Audit Geoteknik & Risiko Bencana'}
+            </span>
+            <span className="text-[8.5px] font-mono uppercase tracking-widest text-text-muted mt-0.5">
+              SNI 1726 · PuSGeN 2024 · InaRISK
+            </span>
+          </div>
         </div>
       </div>
 
