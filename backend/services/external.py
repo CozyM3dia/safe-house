@@ -49,23 +49,32 @@ OFFICIAL_FAULT_GEOMETRY_PARAMS = {
     "f": "geojson",
 }
 
-_shared_client: Optional[httpx.AsyncClient] = None
+_shared_external_clients: dict[asyncio.AbstractEventLoop, httpx.AsyncClient] = {}
 _cached_fault_geometry: Optional[dict] = None
 
 
 def _get_shared_client() -> httpx.AsyncClient:
-    global _shared_client
-    if _shared_client is None or _shared_client.is_closed:
-        _shared_client = httpx.AsyncClient(
-            timeout=TIMEOUT_S,
-            follow_redirects=True,
-            limits=httpx.Limits(
-                max_keepalive_connections=30,
-                max_connections=100,
-                keepalive_expiry=60.0,
-            ),
-        )
-    return _shared_client
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop is not None:
+        client = _shared_external_clients.get(loop)
+        if client is None or client.is_closed:
+            client = httpx.AsyncClient(
+                timeout=TIMEOUT_S,
+                limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
+                headers={"User-Agent": "SAFE-House-Audit/1.0 (contact@safehouse.id)"},
+            )
+            _shared_external_clients[loop] = client
+        return client
+
+    return httpx.AsyncClient(
+        timeout=TIMEOUT_S,
+        limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
+        headers={"User-Agent": "SAFE-House-Audit/1.0 (contact@safehouse.id)"},
+    )
 
 # Public BNPB raster layers. Keep the source names stable because they are
 # persisted in `sources_failed` and shown in the data-coverage manifest.

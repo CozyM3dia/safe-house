@@ -7,11 +7,13 @@ PGA, hazard classes, or risk bands.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
 import os
 import re
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -674,18 +676,31 @@ def audit_fingerprint(audit: AuditResult, lang: str) -> str:
 
 # ── Gemini transport ────────────────────────────────────────────────
 
-_shared_client: Optional[httpx.AsyncClient] = None
+_shared_ai_clients: dict[asyncio.AbstractEventLoop, httpx.AsyncClient] = {}
 
 
 def _get_shared_ai_client() -> httpx.AsyncClient:
-    global _shared_client
-    if _shared_client is None or _shared_client.is_closed:
-        timeout_s = float(os.getenv("AI_TIMEOUT_SECONDS", "35"))
-        _shared_client = httpx.AsyncClient(
-            timeout=timeout_s,
-            limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
-        )
-    return _shared_client
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop is not None:
+        client = _shared_ai_clients.get(loop)
+        if client is None or client.is_closed:
+            timeout_s = float(os.getenv("AI_TIMEOUT_SECONDS", "35"))
+            client = httpx.AsyncClient(
+                timeout=timeout_s,
+                limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
+            )
+            _shared_ai_clients[loop] = client
+        return client
+
+    timeout_s = float(os.getenv("AI_TIMEOUT_SECONDS", "35"))
+    return httpx.AsyncClient(
+        timeout=timeout_s,
+        limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
+    )
 
 
 def _get_thinking_config() -> Optional[dict[str, Any]]:
