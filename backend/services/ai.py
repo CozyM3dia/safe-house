@@ -32,16 +32,16 @@ from models import (
 log = logging.getLogger(__name__)
 
 GEMINI_API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models"
-PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
-FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.1-flash-lite")
+PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
 THINKING_LEVEL = os.getenv("AI_THINKING_LEVEL", "low")
 PROMPT_VERSION = os.getenv("AI_PROMPT_VERSION", "competition-v1")
 CACHE_ENABLED = os.getenv("AI_CACHE_ENABLED", "true").lower() == "true"
 CACHE_TTL = int(os.getenv("AI_CACHE_TTL_SECONDS", "604800"))
 REDACT_LOCATION = os.getenv("AI_REDACT_LOCATION", "true").lower() == "true"
 
-_RETRYABLE_STATUSES = frozenset({408, 429, 500, 502, 503, 504})
-_NO_FALLBACK_STATUSES = frozenset({400, 401, 403})
+_RETRYABLE_STATUSES = frozenset({400, 404, 408, 429, 500, 502, 503, 504})
+_NO_FALLBACK_STATUSES = frozenset({401, 403})
 
 _PROMPT_INJECTION_RE = re.compile(
     r"(?:ignore\s+(?:all|any|the|previous|prior)|reveal\s+(?:the\s+)?(?:system|developer|hidden|secret|api)|"
@@ -820,7 +820,7 @@ def model_chain() -> list[str]:
     """
     primary = os.getenv("GEMINI_MODEL", PRIMARY_MODEL).strip() or PRIMARY_MODEL
     fallback = os.getenv("GEMINI_FALLBACK_MODEL", FALLBACK_MODEL).strip() or FALLBACK_MODEL
-    extras = os.getenv("GEMINI_FALLBACK_MODELS", "").split(",")
+    extras = os.getenv("GEMINI_FALLBACK_MODELS", "gemini-2.0-flash,gemini-3.7-flash").split(",")
 
     ordered = [primary, fallback, *(e.strip() for e in extras)]
     seen: set[str] = set()
@@ -870,7 +870,7 @@ async def generate_with_fallback(
     last_error: Optional[AIServiceError] = None
 
     for index, (model, delivery_mode) in enumerate(models_to_try):
-        if last_error is not None and not last_error.retryable:
+        if last_error is not None and last_error.status_code in {401, 403}:
             raise last_error
 
         try:
@@ -889,7 +889,7 @@ async def generate_with_fallback(
         except AIServiceError as exc:
             last_error = exc
             has_next = index + 1 < len(models_to_try)
-            if exc.retryable and has_next:
+            if has_next and exc.status_code not in {401, 403}:
                 log.warning(
                     "Model %s failed (%s), trying next: %s",
                     model, exc.status_code, models_to_try[index + 1][0],
@@ -898,7 +898,9 @@ async def generate_with_fallback(
                 log.warning("Model %s failed (%s)", model, exc.status_code)
             continue
 
-    raise last_error  # type: ignore[misc]
+    if last_error is not None:
+        raise last_error
+    raise AIServiceError("Tidak ada model AI yang berhasil merespons.", status_code=503)
 
 
 # ── System prompts ──────────────────────────────────────────────────
