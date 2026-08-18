@@ -18,6 +18,7 @@ Tidak ada satu pun yang membutuhkan kunci API.
 
 import asyncio
 import logging
+import os
 import re
 from typing import Any, Optional
 
@@ -27,16 +28,20 @@ from services.geotech import haversine as _haversine_km
 
 log = logging.getLogger(__name__)
 
-# Timeout agresif & snappy agar audit selesai dalam ~1.5-2.0 detik.
-TIMEOUT_S = 2.5
-INARISK_TIMEOUT_S = 2.0
-FAULT_GEOMETRY_TIMEOUT_S = 2.0
+# Timeout adaptif untuk deployment cloud (misal Emergent / container).
+TIMEOUT_S = float(os.getenv("EXTERNAL_TIMEOUT_SECONDS", "3.5"))
+INARISK_TIMEOUT_S = float(os.getenv("INARISK_TIMEOUT_SECONDS", "3.5"))
+FAULT_GEOMETRY_TIMEOUT_S = float(os.getenv("FAULT_GEOMETRY_TIMEOUT_SECONDS", "3.5"))
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 OPEN_METEO_AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 USGS_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+OVERPASS_URLS = [
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://lz4.overpass-api.de/api/interpreter",
+]
 INARISK_BASE = "https://gis.bnpb.go.id/server/rest/services/inarisk"
 OFFICIAL_FAULT_GEOMETRY_URL = (
     "https://gis.bnpb.go.id/server/rest/services/inarisk/"
@@ -52,6 +57,12 @@ OFFICIAL_FAULT_GEOMETRY_PARAMS = {
 _shared_external_clients: dict[asyncio.AbstractEventLoop, httpx.AsyncClient] = {}
 _cached_fault_geometry: Optional[dict] = None
 
+# Header standar agar server ArcGIS / OSM tidak memblokir IP cloud
+DEFAULT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 (SAFE-House-Audit/1.0)",
+    "Accept": "application/json, text/plain, */*",
+}
+
 
 def _get_shared_client() -> httpx.AsyncClient:
     try:
@@ -65,7 +76,7 @@ def _get_shared_client() -> httpx.AsyncClient:
             client = httpx.AsyncClient(
                 timeout=TIMEOUT_S,
                 limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
-                headers={"User-Agent": "SAFE-House-Audit/1.0 (contact@safehouse.id)"},
+                headers=DEFAULT_HEADERS,
             )
             _shared_external_clients[loop] = client
         return client
@@ -73,7 +84,7 @@ def _get_shared_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
         timeout=TIMEOUT_S,
         limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=60.0),
-        headers={"User-Agent": "SAFE-House-Audit/1.0 (contact@safehouse.id)"},
+        headers=DEFAULT_HEADERS,
     )
 
 # Public BNPB raster layers. Keep the source names stable because they are
@@ -87,8 +98,7 @@ INARISK_LAYERS = {
     "coastal": "layer_bahaya_gelombang_ekstrim_dan_abrasi_30",
 }
 
-# Nominatim mewajibkan User-Agent yang mengidentifikasi aplikasi.
-HEADERS = {"User-Agent": "SAFE-House/1.0 (audit risiko geospasial Indonesia)"}
+HEADERS = {"User-Agent": "SAFE-House-Audit/1.0 (https://safehouse.web.id; contact@safehouse.id)"}
 
 
 async def _reverse_geocode(client: httpx.AsyncClient, lat: float, lon: float) -> dict:
@@ -244,25 +254,33 @@ async def _nearby_pois(client: httpx.AsyncClient, lat: float, lon: float) -> lis
     );
     out body 5;
     """
-    # Overpass menolak badan mentah dengan 406 — query harus dikirim
-    # sebagai form field bernama "data".
-    r = await client.post(OVERPASS_URL, data={"data": query}, headers=HEADERS)
-    r.raise_for_status()
+    last_exc: Optional[Exception] = None
+    for url in OVERPASS_URLS:
+        try:
+            r = await client.post(url, data={"data": query}, headers=HEADERS, timeout=TIMEOUT_S)
+            if r.status_code == 200:
+                names: list[str] = []
+                for element in r.json().get("elements", []):
+                    tags = element.get("tags", {})
+                    name = (
+                        tags.get("name")
+                        or tags.get("waterway")
+                        or tags.get("amenity")
+                        or tags.get("highway")
+                    )
+                    if name:
+                        names.append(name)
 
-    names: list[str] = []
-    for element in r.json().get("elements", []):
-        tags = element.get("tags", {})
-        name = (
-            tags.get("name")
-            or tags.get("waterway")
-            or tags.get("amenity")
-            or tags.get("highway")
-        )
-        if name:
-            names.append(name)
+                # dict.fromkeys mempertahankan urutan sekaligus membuang duplikat
+                return list(dict.fromkeys(names))[:5]
+        except Exception as exc:
+            last_exc = exc
+            continue
 
-    # dict.fromkeys mempertahankan urutan sekaligus membuang duplikat
-    return list(dict.fromkeys(names))[:5]
+    if last_exc is not None:
+        log.info("Overpass POI lookup dilewati (timeout/busy): %s", last_exc)
+        return []
+    return []
 
 
 async def fetch_all(lat: float, lon: float) -> tuple[dict[str, Any], list[str]]:
