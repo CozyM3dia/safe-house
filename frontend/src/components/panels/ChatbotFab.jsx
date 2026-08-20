@@ -249,11 +249,11 @@ export function ChatbotFab() {
           aria-label={t('chat.open')}
           title={t('chat.open')}
           data-chat-dock-mark="safehouse"
-          className="safe-fixed-bottom fixed bottom-4 right-3 z-[35] flex h-13 w-13 items-center justify-center rounded-2xl border border-accent/35 bg-bg-surface/95 shadow-[0_12px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-colors hover:border-accent/60 hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:right-5"
+          className="safe-fixed-bottom fixed bottom-6 right-4 z-[35] flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/40 bg-bg-surface/95 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.36),0_0_15px_rgba(212,149,106,0.18)] backdrop-blur-xl transition-all hover:scale-105 hover:border-accent/70 hover:bg-accent/15 hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_24px_rgba(212,149,106,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
         >
-          <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-7 w-7 object-contain" />
+          <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-9 w-9 object-contain sm:h-10 sm:w-10" />
           {hasMessages && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-bg shadow-glow">
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-bg shadow-glow">
               {messages.filter((message) => message.role === 'assistant').length}
             </span>
           )}
