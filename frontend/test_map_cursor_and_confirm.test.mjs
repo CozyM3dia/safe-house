@@ -44,11 +44,11 @@ test('map area integrates custom geospatial cursor and audit confirmation dialog
 
 test('map cursor implements high-visibility HUD reticle and coordinate readout', () => {
   assert.match(mapCursorSource, /safe-map-crosshair/);
-  assert.match(mapCursorSource, /border-black/);
+  assert.match(mapCursorSource, /border-bg\/80/);
   assert.match(mapCursorSource, /containerPointToLatLng/);
   assert.match(mapCursorSource, /pointer-events-none/);
   assert.match(cssSource, /data:image\/svg\+xml/);
-  assert.match(cssSource, /fill='%23000000'/);
+  assert.match(cssSource, /fill='%230f0b08'/);
 });
 
 test('audit confirmation dialog asks user before running audit with coordinates preview and portal', () => {
