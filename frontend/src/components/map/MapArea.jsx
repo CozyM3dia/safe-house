@@ -17,6 +17,7 @@ import { FaultOverlay } from './FaultOverlay';
 import { MapCursor } from './MapCursor';
 import { AuditConfirmDialog } from './AuditConfirmDialog';
 import { CompareMapBanner } from './CompareMapBanner';
+import { subscribeToViewport } from '../../lib/responsive';
 
 function MapInteractionLayer() {
   const loading = useAppStore((s) => s.loading);
@@ -60,6 +61,30 @@ function MapFlyToProperty() {
   return null;
 }
 
+function MapViewportSync() {
+  const map = useMap();
+
+  useEffect(() => {
+    const invalidate = () => {
+      window.requestAnimationFrame(() => map.invalidateSize({ animate: false, pan: false }));
+    };
+    const unsubscribe = subscribeToViewport(invalidate);
+    const container = map.getContainer();
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(invalidate)
+      : null;
+    observer?.observe(container);
+    invalidate();
+
+    return () => {
+      unsubscribe();
+      observer?.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
+
 export function MapArea() {
   const baseMapStyle = useAppStore((s) => s.baseMapStyle);
   const requestedTile = MAP_TILES[baseMapStyle] || MAP_TILES.street;
@@ -96,12 +121,15 @@ export function MapArea() {
           />
         </Pane>
 
+        <Pane name="hazardOverlay" style={{ zIndex: 350, pointerEvents: 'none' }} />
+
         <NationwideOverlays />
         <FaultOverlay />
         <RiskZoneOverlay />
         <MapMarker />
         <MapInteractionLayer />
         <MapFlyToProperty />
+        <MapViewportSync />
         <MapControls />
         <MapCursor />
       </MapContainer>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowUpRight, Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 
 import HeroSection from '../components/landing/HeroSection';
@@ -194,6 +194,7 @@ const COPY = {
 export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredLink, setHoveredLink] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const lang = useAppStore((s) => s.lang);
   const dict = COPY[lang] || COPY.id;
@@ -224,20 +225,29 @@ export default function LandingPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [mobileMenuOpen]);
+
   return (
-    <div className="landing min-h-screen w-screen flex flex-col bg-background text-foreground overflow-x-hidden relative select-none">
+    <div className="landing relative flex min-h-[100dvh] w-full max-w-full flex-col overflow-x-hidden bg-background text-foreground select-none">
       {/* Navbar */}
       <motion.header 
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 ${
+        className={`safe-top fixed left-0 right-0 top-0 z-50 w-full transition-all duration-500 ${
           isScrolled 
             ? 'py-3 bg-bg/90 backdrop-blur-md border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]' 
             : 'py-5 bg-transparent border-b border-transparent'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 flex items-center justify-between transition-all duration-500">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 pb-2 sm:px-6 sm:pb-0 md:px-12 lg:px-20 transition-all duration-500">
           {/* Left: Logo + Descriptor */}
           <motion.div 
             className="flex items-center gap-3 cursor-pointer group" 
@@ -250,7 +260,7 @@ export default function LandingPage() {
               <img 
                 src="/safe_house_logo.png" 
                 alt="S.A.F.E House" 
-                className="h-20 md:h-24 w-auto object-contain -my-5 md:-my-6 transition-all duration-300 group-hover:brightness-110 group-hover:drop-shadow-[0_0_8px_rgba(212,149,106,0.5)]" 
+                className="h-14 w-auto object-contain -my-3 transition-all duration-300 group-hover:brightness-110 group-hover:drop-shadow-[0_0_8px_rgba(212,149,106,0.5)] sm:h-20 sm:-my-5 md:h-24 md:-my-6"
               />
             </div>
             <div className="hidden sm:flex flex-col justify-center border-l border-white/10 pl-3 leading-tight">
@@ -293,14 +303,14 @@ export default function LandingPage() {
           </div>
 
           {/* Right: CTA + Lang toggle */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <LanguageSelector />
             
             <motion.button
               onClick={() => navigate('/app')}
               whileHover="hover"
               whileTap={{ scale: 0.97 }}
-              className="group relative overflow-hidden rounded-lg px-4 py-1.5 text-[10px] md:text-xs font-bold tracking-wider uppercase bg-accent text-bg hover:bg-accent/90 transition-all font-body active:scale-[0.97] btn-press shadow-[0_0_15px_rgba(212,149,106,0.15)] flex items-center gap-1 border border-accent/25 hover:shadow-[0_0_20px_rgba(212,149,106,0.3)] duration-300"
+              className="group relative hidden min-h-[44px] items-center gap-1 overflow-hidden rounded-lg border border-accent/25 bg-accent px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-bg shadow-[0_0_15px_rgba(212,149,106,0.15)] transition-all duration-300 hover:bg-accent/90 hover:shadow-[0_0_20px_rgba(212,149,106,0.3)] sm:flex md:text-xs"
             >
               <span>{t('heroNavBtn', 'Mulai Analisis')}</span>
               <motion.span
@@ -313,8 +323,55 @@ export default function LandingPage() {
                 <ArrowUpRight size={13} className="text-bg" />
               </motion.span>
             </motion.button>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label={mobileMenuOpen ? 'Close navigation' : 'Open navigation'}
+              aria-expanded={mobileMenuOpen}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-text-primary sm:hidden"
+            >
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
         </div>
+
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mx-4 mt-2 flex flex-col gap-1 rounded-2xl border border-white/10 bg-bg-elevated/95 p-2 shadow-glass-lg backdrop-blur-xl sm:hidden"
+            >
+              {[
+                { label: 'About', target: 'about' },
+                { label: 'Workflow', target: 'process' },
+                { label: 'Disclaimer', target: 'disclaimer' },
+                { label: 'FAQ', target: 'faq' },
+              ].map((link) => (
+                <button
+                  type="button"
+                  key={link.target}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    document.getElementById(link.target)?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex min-h-[44px] items-center rounded-xl px-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary hover:bg-white/[0.05] hover:text-text-primary"
+                >
+                  {link.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => navigate('/app')}
+                className="mt-1 flex min-h-[44px] items-center justify-center gap-1 rounded-xl bg-accent px-4 text-xs font-bold uppercase tracking-wider text-bg"
+              >
+                {t('heroNavBtn', 'Mulai Analisis')} <ArrowUpRight className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.header>
 
       {/* Hero Section */}

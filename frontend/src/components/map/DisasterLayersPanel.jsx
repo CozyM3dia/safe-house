@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, ChevronRight, GitBranch, Map as MapIcon, Mountain, Satellite, Sun, Moon } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
@@ -23,21 +23,26 @@ export function DisasterLayersPanel() {
     toggleOverlay,
     chatExpanded,
     setChatExpanded,
+    setMapLayersOpen,
     leftPanelOpen,
     toggleLeftPanel,
   } = useAppStore();
 
+  useEffect(() => () => setMapLayersOpen(false), [setMapLayersOpen]);
+
   return (
-    <div className="pointer-events-auto fixed right-2 top-20 z-[25] flex items-start gap-2 sm:right-4">
+    <div className="pointer-events-auto fixed right-2 top-20 z-[40] flex items-start gap-2 sm:right-4 max-[639px]:left-3 max-[639px]:right-3 max-[639px]:top-[calc(4.75rem+env(safe-area-inset-top))] max-[639px]:flex-col-reverse max-[639px]:items-end max-[639px]:gap-2"
+    >
       {/* Retractable Container */}
       <AnimatePresence initial={false}>
         {!collapsed && !chatExpanded && (
           <motion.div
+            data-testid="disaster-layers-panel"
             initial={{ opacity: 0, x: 24, scale: 0.97, filter: 'blur(4px)' }}
             animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
             exit={{ opacity: 0, x: 24, scale: 0.97, filter: 'blur(4px)' }}
             transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
-            className="flex w-[min(18rem,calc(100vw-1rem))] flex-col rounded-2xl border border-white/8 bg-bg-surface/90 p-4 shadow-glass-lg backdrop-blur-xl"
+            className="overscroll-contain flex w-[min(18rem,calc(100vw-1rem))] max-h-[calc(100dvh-6rem)] flex-col overflow-y-auto rounded-2xl border border-white/8 bg-bg-surface/90 p-4 shadow-glass-lg backdrop-blur-xl max-[639px]:w-full max-[639px]:max-h-[min(70dvh,620px)] max-[639px]:p-3"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/8 mb-3">
@@ -303,6 +308,7 @@ export function DisasterLayersPanel() {
           onClick={() => {
             const nextCollapsed = !collapsed;
             setCollapsed(nextCollapsed);
+            setMapLayersOpen(!nextCollapsed);
             if (!nextCollapsed) {
               setChatExpanded(false);
               if (typeof window !== 'undefined' && window.innerWidth < 900 && leftPanelOpen) {

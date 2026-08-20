@@ -33,7 +33,7 @@ export function CompareMapBanner() {
   return (
     // TopBar menempati ~72px teratas; menyamai offset LeftPanel supaya banner
     // tidak tersembunyi di belakangnya.
-    <div className="pointer-events-none absolute inset-x-0 top-[76px] z-[16] flex justify-center px-4">
+    <div className="pointer-events-none absolute inset-x-0 top-[76px] z-[16] flex justify-center px-4 max-[639px]:top-[calc(4.75rem+env(safe-area-inset-top))] max-[639px]:px-2">
       <AnimatePresence>
         {visible && (
           <motion.div
@@ -41,18 +41,18 @@ export function CompareMapBanner() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-            className="glass pointer-events-auto flex items-center gap-2.5 rounded-full border border-accent/25 py-1.5 pl-3 pr-2 shadow-lg"
+            className="glass pointer-events-auto flex max-w-full items-center gap-2.5 rounded-full border border-accent/25 py-1.5 pl-3 pr-2 shadow-lg max-[639px]:w-full max-[639px]:flex-wrap max-[639px]:items-start max-[639px]:rounded-2xl max-[639px]:px-3 max-[639px]:py-2"
           >
-            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-accent max-[639px]:w-full">
               <GitCompareArrows className="h-3 w-3" />
               Mode Bandingkan
             </span>
 
-            <span className="h-3 w-px bg-white/12" />
+            <span className="h-3 w-px bg-white/12 max-[639px]:hidden" />
 
             {targetSlot ? (
               <>
-                <span className="flex items-center gap-1.5 text-[11px] text-text-secondary">
+                <span className="flex min-w-0 items-start gap-1.5 text-[11px] text-text-secondary max-[639px]:w-full">
                   <MousePointerClick className="h-3 w-3 shrink-0 text-accent" />
                   Klik peta untuk menempatkan{' '}
                   <strong className="font-semibold text-text-primary">
@@ -62,11 +62,11 @@ export function CompareMapBanner() {
                 {/* Tanpa Lokasi A, klik peta memang selalu mengisi A — tidak
                     ada yang bisa dibatalkan, jadi tombolnya pun tak muncul. */}
                 {armedSlot && (
-                  <button
+                <button
                     type="button"
                     onClick={() => armSlot(null)}
                     aria-label="Batalkan pemilihan lokasi"
-                    className="flex h-5 items-center gap-1 rounded-full px-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary"
+                    className="flex min-h-[32px] items-center gap-1 rounded-full px-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary max-[639px]:ml-auto"
                   >
                     <X className="h-2.5 w-2.5" />
                     Batal

@@ -63,6 +63,7 @@ export const useAppStore = create(
       leftPanelOpen: true,
       cmdPaletteOpen: false,
       chatExpanded: false,
+      mapLayersOpen: false,
       simulatedPga: null,
       battleReportContent: null,
       battleReportMeta: null,
@@ -89,8 +90,10 @@ export const useAppStore = create(
       // ─── UI Toggles & Overlay Actions ──────────────────────────
       toggleLeftPanel: () =>
         set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
+      setLeftPanelOpen: (leftPanelOpen) => set({ leftPanelOpen: Boolean(leftPanelOpen) }),
       setAuditDrawer: (open) => set({ auditDrawerOpen: open }),
       setCmdPalette: (open) => set({ cmdPaletteOpen: open }),
+      setMapLayersOpen: (mapLayersOpen) => set({ mapLayersOpen: Boolean(mapLayersOpen) }),
       // Pindah mode ke audit mereset state lokasi A & B kembali ke awal
       setMode: (mode) => {
         if (mode === 'audit') {

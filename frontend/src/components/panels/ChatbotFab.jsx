@@ -19,6 +19,7 @@ import { useT } from '../../hooks/useTranslation';
 import { chatWithAudit } from '../../services/api';
 import { SUGGESTED_PROMPTS_ID, SUGGESTED_PROMPTS_EN } from '../../lib/constants';
 import { cn, shortAddress } from '../../lib/utils';
+import { getViewportHeight, subscribeToViewport } from '../../lib/responsive';
 import { SkeletonText } from '../ui/skeleton';
 
 // ─── Auto-resize textarea hook ──────────────────────────────────────
@@ -113,10 +114,12 @@ export function ChatbotFab() {
   const propertyB = useAppStore((s) => s.propertyB);
   const mode = useAppStore((s) => s.mode);
   const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
+  const mapLayersOpen = useAppStore((s) => s.mapLayersOpen);
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const expanded = useAppStore((s) => s.chatExpanded);
   const setExpanded = useAppStore((s) => s.setChatExpanded);
   const { textareaRef, adjustHeight } = useAutoResizeTextarea();
@@ -143,6 +146,11 @@ export function ChatbotFab() {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [expanded, setExpanded]);
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+    return subscribeToViewport(({ height }) => setViewportHeight(height || getViewportHeight()));
+  }, [expanded]);
 
   const send = async (text) => {
     const userMsg = text || input.trim();
@@ -208,6 +216,8 @@ export function ChatbotFab() {
       : 'READY';
 
   // ─── Collapsed: compact Agent Dock over the map ──────────────────
+  if (!expanded && mapLayersOpen) return null;
+
   if (!expanded) {
     return (
       <motion.div
@@ -217,7 +227,7 @@ export function ChatbotFab() {
         animate={{ y: 0, opacity: 1, scale: 1 }}
         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          'fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[440px]',
+          'safe-fixed-bottom fixed left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[440px]',
           leftPanelOpen && 'max-[639px]:left-auto max-[639px]:right-4 max-[639px]:w-14'
         )}
       >
@@ -286,7 +296,7 @@ export function ChatbotFab() {
                   onKeyDown={handleKeyDown}
                   aria-label={t('chat.placeholder')}
                   placeholder={lang === 'en' ? 'Ask what this location signal means…' : 'Tanyakan arti sinyal lokasi ini…'}
-                  className="min-w-0 flex-1 border-none bg-transparent py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0"
+                  className="min-w-0 flex-1 border-none bg-transparent py-1 text-base text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0 sm:text-xs"
                 />
                 <button
                   type="button"
@@ -326,11 +336,13 @@ export function ChatbotFab() {
   // ─── Expanded: premium Chat Panel ───────────────────────────────
   return (
     <motion.aside
+      data-testid="chatbot-expanded"
       initial={{ x: 24, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       aria-labelledby="safe-ai-chat-title"
-      className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-glass-lg backdrop-blur-xl sm:left-auto sm:right-4 sm:w-[392px]"
+      style={viewportHeight ? { '--safe-chat-height': `${viewportHeight}px` } : undefined}
+      className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-glass-lg backdrop-blur-xl sm:left-auto sm:right-4 sm:w-[392px] max-[639px]:bottom-auto max-[639px]:left-0 max-[639px]:right-0 max-[639px]:top-[calc(4.5rem+env(safe-area-inset-top))] max-[639px]:h-[calc(var(--safe-chat-height,100dvh)-5.25rem)] max-[639px]:max-h-[calc(100dvh-5.25rem)] max-[639px]:rounded-b-none max-[639px]:rounded-t-3xl"
     >
       <header className="border-b border-white/8 bg-white/[0.02] px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
@@ -383,7 +395,7 @@ export function ChatbotFab() {
             aria-selected={panelTab === 'audit'}
             onClick={() => setPanelTab('audit')}
             className={cn(
-              'min-h-9 flex-1 rounded-md px-3 font-mono text-[9px] font-bold tracking-[0.14em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+              'min-h-11 flex-1 rounded-md px-3 font-mono text-[9px] font-bold tracking-[0.14em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
               panelTab === 'audit'
                 ? 'bg-accent/12 text-accent'
                 : 'text-text-muted hover:bg-white/[0.04] hover:text-text-primary'
@@ -398,7 +410,7 @@ export function ChatbotFab() {
             aria-selected={panelTab === 'sources'}
             onClick={() => setPanelTab('sources')}
             className={cn(
-              'min-h-9 flex-1 rounded-md px-3 font-mono text-[9px] font-bold tracking-[0.14em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+              'min-h-11 flex-1 rounded-md px-3 font-mono text-[9px] font-bold tracking-[0.14em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
               panelTab === 'sources'
                 ? 'bg-accent/12 text-accent'
                 : 'text-text-muted hover:bg-white/[0.04] hover:text-text-primary'
@@ -412,7 +424,7 @@ export function ChatbotFab() {
             disabled={!hasMessages || loading}
             aria-label={lang === 'en' ? 'Clear conversation' : 'Hapus percakapan'}
             title={lang === 'en' ? 'Clear conversation' : 'Hapus percakapan'}
-            className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-white/[0.04] hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-white/[0.04] hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -420,7 +432,7 @@ export function ChatbotFab() {
       </header>
 
       <div
-        className="flex-1 min-h-0 space-y-5 overflow-y-auto px-4 py-4 scrollbar-none"
+        className="overscroll-contain flex-1 min-h-0 space-y-5 overflow-y-auto px-4 py-4 scrollbar-none"
         role="log"
         aria-live="polite"
         aria-busy={loading}
@@ -515,7 +527,7 @@ export function ChatbotFab() {
         </section>
       )}
 
-      <div className="shrink-0 border-t border-white/8 bg-white/[0.018] p-3.5">
+      <div className="shrink-0 border-t border-white/8 bg-white/[0.018] p-3.5 max-[639px]:pb-[calc(0.875rem+env(safe-area-inset-bottom))]">
         <div className="overflow-hidden rounded-xl border border-accent/18 bg-bg/35 shadow-inner">
           <textarea
             ref={textareaRef}
@@ -524,7 +536,7 @@ export function ChatbotFab() {
             onKeyDown={handleKeyDown}
             aria-label={t('chat.placeholder')}
             placeholder={lang === 'en' ? 'Ask about the audited evidence…' : 'Tanyakan tentang bukti audit…'}
-            className="block w-full resize-none border-none bg-transparent px-3.5 py-3 text-xs leading-[1.5] text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0"
+            className="block w-full resize-none border-none bg-transparent px-3.5 py-3 text-base leading-[1.5] text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0 sm:text-xs"
             rows={1}
           />
           <div className="flex min-h-[48px] items-center justify-between gap-3 border-t border-white/7 px-3">
@@ -620,6 +632,12 @@ function sentenceParts(text) {
   return (text.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g) || [text])
     .map((sentence) => sentence.trim())
     .filter(Boolean);
+}
+
+function stripMarkdownNode(props) {
+  const { node, ...rest } = props;
+  void node;
+  return rest;
 }
 
 function normalizeAssistantMarkdown(content, lang) {
@@ -726,6 +744,11 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
                   li: ({ children }) => <li className="pl-1">{children}</li>,
                   hr: () => <hr className="my-4 border-0 border-t border-accent/15" />,
                   a: ({ children, href }) => <a className="text-accent underline decoration-accent/40 underline-offset-2 hover:text-text-primary" href={href}>{children}</a>,
+                  table: ({ children, ...props }) => (
+                    <div className="table-scroll max-w-full overscroll-contain">
+                      <table {...stripMarkdownNode(props)}>{children}</table>
+                    </div>
+                  ),
                 }}
               >
                 {normalizeAssistantMarkdown(content, lang)}

@@ -32,7 +32,7 @@ function ControlsInner() {
   };
 
   return (
-    <div data-testid="map-controls" className="glass pointer-events-auto absolute bottom-6 right-4 z-[15] flex flex-col overflow-hidden rounded-xl">
+    <div data-testid="map-controls" className="glass pointer-events-auto absolute bottom-6 right-4 z-[15] flex flex-col overflow-hidden rounded-xl max-[639px]:bottom-[calc(6rem+env(safe-area-inset-bottom))] max-[639px]:right-3">
       <ControlBtn onClick={() => map.zoomIn()} label={t('map.zoomIn')}>
         <ZoomIn className="h-4 w-4" />
       </ControlBtn>

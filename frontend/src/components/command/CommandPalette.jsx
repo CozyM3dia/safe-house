@@ -145,7 +145,7 @@ export function CommandPalette() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-[40] flex items-start justify-center bg-bg/60 backdrop-blur-sm pt-[13vh]"
+          className="safe-inset-x fixed inset-y-0 z-[40] flex items-start justify-center bg-bg/60 p-3 pt-[13vh] backdrop-blur-sm max-[639px]:pt-[calc(4.75rem+env(safe-area-inset-top))]"
           onClick={closePalette}
           onKeyDown={handleKeyDown}
         >
@@ -154,7 +154,7 @@ export function CommandPalette() {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: -10 }}
             transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-            className="glass-strong w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl"
+            className="glass-strong flex max-h-[calc(100dvh-6rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/*
@@ -170,7 +170,7 @@ export function CommandPalette() {
                   value={query}
                   onValueChange={handleQueryChange}
                   placeholder={t('cmd.searchPlaceholder')}
-                  className="h-12 flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted focus:outline-none"
+                  className="h-12 flex-1 bg-transparent text-base text-text-primary placeholder:text-text-muted focus:outline-none sm:text-sm"
                 />
                 {searching && <Skeleton className="h-4 w-4 shrink-0 rounded-full" />}
                 {query && !searching && (
@@ -188,7 +188,7 @@ export function CommandPalette() {
                 </kbd>
               </div>
 
-              <Command.List className="max-h-[380px] overflow-y-auto p-2">
+              <Command.List className="overscroll-contain max-h-[min(52vh,380px)] overflow-y-auto p-2">
                 {searching && query && (
                   <div role="status" aria-live="polite" className="py-1">
                     <span className="sr-only">{t('cmd.searching')}</span>
@@ -272,8 +272,8 @@ export function CommandPalette() {
               </Command.List>
 
               {/* Footer hints */}
-              <div className="flex items-center justify-between gap-4 border-t border-white/8 px-4 py-2 text-[10px] text-text-muted">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-4 border-t border-white/8 px-4 py-2 text-[10px] text-text-muted max-[639px]:flex-wrap max-[639px]:gap-2">
+                <div className="flex flex-wrap items-center gap-3 max-[639px]:hidden">
                   <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">↑↓</kbd> {t('cmd.navigate')}</span>
                   <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">⏎</kbd> {t('cmd.select')}</span>
                   <span><kbd className="rounded bg-white/5 px-1 py-0.5 font-mono">Esc</kbd> {t('cmd.close')}</span>

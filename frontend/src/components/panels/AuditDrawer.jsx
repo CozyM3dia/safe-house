@@ -662,9 +662,9 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
                     );
                   },
                   strong: (props) => <strong className="font-semibold text-text-primary" {...stripMarkdownNode(props)} />,
-                  table: (props) => (
-                    <div className="my-4 overflow-x-auto rounded-xl border border-white/8 bg-white/[0.01] backdrop-blur-md">
-                      <table className="min-w-full divide-y divide-white/8 text-left text-xs" {...stripMarkdownNode(props)} />
+                  table: ({ children, ...props }) => (
+                    <div className="table-scroll my-4 max-w-full rounded-xl border border-white/8 bg-white/[0.01] backdrop-blur-md overscroll-contain">
+                      <table className="min-w-full divide-y divide-white/8 text-left text-xs" {...stripMarkdownNode(props)}>{children}</table>
                     </div>
                   ),
                   thead: (props) => <thead className="bg-white/[0.02]" {...stripMarkdownNode(props)} />,
@@ -766,21 +766,9 @@ export function AuditDrawer() {
           onClick={() => setAuditDrawer(false)}
           className="pointer-events-auto fixed inset-0 z-30 bg-bg/60 backdrop-blur-sm"
         />
-        {/* Keep this control outside the drawer stacking context: the chatbot stays interactive above the report, while close remains above both. */}
-        <button
-          type="button"
-          data-testid="audit-drawer-close"
-          aria-label={t('drawer.close')}
-          title={t('drawer.close')}
-          onClick={() => setAuditDrawer(false)}
-          className="fixed right-4 top-[calc(22vh+0.75rem)] z-[45] flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-bg-surface/95 text-text-muted shadow-glass-lg transition-colors hover:bg-white/8 hover:text-text-primary sm:right-6"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
         {/* z-40: panel chatbot memakai z-[35]. Dengan z-30, panel chat menutupi
             laporan dan membuatnya tak terbaca saat keduanya terbuka. */}
-        <Drawer.Content data-testid="audit-drawer" className="glass-strong fixed bottom-0 left-0 right-0 z-40 mt-24 flex h-[78vh] flex-col rounded-t-2xl border-t border-white/10 outline-none">
+        <Drawer.Content data-testid="audit-drawer" className="glass-strong fixed bottom-0 left-0 right-0 z-40 mt-24 flex h-[min(78dvh,56rem)] max-h-[calc(100dvh-env(safe-area-inset-top))] flex-col rounded-t-2xl border-t border-white/10 outline-none max-[639px]:h-[calc(100dvh-env(safe-area-inset-top))] max-[639px]:rounded-t-3xl">
           <Drawer.Title className="sr-only">{drawerTitle}</Drawer.Title>
           <Drawer.Description className="sr-only">{drawerSubtitle}</Drawer.Description>
 
@@ -788,19 +776,19 @@ export function AuditDrawer() {
           <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-white/14" />
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/8 px-4 py-4 pr-20 sm:px-6 sm:pr-24">
-            <div className="flex items-center gap-3">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/8 bg-bg-surface/92 px-4 py-4 pr-20 backdrop-blur-xl sm:px-6 sm:pr-24">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 border border-accent/30">
                 {isBattle
                   ? <GitCompareArrows className="h-4 w-4 text-accent" />
                   : <FileText className="h-4 w-4 text-accent" />
                 }
               </div>
-              <div>
-                <h2 className="font-display text-base font-semibold text-text-primary">
+              <div className="min-w-0">
+                <h2 className="truncate font-display text-base font-semibold text-text-primary">
                   {drawerTitle}
                 </h2>
-                <p className="text-[10px] text-text-muted font-mono tracking-wider flex items-center gap-1.5">
+                <p className="flex min-w-0 flex-wrap items-center gap-1.5 text-[10px] font-mono tracking-wider text-text-muted">
                   {reportGeneratedBy}
                   {!isBattle && aiReport?.deliveryMode && (
                     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-bold tracking-widest uppercase ${
@@ -823,22 +811,32 @@ export function AuditDrawer() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={handleCopy}>
+            <div className="flex items-center gap-1">
+              <Button variant="secondary" size="sm" onClick={handleCopy} className="min-h-[44px] px-2 sm:px-3">
                 {copied
                   ? <Check className="h-3.5 w-3.5" />
                   : <Copy className="h-3.5 w-3.5" />
                 }
-                {copied ? t('drawer.copied') : t('drawer.copyLink')}
+                <span className="max-[639px]:hidden">{copied ? t('drawer.copied') : t('drawer.copyLink')}</span>
               </Button>
             </div>
+            <button
+              type="button"
+              data-testid="audit-drawer-close"
+              aria-label={t('drawer.close')}
+              title={t('drawer.close')}
+              onClick={() => setAuditDrawer(false)}
+              className="absolute right-2 top-2 z-[45] flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-bg-surface/95 text-text-muted shadow-glass-lg transition-colors hover:bg-white/8 hover:text-text-primary sm:right-4 sm:top-3"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="overscroll-contain flex-1 overflow-y-auto">
             <div
               ref={reportRef}
-              className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-8 sm:py-9"
+              className="mx-auto w-full max-w-[1440px] min-w-0 px-4 py-6 sm:px-8 sm:py-9"
             >
               {!isBattle && propertyA && (
                 <header className="mb-8">
@@ -909,7 +907,7 @@ export function AuditDrawer() {
                    kanan. Sebelumnya semuanya satu kolom max-w-3xl, sehingga di
                    monitor lebar laporan jadi pita sempit dengan ruang kosong
                    besar di kedua sisi. */
-                <div className="grid gap-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-12">
+                <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-12">
                   <aside className="space-y-7 lg:sticky lg:top-0 lg:self-start">
                     <HeroScore
                       score={drawerScore}
@@ -959,7 +957,16 @@ export function AuditDrawer() {
                         }
                         return (
                           <article className="prose-safe max-w-[72ch]">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                table: ({ children, ...props }) => (
+                                  <div className="table-scroll my-4 max-w-full rounded-xl border border-white/8 bg-white/[0.01] backdrop-blur-md overscroll-contain">
+                                    <table {...stripMarkdownNode(props)}>{children}</table>
+                                  </div>
+                                ),
+                              }}
+                            >
                               {aiReport.detailedReport}
                             </ReactMarkdown>
                           </article>
@@ -1126,9 +1133,9 @@ function KeyParameters({ property }) {
       </h2>
       <dl className="divide-y divide-white/[0.06]">
         {rows.map((row) => (
-          <div key={row.label} className="flex items-baseline justify-between gap-4 py-2.5">
+          <div key={row.label} className="flex items-start justify-between gap-4 py-2.5 max-[639px]:gap-3">
             <dt className="shrink-0 text-[11px] text-text-muted">{row.label}</dt>
-            <dd className="min-w-0 text-right">
+            <dd className="min-w-0 max-w-[68%] text-right break-words">
               <span
                 className={`data-num text-[13px] font-semibold ${
                   row.wide ? 'text-[11px] uppercase tracking-wide' : ''
@@ -1239,7 +1246,7 @@ function DataCoverageSummary({ property }) {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent/15"
+          className="flex min-h-[40px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent/15"
         >
           {quality.mode === 'best_available' ? t('drawer.bestAvailable') : t('drawer.strict')}
           <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
