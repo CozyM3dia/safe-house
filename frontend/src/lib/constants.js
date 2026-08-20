@@ -41,8 +41,8 @@ export const KEYBOARD_SHORTCUTS = [
 export const SUGGESTED_PROMPTS_ID = [
   'Apa risiko utama lokasi ini?',
   'Rekomendasi pondasi apa untuk tanah ini?',
-  'Seberapa rawan likuefaksi di sini?',
-  'Data apa yang belum tersedia untuk lokasi ini?',
+  'Berapa estimasi biaya mitigasi?',
+  'Apakah lokasi ini layak untuk investasi?',
   'Bagaimana kesiapsiagaan gempa di sini?',
   'Apa saja SNI yang berlaku untuk bangunan di sini?',
 ];
@@ -50,8 +50,8 @@ export const SUGGESTED_PROMPTS_ID = [
 export const SUGGESTED_PROMPTS_EN = [
   'What are the main risks here?',
   'What foundation do you recommend?',
-  'How prone to liquefaction is this site?',
-  'Which data is still unavailable here?',
+  'Estimate the mitigation costs?',
+  'Is this a good location to invest?',
   'How to prepare for earthquakes here?',
   'Which building codes apply here?',
 ];
