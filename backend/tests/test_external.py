@@ -11,14 +11,19 @@ def _geocode(lat="0.0", lon="0.0"):
 
 class WaterDetectionTests(unittest.TestCase):
     def test_selatan_is_not_water(self):
-        # "selat" must not match inside "Selatan" (a very common direction).
-        for addr in [
-            "DPRD Provinsi Jawa Tengah, Semarang Selatan, Kota Semarang, Indonesia",
-            "Natar, Lampung Selatan, Lampung, Indonesia",
-            "Jalan Sudirman, Jakarta Selatan, DKI Jakarta, Indonesia",
+        # "selat" must not match inside "Selatan" (a very common direction),
+        # and "teluk" / "laut" in street or district names on land must not be flagged as water.
+        for addr, road, sub in [
+            ("DPRD Provinsi Jawa Tengah, Semarang Selatan, Kota Semarang, Indonesia", "Jalan Pahlawan", "Semarang Selatan"),
+            ("Natar, Lampung Selatan, Lampung, Indonesia", "Jalan Lintas Sumatera", "Natar"),
+            ("Jalan Sudirman, Jakarta Selatan, DKI Jakarta, Indonesia", "Jalan Sudirman", "Kebayoran Baru"),
+            ("Jalan Teluk Bone, Kota Karang, Teluk Betung Timur, Bandar Lampung, Indonesia", "Jalan Teluk Bone", "Teluk Betung Timur"),
+            ("Jalan Laut Jawa, Harapan Baru, Bekasi Utara, Kota Bekasi, Jawa Barat, Indonesia", "Jalan Laut Jawa", "Bekasi Utara"),
         ]:
+            geocode_data = _geocode()
+            geocode_data["address"] = {"road": road, "suburb": sub}
             self.assertFalse(
-                external.is_water_body(0.0, 0.0, addr, 11.0, _geocode()),
+                external.is_water_body(0.0, 0.0, addr, 11.0, geocode_data),
                 f"false water for: {addr}",
             )
 

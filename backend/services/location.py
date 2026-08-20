@@ -35,7 +35,11 @@ class LocationClassification:
     boundary_source: str
 
 
-_WATER_TYPES = {"sea", "ocean", "bay", "strait", "water"}
+import re
+
+_WATER_TYPES = {
+    "sea", "ocean", "bay", "strait", "water", "waterway", "river", "canal", "lake", "reservoir", "basin", "dock"
+}
 _WATER_WORDS = {"ocean", "sea", "laut", "selat", "strait", "bay", "teluk", "samudra"}
 # Only signals tied to a concrete physical feature count as evidence of land.
 # Administrative-only fields such as city/county/postcode are deliberately
@@ -124,15 +128,49 @@ def _configured_land_mask() -> Optional[dict[str, Any]]:
         raise RuntimeError(f"INDONESIA_LAND_GEOJSON tidak dapat dibaca: {path}") from exc
 
 
-def _water_signal(address: dict[str, Any], geocode: dict[str, Any], label: str) -> bool:
-    if geocode.get("type") in _WATER_TYPES:
-        return True
-    if geocode.get("category") == "natural" and geocode.get("type") == "water":
-        return True
+def _water_signal(
+    address: dict[str, Any],
+    geocode: dict[str, Any],
+    label: str,
+    elevation_m: Optional[float] = None,
+    has_land_feature: bool = False,
+) -> bool:
+    place_type = str(geocode.get("type") or "").lower()
+    category = str(geocode.get("category") or "").lower()
+
+    # 1. Explicit OSM water tags in address
     if any(address.get(key) for key in ("ocean", "sea", "water")):
         return True
+
+    # 2. Explicit OSM natural water feature or waterway
+    if category == "waterway":
+        return True
+    if category == "natural" and place_type in ("water", "bay", "strait", "coastline", "shoal", "reef"):
+        return True
+    if place_type in ("sea", "ocean"):
+        return True
+
+    # 3. If it has a verified physical land feature (road, building, house_number, amenity, shop, etc.),
+    # it is solid land — water words in street/suburb names (e.g. Jalan Teluk Bone, Teluk Betung) do NOT make it water.
+    if has_land_feature:
+        return False
+
+    # 4. For non-land features (e.g. natural points or unverified centroids):
+    # Check if the label contains explicit water body names and is at sea level / natural category
     lowered = label.lower()
-    return any(word in lowered.split() for word in _WATER_WORDS)
+    has_water_word = any(re.search(rf"\b{re.escape(w)}\b", lowered) for w in _WATER_WORDS)
+    if has_water_word:
+        is_admin_or_place = any(address.get(k) for k in ("suburb", "neighbourhood", "village", "town", "city", "county", "state"))
+        if is_admin_or_place and elevation_m is not None and elevation_m > 0:
+            return False
+        if category == "place" and place_type in ("neighbourhood", "suburb", "village", "town", "city", "quarter", "hamlet"):
+            return False
+        if elevation_m is not None and elevation_m <= 0:
+            return True
+        if category in ("natural", "waterway", ""):
+            return True
+
+    return False
 
 
 def _has_land_feature(address: dict[str, Any]) -> bool:
@@ -195,13 +233,13 @@ def classify_location(
             "configured_land_geojson",
         )
 
-    if _water_signal(address, geocode, label):
+    has_land_feature = _has_land_feature(address)
+
+    if _water_signal(address, geocode, label, elevation_m=elevation_m, has_land_feature=has_land_feature):
         return LocationClassification(
             "not_buildable", "Koordinat berada di perairan", country_code, offset_km, True,
             "nominatim_water_feature",
         )
-
-    has_land_feature = _has_land_feature(address)
     if offset_km is None:
         return LocationClassification(
             "insufficient_data", "Posisi daratan tidak dapat dicocokkan", country_code, None, False,

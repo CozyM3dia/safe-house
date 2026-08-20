@@ -66,6 +66,47 @@ class LocationValidationTests(unittest.TestCase):
         self.assertEqual("valid_land", result.status)
         self.assertFalse(result.is_water)
 
+    def test_teluk_bone_and_teluk_betung_streets_are_valid_land(self):
+        # Jalan Teluk Bone, Kota Karang, Teluk Betung Timur, Bandar Lampung
+        teluk_bone = geocode(
+            lat="-5.4412",
+            lon="105.2589",
+            category="highway",
+            type="residential",
+            display_name="Jalan Teluk Bone, Kota Karang, Teluk Betung Timur, Bandar Lampung, Lampung, 35231, Indonesia",
+            address={
+                "road": "Jalan Teluk Bone",
+                "neighbourhood": "Kota Karang",
+                "suburb": "Teluk Betung Timur",
+                "city": "Bandar Lampung",
+                "state": "Lampung",
+                "country": "Indonesia",
+                "country_code": "id",
+            },
+        )
+        result = classify_location(-5.4412, 105.2589, teluk_bone, elevation_m=8.0)
+        self.assertEqual("valid_land", result.status)
+        self.assertFalse(result.is_water)
+
+    def test_real_water_body_is_not_buildable(self):
+        # Teluk Lampung in open ocean with water/bay category
+        teluk_lampung_ocean = {
+            "lat": "-5.55",
+            "lon": "105.30",
+            "category": "natural",
+            "type": "bay",
+            "display_name": "Teluk Lampung, Lampung, Indonesia",
+            "address": {
+                "natural": "bay",
+                "state": "Lampung",
+                "country": "Indonesia",
+                "country_code": "id",
+            },
+        }
+        result = classify_location(-5.55, 105.30, teluk_lampung_ocean, elevation_m=0.0)
+        self.assertEqual("not_buildable", result.status)
+        self.assertTrue(result.is_water)
+
     def test_geojson_land_mask_rejects_point_outside_polygon(self):
         mask = {
             "type": "FeatureCollection",

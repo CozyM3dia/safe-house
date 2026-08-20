@@ -358,26 +358,40 @@ def is_water_body(
         pass
 
     addr = geocode.get("address", {}) or {}
-    place_type = geocode.get("type")
-    category = geocode.get("category")
+    place_type = str(geocode.get("type") or "").lower()
+    category = str(geocode.get("category") or "").lower()
 
     if addr.get("ocean") or addr.get("sea") or addr.get("water"):
         return True
     if place_type in ("sea", "ocean"):
         return True
-    if category == "natural" and place_type == "water":
+    if category == "natural" and place_type in ("water", "bay", "strait", "coastline"):
+        return True
+    if category == "waterway":
         return True
     if geocode.get("error"):
         return True
 
+    # Jika ada fitur jalan, bangunan, toko, fasilitas daratan, ini pasti daratan
+    if any(addr.get(k) for k in ("road", "building", "house_number", "amenity", "shop", "industrial", "landuse")):
+        return False
+
     # Cocokkan sebagai kata utuh, bukan substring: "selat" TIDAK boleh cocok
-    # dengan "Selatan" (arah, sangat umum: "Lampung Selatan", "Jakarta
-    # Selatan"), dan "laut" tidak cocok dengan "lautan"/"pelautan".
+    # dengan "Selatan", dan "teluk" di nama jalan/wilayah daratan tidak boleh
+    # dianggap perairan jika ada bukti daratan.
     water_words = (
-        "ocean", "sea", "laut", "selat", "strait", "bay", "teluk", "samudra",
+        "ocean", "sea", "laut", "selat", "strait", "bay", "samudra", "teluk",
     )
     lowered = address.lower()
-    if any(re.search(rf"\b{re.escape(w)}\b", lowered) for w in water_words):
-        return True
+    has_water_word = any(re.search(rf"\b{re.escape(w)}\b", lowered) for w in water_words)
+
+    if has_water_word:
+        is_admin_or_place = any(addr.get(k) for k in ("suburb", "neighbourhood", "village", "town", "city", "county", "state"))
+        if is_admin_or_place and elevation > 0:
+            return False
+        if category == "place" and place_type in ("neighbourhood", "suburb", "village", "town", "city", "quarter", "hamlet"):
+            return False
+        if elevation <= 0 or category in ("natural", "waterway"):
+            return True
 
     return address == "Lokasi tidak terdeteksi" and elevation <= 0
