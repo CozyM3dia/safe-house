@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Pane, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useAppStore } from '../../store/useAppStore';
 import {
@@ -64,7 +64,11 @@ export function MapArea() {
   const activeTile = MAP_TILES[baseMapStyle] || MAP_TILES.street;
 
   return (
-    <div className="absolute inset-0 z-0" data-tour="map-area">
+    <div
+      className="safe-map absolute inset-0 z-0"
+      data-basemap-style={baseMapStyle}
+      data-tour="map-area"
+    >
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
@@ -78,12 +82,15 @@ export function MapArea() {
         className="!h-full !w-full safe-map-crosshair"
         preferCanvas
       >
-        <TileLayer
-          url={activeTile.url}
-          attribution={activeTile.attribution}
-          maxZoom={activeTile.maxZoom}
-          subdomains={activeTile.subdomains || 'abc'}
-        />
+        <Pane name="basemap" style={{ zIndex: 200 }}>
+          <TileLayer
+            url={activeTile.url}
+            attribution={activeTile.attribution}
+            maxZoom={activeTile.maxZoom}
+            subdomains={activeTile.subdomains || 'abc'}
+            className="safe-map-tiles"
+          />
+        </Pane>
 
         <NationwideOverlays />
         <FaultOverlay />
@@ -101,8 +108,8 @@ export function MapArea() {
       {/* Audit Click Confirmation Dialog */}
       <AuditConfirmDialog />
 
-      {/* Subtle top gradient so TopBar reads cleanly */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-20 bg-gradient-to-b from-bg/50 to-transparent" />
+      {/* Light edge treatment keeps the map legible beneath the floating chrome. */}
+      <div className="safe-map-edge pointer-events-none absolute inset-0 z-[5]" />
     </div>
   );
 }

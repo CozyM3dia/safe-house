@@ -26,6 +26,7 @@ const translations = {
   'panel.mapView': { id: 'Tampilan Peta', en: 'Map View' },
   'panel.mapLayerControls': { id: 'Kontrol layer referensi', en: 'Reference layer controls' },
   'panel.closeMapPanel': { id: 'Tutup panel peta', en: 'Close map panel' },
+  'panel.topography': { id: 'Topografi', en: 'Topography' },
   'panel.street': { id: 'Biasa', en: 'Street' },
   'panel.satellite': { id: 'Satelit', en: 'Satellite' },
   'panel.useBasemap': { id: 'Gunakan peta dasar', en: 'Use basemap' },

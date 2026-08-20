@@ -48,12 +48,37 @@
     background: rgba(212, 149, 106, 0.32);
   }
 
-  /* Leaflet — Carto Positron sits under warm dark UI */
+  /* Leaflet — the atlas basemap stays vivid under the warm dark UI. */
   .leaflet-container {
-    background: #e8e4df !important;
+    background: #c9d7d0 !important;
     font-family: 'Red Hat Display', sans-serif;
     height: 100%;
     width: 100%;
+  }
+
+  .safe-map .leaflet-basemap-pane {
+    transition: filter 240ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Keep the reference map readable and slightly editorial, while leaving
+     the separate hazard panes untouched so risk colors remain truthful. */
+  .safe-map[data-basemap-style='terrain'] .leaflet-basemap-pane {
+    filter: saturate(0.9) contrast(1.04) brightness(0.98);
+  }
+
+  .safe-map[data-basemap-style='street'] .leaflet-basemap-pane {
+    filter: saturate(0.82) contrast(0.98) brightness(1.01);
+  }
+
+  .safe-map[data-basemap-style='satellite'] .leaflet-basemap-pane {
+    filter: saturate(0.88) contrast(1.02) brightness(0.88);
+  }
+
+  .safe-map-edge {
+    background:
+      linear-gradient(to bottom, rgba(15, 11, 8, 0.22), transparent 9rem),
+      linear-gradient(to right, rgba(15, 11, 8, 0.12), transparent 11rem, transparent calc(100% - 11rem), rgba(15, 11, 8, 0.10));
+    mix-blend-mode: multiply;
   }
 
   .safe-map-crosshair,

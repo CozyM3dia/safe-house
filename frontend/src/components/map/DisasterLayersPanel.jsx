@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, ChevronRight, GitBranch } from 'lucide-react';
+import { Layers, ChevronRight, GitBranch, Map as MapIcon, Mountain, Satellite } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { cn } from '../../lib/utils';
@@ -62,10 +62,11 @@ export function DisasterLayersPanel() {
             </div>
 
             {/* Base Map Style Picker */}
-            <div className="flex rounded-lg bg-white/[0.03] p-0.5 border border-white/6">
+            <div className="grid grid-cols-3 gap-0.5 rounded-xl border border-white/6 bg-white/[0.03] p-0.5">
               {[
-                { id: 'street', label: t('panel.street') },
-                { id: 'satellite', label: t('panel.satellite') },
+                { id: 'terrain', label: t('panel.topography'), Icon: Mountain },
+                { id: 'street', label: t('panel.street'), Icon: MapIcon },
+                { id: 'satellite', label: t('panel.satellite'), Icon: Satellite },
               ].map((style) => {
                 const isActive = baseMapStyle === style.id;
                 return (
@@ -77,12 +78,13 @@ export function DisasterLayersPanel() {
                     title={`${t('panel.useBasemap')}: ${style.label}`}
                     onClick={() => setBaseMapStyle(style.id)}
                     className={cn(
-                      "flex min-h-[44px] flex-1 items-center justify-center rounded-md py-1.5 text-center text-[10px] font-bold transition-all",
+                      "flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-center text-[9px] font-bold transition-all",
                       isActive
                         ? "bg-accent/15 text-accent shadow-sm border border-accent/20"
                         : "text-text-muted hover:text-text-primary border border-transparent"
                     )}
                   >
+                    <style.Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     {style.label}
                   </button>
                 );

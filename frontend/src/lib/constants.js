@@ -2,6 +2,14 @@
 // Google Maps XYZ dihapus: pemakaian tanpa kunci resmi melanggar ketentuan
 // layanan Google. Lihat spec bagian 6.
 export const MAP_TILES = {
+  terrain: {
+    // Esri's topographic atlas gives the map landform, relief, boundaries,
+    // and place labels without introducing another API key or changing the
+    // underlying hazard data contract.
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri — Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), swisstopo, GSI and the GIS User Community',
+    maxZoom: 19,
+  },
   street: {
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     attribution: '&copy; OpenStreetMap &copy; CARTO',
