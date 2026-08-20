@@ -10,8 +10,8 @@ import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { locationToUrl, riskHex, riskLabel } from '../../lib/utils';
+import { locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
+import { siteClass } from '../../lib/formatters';
 
 // ─── Local Helpers ──────────────────────────────────────────────────
 function computeScore(p) {
@@ -574,7 +574,7 @@ function stripMarkdownNode(props) {
 
 function SectionCard({ title, content, defaultExpanded = false, property }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const { icon: Icon, accentClass, isImportant } = getSectionMeta(title);
+  const { icon: Icon } = getSectionMeta(title);
   
   const isMitigationSection = title.toLowerCase().includes('mitigasi') || title.toLowerCase().includes('mitigation');
   const isCodeSection = title.toLowerCase().includes('persyaratan bangunan') || title.toLowerCase().includes('building code') || title.toLowerCase().includes('regulasi');
@@ -584,40 +584,23 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
   const isEnvironment = title.toLowerCase().includes('banjir') || title.toLowerCase().includes('flood') || title.toLowerCase().includes('lingkungan') || title.toLowerCase().includes('environmental');
 
   return (
-    <motion.div 
-      layout
-      className={`mb-4 overflow-hidden rounded-2xl border transition-all duration-300 ${
-        expanded ? 'border-white/14 shadow-lg shadow-black/20' : 'border-white/8 hover:border-white/12'
-      } ${
-        isImportant 
-          ? 'bg-gradient-to-br from-white/[0.05] to-transparent shadow-md shadow-black/10' 
-          : 'bg-white/[0.01]'
-      }`}
-    >
+    <motion.div layout className="border-b border-white/[0.07] last:border-b-0">
       <button
         type="button"
         aria-expanded={expanded}
         aria-label={`${expanded ? 'Tutup' : 'Buka'} ${title}`}
         onClick={() => setExpanded(!expanded)}
-        className={`flex w-full items-center justify-between px-5 py-4.5 text-left transition-all duration-300 ${
-          expanded ? 'bg-white/[0.03]' : 'hover:bg-white/[0.02]'
-        }`}
+        className="group flex w-full items-center gap-3 py-3.5 text-left"
       >
-        <div className="flex items-center gap-3.5">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm transition-transform duration-300 ${
-            expanded ? 'scale-105' : ''
-          } ${accentClass}`}>
-            <Icon className="h-4.5 w-4.5" />
-          </div>
-          <div>
-            <h3 className="font-display text-xs font-bold tracking-wider text-text-primary uppercase">
-              {title}
-            </h3>
-          </div>
-        </div>
-        <div className={`transition-transform duration-300 ${expanded ? 'rotate-180 text-accent' : 'text-text-muted'}`}>
-          <ChevronDown className="h-4.5 w-4.5" />
-        </div>
+        <Icon className={`h-3.5 w-3.5 shrink-0 transition-colors ${expanded ? 'text-accent' : 'text-text-muted'}`} />
+        <h3 className="flex-1 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-text-primary">
+          {title}
+        </h3>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+            expanded ? 'rotate-180 text-accent' : 'text-text-muted group-hover:text-text-secondary'
+          }`}
+        />
       </button>
       
       <AnimatePresence initial={false}>
@@ -627,7 +610,7 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-            className="border-t border-white/6 px-5 py-4 text-sm leading-relaxed text-text-secondary space-y-4 overflow-hidden"
+            className="max-w-[70ch] overflow-hidden pb-5 text-sm leading-relaxed text-text-secondary space-y-4"
           >
           {isMitigationSection ? (
             <MitigationSection content={content} />
@@ -801,8 +784,12 @@ export function AuditDrawer() {
                        'CACHED · dibuat sebelumnya'}
                     </span>
                   )}
-                  <span className="text-text-muted/60">·</span>
-                  {drawerSubtitle}
+                  {isBattle && (
+                    <>
+                      <span className="text-text-muted/60">·</span>
+                      {drawerSubtitle}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -819,193 +806,48 @@ export function AuditDrawer() {
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto">
             <div
               ref={reportRef}
-              className="mx-auto max-w-3xl rounded-2xl border border-white/8 bg-gradient-to-br from-white/[0.02] to-transparent p-8 relative overflow-hidden"
+              className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-8 sm:py-9"
             >
-              {/* Disclaimer */}
-              <div className="mb-6 flex items-center gap-2 rounded-lg border border-risk-moderate/20 bg-risk-moderate/5 px-3 py-2 text-[11px] text-risk-moderate relative z-10">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                {t('drawer.disclaimer')}
-              </div>
-
-              {/* Dynamic Header Card */}
               {!isBattle && propertyA && (
-                <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.2)]">
-                  {/* Subtle decorative grid background */}
-                  <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{
-                    backgroundImage: 'radial-gradient(rgba(212,149,106,0.15) 1px, transparent 1px)',
-                    backgroundSize: '14px 14px'
-                  }} />
-                  <div className="relative z-10 flex-1 min-w-0">
-                    <span className="text-[9px] font-bold tracking-[0.25em] text-accent uppercase mb-1.5 block">
-                      HASIL AUDIT PROPERTI
-                    </span>
-                    <h1 className="font-display text-[15px] font-bold text-text-primary leading-tight mb-2 truncate">
-                      {propertyA.address}
-                    </h1>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-text-muted font-mono">
-                      <span>LAT: {propertyA.lat?.toFixed(6)}</span>
-                      <span>LON: {propertyA.lon?.toFixed(6)}</span>
-                      <span>ELEV: {propertyA.elevation ?? propertyA.geotech?.elevation_m}m</span>
-                    </div>
-                  </div>
-                  <div className="relative z-10 shrink-0 flex items-center gap-4 bg-black/35 border border-white/8 rounded-2xl px-4.5 py-3.5">
-                    <div className="text-right">
-                      <span className="text-[8px] font-bold text-text-muted tracking-wider block mb-1">SCORE</span>
-                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
-                        drawerScore >= 70 ? 'bg-risk-safe/10 text-risk-safe border border-risk-safe/25' :
-                        drawerScore >= 40 ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/25' :
-                        'bg-risk-danger/10 text-risk-danger border border-risk-danger/25'
-                      }`}>
-                        {drawerScoreReady ? `${drawerScore}/100` : 'N/A — DATA TIDAK CUKUP'}
-                      </span>
-                    </div>
-                    <div className="h-9 w-px bg-white/10" />
-                    <div>
-                      <span className="text-[8px] font-bold text-text-muted tracking-wider block mb-1">KATEGORI SKOR</span>
-                      <span className="text-[11px] font-extrabold block tracking-wider uppercase" style={{ color: riskHex(drawerScore || 0) }}>
-                        {drawerScoreReady ? riskLabel(drawerScore) : 'DATA TIDAK CUKUP'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Provenance & kelengkapan data — bahan rujukan, bukan headline.
-                  Sebelumnya blok ini berada di atas kartu skor sehingga skor
-                  dan analisis AI baru terlihat setelah menggulir melewati 16
-                  chip status field. */}
-              {!isBattle && propertyA?.data_quality?.fields && (
-                <div className="mt-8 pt-6 border-t border-white/8">
-                  <DataCoverageSummary property={propertyA} />
-
-                  {propertyA?.audit_status && propertyA.audit_status !== 'valid' && (
-                    <div className="rounded-lg border border-risk-moderate/25 bg-risk-moderate/5 px-3 py-2 text-[11px] text-risk-moderate relative z-10">
-                      Audit {propertyA.audit_status}.
-                      {propertyA.data_quality?.optional_missing?.length > 0 && (
-                        <> Layer belum tersedia: {propertyA.data_quality.optional_missing.map((name) => COVERAGE_LABELS[name] || name).join(', ')}.</>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <header className="mb-8">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-accent">
+                    Hasil Audit Properti
+                  </span>
+                  {/* Alamat penuh dulu dipangkas paksa dengan `truncate`, jadi
+                      nama jalan sering hilang. Dua baris cukup untuk alamat
+                      Nominatim terpanjang sekalipun. */}
+                  <h1
+                    className="mt-2 max-w-[46ch] font-display text-xl font-bold leading-snug text-text-primary sm:text-2xl"
+                    title={propertyA.address}
+                  >
+                    {shortAddress(propertyA.address, 3)}
+                  </h1>
+                  <p className="mt-2 font-mono text-[10px] tracking-wide text-text-muted">
+                    {propertyA.lat?.toFixed(5)}, {propertyA.lon?.toFixed(5)}
+                    <span className="mx-2 text-text-muted/40">/</span>
+                    {propertyA.elevation ?? propertyA.geotech?.elevation_m} m dpl
+                  </p>
+                </header>
               )}
 
               {isBattle ? (
-                /* ── Battle Report ── */
-                battleReport ? (
-                  (() => {
-                    const sections = parseSections(battleReport);
-                    if (sections.length > 0) {
-                      return (
-                        <div className="space-y-1 relative z-10">
-                          {sections.map((sec, idx) => (
-                            <SectionCard 
-                              key={idx} 
-                              title={sec.title} 
-                              content={sec.content} 
-                              defaultExpanded={idx === 0 || idx === 1}
-                              property={propertyA}
-                            />
-                          ))}
-                        </div>
-                      );
-                    }
-                    return (
-                      <article className="prose-safe relative z-10">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {battleReport}
-                        </ReactMarkdown>
-                      </article>
-                    );
-                  })()
-                ) : (
-                  <p className="text-sm text-text-muted relative z-10">
-                    {t('drawer.reportLoading')}
-                  </p>
-                )
-              ) : (
-                /* ── Single Site Report ── */
-                <div className="relative z-10">
-                  {/* Summary cards */}
-                  {aiReport && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <SummaryCell 
-                        label={t('drawer.geotechnical')} 
-                        text={aiReport.geoStabilityExplanation} 
-                        icon={Layers}
-                        colorClass="text-amber-500"
-                        borderClass="border-amber-500/20"
-                        bgClass="bg-amber-500/[0.02]"
-                      />
-                      <SummaryCell 
-                        label={t('drawer.seismicLabel')} 
-                        text={aiReport.seismicExplanation} 
-                        icon={Activity}
-                        colorClass="text-red-400"
-                        borderClass="border-red-400/20"
-                        bgClass="bg-red-400/[0.02]"
-                      />
-                      <SummaryCell 
-                        label={t('drawer.environment')} 
-                        text={aiReport.floodEnvExplanation} 
-                        icon={Droplets}
-                        colorClass="text-blue-400"
-                        borderClass="border-blue-400/20"
-                        bgClass="bg-blue-400/[0.02]"
-                      />
-                    </div>
-                  )}
-
-                  {/* AI error state */}
-                  {aiReport?.aiError && (
-                    <div className="mb-6 rounded-lg border border-risk-danger/20 bg-risk-danger/5 p-4 flex items-start gap-3">
-                      <AlertTriangle className="h-4 w-4 text-risk-danger shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-semibold text-risk-danger mb-1">
-                          AI belum dapat membuat penjelasan
-                        </p>
-                        <p className="text-xs text-text-muted leading-relaxed">
-                          {lang === 'en'
-                            ? 'The AI explanation could not be generated. The scores and classifications above remain valid — they are calculated by the S.A.F.E House deterministic engine.'
-                            : 'AI belum dapat membuat penjelasan. Angka dan klasifikasi audit di atas tetap valid karena dihitung oleh mesin audit S.A.F.E House.'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Micro analysis */}
-                  {aiReport?.microAnalysis && (
-                    <div className="mb-6 rounded-2xl border border-accent/20 bg-accent/[0.02] p-5 relative overflow-hidden" style={{
-                      backgroundImage: 'radial-gradient(rgba(212,149,106,0.03) 1px, transparent 1px)',
-                      backgroundSize: '16px 16px'
-                    }}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Badge variant="default" className="gap-1 shadow-sm">
-                          <MapPin className="h-3 w-3" />
-                          {t('drawer.microAnalysis')}
-                        </Badge>
-                      </div>
-                      <p className="text-xs leading-relaxed text-text-secondary">
-                        {aiReport.microAnalysis}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Detailed report sections or loading skeleton */}
-                  {aiReport?.detailedReport ? (
+                /* ── Laporan perbandingan ── */
+                <div className="mx-auto max-w-3xl">
+                  {battleReport ? (
                     (() => {
-                      const sections = parseSections(aiReport.detailedReport);
+                      const sections = parseSections(battleReport);
                       if (sections.length > 0) {
                         return (
-                          <div className="space-y-1">
+                          <div>
                             {sections.map((sec, idx) => (
-                              <SectionCard 
-                                key={idx} 
-                                title={sec.title} 
-                                content={sec.content} 
-                                defaultExpanded={idx === 0} 
+                              <SectionCard
+                                key={idx}
+                                title={sec.title}
+                                content={sec.content}
+                                defaultExpanded={idx === 0 || idx === 1}
                                 property={propertyA}
                               />
                             ))}
@@ -1015,31 +857,108 @@ export function AuditDrawer() {
                       return (
                         <article className="prose-safe">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {aiReport.detailedReport}
+                            {battleReport}
                           </ReactMarkdown>
                         </article>
                       );
                     })()
-                  ) : aiReport?.reportLoading ? (
-                    <div className="space-y-3 animate-pulse">
-                      <div className="h-4 bg-white/8 rounded w-2/5" />
-                      <div className="h-3 bg-white/6 rounded w-full" />
-                      <div className="h-3 bg-white/6 rounded w-11/12" />
-                      <div className="h-3 bg-white/6 rounded w-4/5" />
-                      <div className="h-4 bg-white/8 rounded w-1/3 mt-5" />
-                      <div className="h-3 bg-white/6 rounded w-full" />
-                      <div className="h-3 bg-white/6 rounded w-10/12" />
-                      <div className="h-4 bg-white/8 rounded w-2/5 mt-5" />
-                      <div className="h-3 bg-white/6 rounded w-full" />
-                      <div className="h-3 bg-white/6 rounded w-3/4" />
-                      <div className="h-3 bg-white/6 rounded w-full" />
-                      <p className="text-[10px] text-text-muted font-mono mt-4">
-                        {lang === 'en' ? 'Generating full report…' : 'Membuat laporan lengkap…'}
-                      </p>
-                    </div>
-                  ) : !aiReport?.aiError ? (
+                  ) : (
                     <p className="text-sm text-text-muted">{t('drawer.reportLoading')}</p>
-                  ) : null}
+                  )}
+                </div>
+              ) : (
+                /* Dua kolom di layar lebar: bukti terukur di kiri, narasi di
+                   kanan. Sebelumnya semuanya satu kolom max-w-3xl, sehingga di
+                   monitor lebar laporan jadi pita sempit dengan ruang kosong
+                   besar di kedua sisi. */
+                <div className="grid gap-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-12">
+                  <aside className="space-y-7 lg:sticky lg:top-0 lg:self-start">
+                    <HeroScore
+                      score={drawerScore}
+                      ready={drawerScoreReady}
+                      status={propertyA?.audit_status}
+                    />
+
+                    <KeyParameters property={propertyA} />
+
+                    {propertyA?.data_quality?.fields && (
+                      <DataCoverageSummary property={propertyA} />
+                    )}
+                  </aside>
+
+                  <div className="min-w-0">
+                    {aiReport?.aiError && (
+                      <div className="mb-6 flex items-start gap-3 rounded-xl border border-risk-danger/25 bg-risk-danger/[0.06] p-4">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-risk-danger" />
+                        <div>
+                          <p className="mb-1 text-sm font-semibold text-risk-danger">
+                            AI belum dapat membuat penjelasan
+                          </p>
+                          <p className="text-xs leading-relaxed text-text-muted">
+                            {lang === 'en'
+                              ? 'The AI explanation could not be generated. The scores and classifications remain valid — they are calculated by the S.A.F.E House deterministic engine.'
+                              : 'Angka dan klasifikasi audit tetap valid karena dihitung mesin audit S.A.F.E House, bukan oleh AI.'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {aiReport?.detailedReport ? (
+                      (() => {
+                        const sections = parseSections(aiReport.detailedReport);
+                        if (sections.length > 0) {
+                          return (
+                            <div>
+                              {sections.map((sec, idx) => (
+                                <SectionCard
+                                  key={idx}
+                                  title={sec.title}
+                                  content={sec.content}
+                                  defaultExpanded={idx === 0}
+                                  property={propertyA}
+                                />
+                              ))}
+                            </div>
+                          );
+                        }
+                        return (
+                          <article className="prose-safe max-w-[72ch]">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {aiReport.detailedReport}
+                            </ReactMarkdown>
+                          </article>
+                        );
+                      })()
+                    ) : aiReport?.reportLoading ? (
+                      <div className="space-y-3">
+                        <div className="shimmer h-3.5 w-2/5 rounded" />
+                        <div className="shimmer h-2.5 w-full rounded" />
+                        <div className="shimmer h-2.5 w-11/12 rounded" />
+                        <div className="shimmer h-2.5 w-4/5 rounded" />
+                        <div className="shimmer mt-6 h-3.5 w-1/3 rounded" />
+                        <div className="shimmer h-2.5 w-full rounded" />
+                        <div className="shimmer h-2.5 w-10/12 rounded" />
+                        <p className="pt-2 font-mono text-[10px] text-text-muted">
+                          {lang === 'en' ? 'Generating report…' : 'Menyusun laporan…'}
+                        </p>
+                      </div>
+                    ) : !aiReport?.aiError ? (
+                      <p className="text-sm text-text-muted">{t('drawer.reportLoading')}</p>
+                    ) : null}
+
+                    {aiReport?.microAnalysis && (
+                      <p className="mt-7 max-w-[72ch] border-t border-white/6 pt-4 text-[11px] leading-relaxed text-text-muted">
+                        <span className="font-semibold text-text-secondary">Konteks sekitar. </span>
+                        {aiReport.microAnalysis}
+                      </p>
+                    )}
+
+                    {/* Satu-satunya disclaimer. Sebelumnya ada tiga blok
+                        peringatan bernada sama bertumpuk di bagian atas. */}
+                    <p className="mt-6 max-w-[72ch] text-[10px] leading-relaxed text-text-muted/80">
+                      {t('drawer.disclaimer')}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -1047,6 +966,153 @@ export function AuditDrawer() {
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
+  );
+}
+
+// ── Skor sebagai tokoh utama laporan ────────────────────────────────
+// Sebelumnya skor hanya chip kecil di pojok kartu identitas, padahal ia
+// adalah kesimpulan seluruh audit. Rel band memberi konteks yang tidak
+// dimiliki angka telanjang: seberapa jauh lokasi ini dari band berikutnya.
+const SCORE_BANDS = [
+  { max: 39, label: 'WASPADA', meaning: 'Perlu mitigasi serius sebelum membangun' },
+  { max: 69, label: 'SEDANG', meaning: 'Layak dengan catatan teknis' },
+  { max: 100, label: 'AMAN', meaning: 'Relatif aman untuk dibangun' },
+];
+
+function HeroScore({ score, ready, status }) {
+  const value = ready ? score : 0;
+  const hex = riskHex(value);
+  const band = SCORE_BANDS.find((b) => value <= b.max) || SCORE_BANDS[2];
+
+  return (
+    <section>
+      <div className="flex items-baseline gap-2.5">
+        <span
+          className="data-num text-[56px] font-semibold leading-none tracking-tight"
+          style={{ color: ready ? hex : undefined }}
+        >
+          {ready ? score : '—'}
+        </span>
+        <span className="data-num text-sm text-text-muted">/100</span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span
+          className="text-[11px] font-bold uppercase tracking-[0.18em]"
+          style={{ color: ready ? hex : undefined }}
+        >
+          {ready ? riskLabel(score) : 'Data tidak cukup'}
+        </span>
+        {status && status !== 'valid' && (
+          <span className="rounded-full border border-risk-moderate/30 bg-risk-moderate/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-risk-moderate">
+            {status}
+          </span>
+        )}
+      </div>
+
+      {ready && (
+        <>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">
+            {band.meaning}
+          </p>
+
+          {/* Rel band 0-39 / 40-69 / 70-100 */}
+          <div className="mt-4">
+            <div className="relative h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="absolute inset-y-0 left-0 w-[39%] bg-risk-danger/25" />
+              <div className="absolute inset-y-0 left-[39%] w-[31%] bg-risk-moderate/25" />
+              <div className="absolute inset-y-0 left-[70%] right-0 bg-risk-safe/25" />
+              <div
+                className="absolute top-1/2 h-3 w-[3px] -translate-y-1/2 rounded-full ring-2 ring-bg"
+                style={{ left: `calc(${Math.min(100, Math.max(0, score))}% - 1.5px)`, background: hex }}
+              />
+            </div>
+            <div className="mt-1.5 flex justify-between font-mono text-[8px] tracking-wider text-text-muted/70">
+              <span>0</span>
+              <span>40</span>
+              <span>70</span>
+              <span>100</span>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+// ── Parameter kunci ────────────────────────────────────────────────
+// Menggantikan tiga kartu ringkasan yang isinya kalimat robotik hasil
+// perakitan ("Audit mengestimasi Vs30 160 m/s ... dengan status RAWAN").
+// Angkanya dibaca langsung dari AuditResult, jadi tidak bergantung AI dan
+// tidak mengulang isi laporan naratif di sebelahnya.
+function KeyParameters({ property }) {
+  const geo = property?.geotech;
+  if (!geo) return null;
+
+  const hazard = property?.hazard || {};
+  const fault = geo.nearest_fault || {};
+  const floodKnown = hazard.flood_known !== false;
+
+  const rows = [
+    {
+      label: 'Vs30',
+      value: `${geo.vs30} m/s`,
+      note: siteClass(geo.vs30),
+    },
+    {
+      label: 'FS likuefaksi',
+      value: Number(geo.fs).toFixed(2),
+      note: geo.status,
+      tone: geo.fs < 1 ? 'danger' : 'safe',
+    },
+    {
+      label: 'PGA permukaan',
+      value: `${Number(geo.pga_surface).toFixed(3)} g`,
+      note: null,
+    },
+    {
+      label: 'Sesar terdekat',
+      value: fault.distance_km != null ? `${Number(fault.distance_km).toFixed(1)} km` : '—',
+      note: fault.name || null,
+    },
+    {
+      label: 'Bahaya banjir',
+      value: floodKnown ? (hazard.flood_label || '—') : '—',
+      note: floodKnown ? null : 'data tidak tersedia',
+      wide: true,
+    },
+  ];
+
+  const toneClass = {
+    danger: 'text-risk-danger',
+    safe: 'text-risk-safe',
+  };
+
+  return (
+    <section>
+      <h2 className="mb-3 text-[9px] font-bold uppercase tracking-[0.25em] text-text-muted/70">
+        Parameter Kunci
+      </h2>
+      <dl className="divide-y divide-white/[0.06]">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-baseline justify-between gap-4 py-2.5">
+            <dt className="shrink-0 text-[11px] text-text-muted">{row.label}</dt>
+            <dd className="min-w-0 text-right">
+              <span
+                className={`data-num text-[13px] font-semibold ${
+                  row.wide ? 'text-[11px] uppercase tracking-wide' : ''
+                } ${toneClass[row.tone] || 'text-text-primary'}`}
+              >
+                {row.value}
+              </span>
+              {row.note && (
+                <span className="ml-2 text-[10px] text-text-muted/80">{row.note}</span>
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
@@ -1146,21 +1212,3 @@ function DataCoverageSummary({ property }) {
   );
 }
 
-function SummaryCell({ label, text, icon: Icon, colorClass, borderClass, bgClass }) {
-  return (
-    <div className={`relative overflow-hidden rounded-2xl border ${borderClass} ${bgClass} p-4 hover:scale-[1.02] hover:bg-white/[0.03] transition-all duration-300 shadow-sm`}>
-      {/* Decorative background glow */}
-      <div className={`absolute -right-6 -top-6 h-12 w-12 rounded-full blur-2xl opacity-15 ${colorClass.replace('text-', 'bg-')}`} />
-      
-      <div className="flex items-center gap-2 mb-2 relative z-10">
-        <div className={`flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-white/5 border border-white/8 shadow-sm ${colorClass}`}>
-          <Icon className="h-3.5 w-3.5" />
-        </div>
-        <p className="text-[9.5px] font-bold uppercase tracking-[0.2em] text-text-muted">
-          {label}
-        </p>
-      </div>
-      <p className="text-[11.5px] leading-relaxed text-text-secondary relative z-10">{text}</p>
-    </div>
-  );
-}
