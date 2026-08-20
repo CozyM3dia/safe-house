@@ -187,6 +187,19 @@
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='2' fill='%23f0e4cc' stroke='%230f0b08' stroke-width='1'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5' stroke='%23f0e4cc' stroke-width='1.5' stroke-linecap='round' filter='drop-shadow(0 0 0.8px %230f0b08)'/%3E%3C/svg%3E") 12 12, crosshair !important;
   }
 
+  /* When dragging/panning the map, always show grabbing hand cursor */
+  html .leaflet-container.leaflet-dragging,
+  html .leaflet-container.leaflet-dragging *,
+  html .safe-map-crosshair.leaflet-dragging,
+  html .safe-map-crosshair.leaflet-dragging *,
+  html .safe-map-crosshair.leaflet-dragging canvas,
+  html .safe-map-crosshair.leaflet-dragging .leaflet-tile-pane,
+  html .safe-map-crosshair.leaflet-dragging .leaflet-grab,
+  html .safe-map-crosshair.leaflet-dragging .leaflet-interactive {
+    cursor: grabbing !important;
+    cursor: -webkit-grabbing !important;
+  }
+
   .leaflet-control-attribution {
     background: rgba(15, 11, 8, 0.80) !important;
     color: rgba(196, 168, 126, 0.75) !important;

@@ -29,7 +29,28 @@ export function MapCursor() {
     // Apply precision crosshair cursor to Leaflet map container
     container.classList.add('safe-map-crosshair');
 
+    let isDragging = false;
+
+    const onDragStart = () => {
+      isDragging = true;
+      setVisible(false);
+    };
+
+    const onDragEnd = () => {
+      isDragging = false;
+    };
+
+    map.on('dragstart', onDragStart);
+    map.on('dragend', onDragEnd);
+    map.on('movestart', onDragStart);
+    map.on('moveend', onDragEnd);
+
     const handleMouseMove = (e) => {
+      if (isDragging) {
+        setVisible(false);
+        return;
+      }
+
       // If hovering over any floating UI controls/dialogs/panels, hide the custom reticle
       const target = e.target;
       if (
@@ -78,6 +99,10 @@ export function MapCursor() {
 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
+      map.off('dragstart', onDragStart);
+      map.off('dragend', onDragEnd);
+      map.off('movestart', onDragStart);
+      map.off('moveend', onDragEnd);
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('mouseleave', handleMouseLeave);
       container.classList.remove('safe-map-crosshair');
