@@ -35,14 +35,14 @@ export const KEYBOARD_SHORTCUTS = [
   { keys: ['Esc'], action: 'Close drawer / panel' },
   { keys: ['C'], action: 'Focus chatbot' },
   { keys: ['L'], action: 'Toggle left panel' },
-  { keys: ['B'], action: 'Toggle battle mode' },
+  { keys: ['B'], action: 'Toggle mode bandingkan' },
 ];
 
 export const SUGGESTED_PROMPTS_ID = [
   'Apa risiko utama lokasi ini?',
   'Rekomendasi pondasi apa untuk tanah ini?',
-  'Berapa estimasi biaya mitigasi?',
-  'Apakah lokasi ini layak untuk investasi?',
+  'Seberapa rawan likuefaksi di sini?',
+  'Data apa yang belum tersedia untuk lokasi ini?',
   'Bagaimana kesiapsiagaan gempa di sini?',
   'Apa saja SNI yang berlaku untuk bangunan di sini?',
 ];
@@ -50,8 +50,8 @@ export const SUGGESTED_PROMPTS_ID = [
 export const SUGGESTED_PROMPTS_EN = [
   'What are the main risks here?',
   'What foundation do you recommend?',
-  'Estimate the mitigation costs?',
-  'Is this a good location to invest?',
+  'How prone to liquefaction is this site?',
+  'Which data is still unavailable here?',
   'How to prepare for earthquakes here?',
   'Which building codes apply here?',
 ];
