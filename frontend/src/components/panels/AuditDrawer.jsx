@@ -3,7 +3,7 @@ import { Drawer } from 'vaul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, FileText, AlertTriangle, MapPin, GitCompareArrows, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award } from 'lucide-react';
+import { Copy, Check, X, FileText, AlertTriangle, MapPin, GitCompareArrows, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -13,6 +13,7 @@ import { Button } from '../ui/button';
 import { Skeleton, SkeletonText } from '../ui/skeleton';
 import { locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
 import { siteClass } from '../../lib/formatters';
+import { parseBuildingCodes } from '../../lib/standards';
 
 // ─── Local Helpers ──────────────────────────────────────────────────
 function computeScore(p) {
@@ -290,7 +291,7 @@ const parseMitigations = (content) => {
   const lines = content.split('\n');
   
   // Detect if we have standard multi-line bullet details
-  const hasSubBullets = content.includes('- Apa yang harus dilakukan') || content.includes('- Tindakan') || content.includes('- What to do');
+  const hasSubBullets = content.includes('- Apa yang harus dilakukan') || content.includes('- Tindakan') || content.includes('- What to do') || content.includes('- Action:');
   
   if (hasSubBullets) {
     const blocks = content.split(/(?:\r?\n)+(?=\d+\.|\*\*\d+\.)/);
@@ -361,11 +362,11 @@ const parseMitigations = (content) => {
           priority = priorityMatch[1].trim();
           action = action.replace(priorityMatch[0], '');
         }
-        
+
         // Clean up action text
         action = action.replace(/(?:Estimasi biaya|Estimasi Biaya|Biaya|Cost)\s*:\s*$/i, '')
                       .replace(/(?:Prioritas|Priority)\s*:\s*$/i, '')
-                       .replace(/[,.\s]+$/, '')
+                      .replace(/[,.\s]+$/, '')
                       .trim();
         
         items.push({
@@ -374,34 +375,6 @@ const parseMitigations = (content) => {
           why: '',
           cost,
           priority
-        });
-      }
-    }
-  }
-  
-  return items;
-};
-
-const parseBuildingCodes = (content) => {
-  const items = [];
-  const lines = content.split('\n');
-  for (const line of lines) {
-    const lineTrim = line.trim();
-    if (!lineTrim) continue;
-    
-    // Match e.g. - **SNI 1726:2019**: ... or SNI 1726:2019: ...
-    const match = lineTrim.match(/^(?:-\s*|\*\s*|\d+\.\s*)?(?:\*\*)?(SNI\s+\d+:\d+|\w+)(?:\*\*)?\s*:\s*(.*)/i);
-    if (match) {
-      items.push({
-        code: match[1].trim(),
-        description: match[2].trim()
-      });
-    } else {
-      const boldMatch = lineTrim.match(/^(?:-\s*|\*\s*|\d+\.\s*)?\*\*(.*?)\*\*\s*(.*)/);
-      if (boldMatch) {
-        items.push({
-          code: boldMatch[1].trim(),
-          description: boldMatch[2].trim()
         });
       }
     }
@@ -550,25 +523,53 @@ function MitigationSection({ content }) {
 }
 
 function CodeCard({ item }) {
-  const { code, description } = item;
+  const t = useT();
+  const { code, description, url, badge, fullTitle } = item;
   
   return (
-    <div className="flex gap-4.5 rounded-2xl border border-white/8 bg-white/[0.01] p-4.5 hover:border-white/14 hover:bg-white/[0.02] transition-all duration-300 relative overflow-hidden" style={{
-      backgroundImage: 'radial-gradient(rgba(255,255,255,0.01) 1px, transparent 1px)',
-      backgroundSize: '12px 12px'
-    }}>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shadow-sm">
-        <FileCheck className="h-5 w-5" />
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`${t('drawer.openDoc')}: ${code}${fullTitle ? ` — ${fullTitle}` : ''}`}
+      aria-label={`${t('drawer.openDoc')}: ${code}`}
+      className="group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/[0.01] p-4.5 hover:border-purple-500/30 hover:bg-purple-500/[0.03] transition-all duration-300 relative overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-purple-500/40 cursor-pointer block"
+      style={{
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.01) 1px, transparent 1px)',
+        backgroundSize: '12px 12px'
+      }}
+    >
+      {/* Decorative subtle background glow on hover */}
+      <div className="absolute -right-8 -bottom-8 h-16 w-16 rounded-full bg-purple-500/[0.04] blur-xl group-hover:bg-purple-500/[0.12] transition-colors" />
+
+      <div className="flex items-start gap-4 flex-1 min-w-0 z-10">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 group-hover:bg-purple-500/20 group-hover:text-purple-300 group-hover:scale-105 transition-all duration-200 shadow-sm mt-0.5">
+          <FileCheck className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h4 className="font-mono text-xs font-extrabold text-purple-300 uppercase tracking-widest group-hover:text-purple-200 transition-colors">
+              {code}
+            </h4>
+            {badge && (
+              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold font-mono tracking-wider bg-purple-500/10 border border-purple-500/25 text-purple-300/80">
+                {badge}
+              </span>
+            )}
+          </div>
+          {description && (
+            <p className="text-[11px] leading-relaxed text-text-secondary group-hover:text-text-primary/90 transition-colors">
+              {description}
+            </p>
+          )}
+        </div>
       </div>
-      <div>
-        <h4 className="font-mono text-xs font-extrabold text-purple-300 uppercase tracking-widest mb-1.5">
-          {code}
-        </h4>
-        <p className="text-[11px] leading-relaxed text-text-secondary">
-          {description}
-        </p>
+
+      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/25 px-2.5 py-1.5 text-[10px] font-semibold text-purple-300 group-hover:text-purple-100 transition-all shadow-sm z-10">
+        <span>{t('drawer.openDoc')}</span>
+        <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
       </div>
-    </div>
+    </a>
   );
 }
 
