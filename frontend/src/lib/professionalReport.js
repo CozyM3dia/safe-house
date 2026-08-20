@@ -162,7 +162,6 @@ function renderCover(doc, property, ctx, score) {
   doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...rc);
   doc.text(label, PAGE.w - PAGE.m - 8, baseline, { align: 'right' });
   doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED);
-  doc.text(`Keyakinan data ${property.confidence ?? 0}%`, PAGE.w - PAGE.m - 8, panelY + 10, { align: 'right' });
 
   // Metadata (label kiri / nilai kanan, garis rambut antar baris)
   let my = panelY + panelH + 16;

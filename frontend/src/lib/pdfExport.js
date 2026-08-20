@@ -515,11 +515,10 @@ function drawAuditEvidencePage(pdf, property, lang) {
 
   const cards = [
     ['STATUS', evidence.status.toUpperCase(), evidence.status === 'valid' ? C.safe : C.moderate],
-    ['CONFIDENCE', `${evidence.confidence}%`, C.accent],
     [isEn ? 'SCORE VERSION' : 'VERSI SKOR', pdfShortText(evidence.scoreVersion, 25), C.blue],
     [isEn ? 'DATA MODE' : 'MODE DATA', pdfShortText(evidence.mode, 25), C.violet],
   ];
-  const cardW = (W - M * 2 - 9) / 4;
+  const cardW = (W - M * 2 - 6) / 3;
   cards.forEach(([label, value, color], index) => {
     const x = M + index * (cardW + 3);
     drawRoundedRect(pdf, x, y, cardW, 21, 2.5, C.bgCard);
@@ -565,8 +564,7 @@ function drawAuditEvidencePage(pdf, property, lang) {
 
       pdf.setFont('helvetica', 'normal');
       setColor(pdf, C.textSec);
-      pdf.text(`${entry.confidence}%`, M + 77, y + 1);
-      pdf.text(pdfShortText(entry.source, 72), M + 91, y + 1);
+      pdf.text(pdfShortText(entry.source, 86), M + 77, y + 1);
       y += rowH;
     });
     if (evidence.entries.length > entries.length) {

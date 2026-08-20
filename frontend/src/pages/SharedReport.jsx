@@ -158,7 +158,7 @@ function ReportBody({ property }) {
 
       {property.audit_status && property.audit_status !== 'valid' && (
         <p className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-300">
-          Audit {property.audit_status}; confidence {property.confidence ?? 0}%.
+          Audit {property.audit_status}.
           {' '}{t('report.notFinal')}
         </p>
       )}

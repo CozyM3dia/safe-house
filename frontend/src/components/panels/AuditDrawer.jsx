@@ -839,7 +839,7 @@ export function AuditDrawer() {
 
               {!isBattle && propertyA?.audit_status && propertyA.audit_status !== 'valid' && (
                 <div className="mb-6 rounded-lg border border-risk-moderate/25 bg-risk-moderate/5 px-3 py-2 text-[11px] text-risk-moderate relative z-10">
-                  Audit {propertyA.audit_status}. Confidence {propertyA.confidence ?? 0}%.
+                  Audit {propertyA.audit_status}.
                   {propertyA.data_quality?.optional_missing?.length > 0 && (
                     <> Layer belum tersedia: {propertyA.data_quality.optional_missing.join(', ')}.</>
                   )}
@@ -1103,7 +1103,7 @@ function DataCoverageSummary({ property }) {
           </p>
         </div>
         <span className="rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent">
-          {quality.mode === 'best_available' ? 'BEST AVAILABLE' : 'STRICT'} · {property.confidence ?? 0}%
+          {quality.mode === 'best_available' ? 'BEST AVAILABLE' : 'STRICT'}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
@@ -1116,9 +1116,12 @@ function DataCoverageSummary({ property }) {
           </div>
         ))}
       </div>
+      {/* Hanya daftar field proxy. Kalimat "bukan pengganti survei lapangan"
+          sudah ada di banner disclaimer paling atas drawer; mengulanginya di
+          sini membuat satu layar memuat peringatan yang sama dua kali. */}
       {quality.estimated_fields?.length > 0 && (
         <p className="mt-3 text-[9px] leading-relaxed text-amber-200/80">
-          MODEL/proxy: {quality.estimated_fields.map((name) => COVERAGE_LABELS[name] || name).join(', ')}. Ini untuk screening awal, bukan pengganti survei lapangan atau peta bahaya resmi.
+          MODEL/proxy: {quality.estimated_fields.map((name) => COVERAGE_LABELS[name] || name).join(', ')}.
         </p>
       )}
     </div>

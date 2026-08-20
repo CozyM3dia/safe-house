@@ -223,7 +223,10 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(["gemini-3.7-flash"], models_seen)
         self.assertEqual("Gemini (gemini-3.7-flash)", result.generated_by)
         self.assertIn("450", result.geo_stability_explanation)
-        self.assertTrue(result.detailed_report.startswith("## Ringkasan Data Terverifikasi"))
+        # Snapshot angka tidak lagi ditempel ke laporan: skor, Vs30, FS, dan PGA
+        # sudah tampil di kartu skor dan ringkasan deterministik, sehingga
+        # menempelkannya lagi mengulang angka yang sama tiga kali di satu layar.
+        self.assertNotIn("## Ringkasan Data Terverifikasi", result.detailed_report)
         self.assertNotIn("Sumber yang dibuat-buat", result.sources)  # T18
         self.assertIn("InaRISK BNPB", result.sources)
         self.assertTrue(any("desk study" in item for item in result.data_limitations))
