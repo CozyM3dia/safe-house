@@ -44,7 +44,7 @@ export function LanguageSelector() {
         onClick={() => setOpen((o) => !o)}
         whileHover="hover"
         whileTap={{ scale: 0.95 }}
-        aria-label="Select language"
+        aria-label="Pilih bahasa"
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
@@ -72,7 +72,7 @@ export function LanguageSelector() {
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             role="menu"
-            aria-label="Language options"
+            aria-label="Pilihan bahasa"
             className={cn(
               "absolute right-0 mt-2 z-50 w-48 overflow-hidden rounded-xl border border-white/10",
               "bg-bg-elevated/95 shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl"

@@ -11,7 +11,9 @@ const translations = {
   },
   'search.shortPlaceholder': { id: 'Cari', en: 'Search' },
   'mode.audit': { id: 'Audit', en: 'Audit' },
-  'mode.battle': { id: 'Battle', en: 'Battle' },
+  // Nama internal mode tetap 'battle' (kontrak store & API); hanya label yang
+  // dilihat pengguna yang memakai istilah "Bandingkan".
+  'mode.battle': { id: 'Bandingkan', en: 'Compare' },
   'status.ready': { id: 'Siap', en: 'Ready' },
   'status.active': { id: 'Aktif', en: 'Active' },
   'status.analyzing': { id: 'Menganalisis', en: 'Analyzing' },
@@ -62,7 +64,7 @@ const translations = {
   'panel.toggleLayer': { id: 'Aktifkan layer', en: 'Toggle layer' },
   'panel.faults': { id: 'Sesar aktif', en: 'Active faults' },
   'panel.faultsDescription': { id: 'Geometri resmi PuSGeN 2024', en: 'Official PuSGeN 2024 geometry' },
-  'panel.faultsFallbackDescription': { id: 'Koridor referensi lokal — sumber resmi tidak tersedia', en: 'Local reference corridors — official source unavailable' },
+  'panel.faultsFallbackDescription': { id: 'Koridor referensi lokal; sumber resmi tidak tersedia', en: 'Local reference corridors; official source unavailable' },
   'panel.faultsLoadingDescription': { id: 'Memuat geometri resmi PuSGeN 2024', en: 'Loading official PuSGeN 2024 geometry' },
   'panel.faultLegend': { id: 'Referensi sesar aktif', en: 'Active fault reference' },
   'panel.faultLegendDescription': { id: 'Garis solid menunjukkan geometri sesar resmi.', en: 'Solid lines show official fault geometry.' },
@@ -125,15 +127,23 @@ const translations = {
     id: 'Laporan AI Memuat…',
     en: 'AI Report Loading…',
   },
-  'panel.battleMode': { id: 'Mode Battle', en: 'Battle Mode' },
-  'panel.headToHead': { id: 'Head-to-Head', en: 'Head-to-Head' },
+  'panel.battleMode': { id: 'Mode Bandingkan', en: 'Compare Mode' },
+  'panel.headToHead': { id: 'Lokasi A vs Lokasi B', en: 'Site A vs Site B' },
+  'panel.riskProfile': {
+    id: 'Profil Risiko',
+    en: 'Risk Profile',
+  },
+  'panel.paramComparison': {
+    id: 'Perbandingan Parameter',
+    en: 'Parameter Comparison',
+  },
   'panel.generateBattleReport': {
-    id: 'Buat Laporan Perbandingan AI',
-    en: 'Generate AI Battle Report',
+    id: 'Buat Laporan Perbandingan',
+    en: 'Generate Comparison Report',
   },
   'panel.viewBattleReport': {
-    id: 'Lihat Laporan Battle',
-    en: 'View Battle Report',
+    id: 'Lihat Laporan Perbandingan',
+    en: 'View Comparison Report',
   },
   'panel.battleReportLoading': {
     id: 'Membuat laporan…',
@@ -154,21 +164,31 @@ const translations = {
   'card.peakAccel': { id: 'Akselerasi puncak', en: 'Peak acceleration' },
   'card.highRisk': { id: 'Risiko tinggi', en: 'High risk' },
   'card.stable': { id: 'Stabil', en: 'Stable' },
-  'card.lowFlood': { id: 'Rendah — rawan banjir', en: 'Low — flood prone' },
+  'card.lowFlood': { id: 'Rendah, rawan banjir', en: 'Low, flood prone' },
   'card.standard': { id: 'Standar', en: 'Standard' },
+  'card.highShaking': { id: 'Guncangan tinggi', en: 'High shaking' },
+  'card.elevation2': { id: 'Elevasi', en: 'Elevation' },
+  'card.liqFs': { id: 'FS Likuefaksi', en: 'Liq. FS' },
+  'panel.technicalMetrics': { id: 'Metrik Teknis', en: 'Technical Metrics' },
+  'panel.riskAnalysis': { id: 'Analisis Risiko', en: 'Risk Analysis' },
+  'axis.seismic': { id: 'Seismik', en: 'Seismic' },
+  'axis.flood': { id: 'Banjir', en: 'Flood' },
+  'axis.soil': { id: 'Tanah', en: 'Soil' },
+  'axis.landslide': { id: 'Longsor', en: 'Landslide' },
+  'axis.subsidence': { id: 'Penurunan', en: 'Subsidence' },
 
-  // ─── Battle Card ────────────────────────────────────────────────
-  'battle.setup': { id: 'Pengaturan Battle', en: 'Battle Setup' },
+  // ─── Kartu Bandingkan ───────────────────────────────────────────
+  'battle.setup': { id: 'Siapkan Perbandingan', en: 'Set Up Comparison' },
   'battle.selectB': {
     id: 'Pilih lokasi kedua di peta untuk membandingkan dengan',
     en: 'Select a second location on the map to compare against',
   },
   'battle.clickMap': {
-    id: 'Klik peta untuk Situs B…',
+    id: 'Klik peta untuk Lokasi B…',
     en: 'Click map for Site B…',
   },
-  'battle.selectTarget': { id: 'Pilih Target B', en: 'Select Target B' },
-  'battle.verdict': { id: 'Hasil', en: 'Verdict' },
+  'battle.selectTarget': { id: 'Pilih Lokasi B di peta', en: 'Select Site B on map' },
+  'battle.verdict': { id: 'Rekomendasi', en: 'Recommendation' },
 
   // ─── Chatbot ────────────────────────────────────────────────────
   'chat.placeholder': { id: 'Tanya S.A.F.E AI…', en: 'Ask S.A.F.E AI…' },
@@ -217,16 +237,16 @@ const translations = {
   'drawer.close': { id: 'Tutup laporan audit', en: 'Close audit report' },
   'drawer.copied': { id: 'Tersalin!', en: 'Copied!' },
   'drawer.battleTitle': {
-    id: 'Laporan Battle S.A.F.E',
-    en: 'S.A.F.E Battle Report',
+    id: 'Laporan Perbandingan S.A.F.E',
+    en: 'S.A.F.E Comparison Report',
   },
   'drawer.microAnalysis': {
     id: 'Analisis Mikro Lingkungan',
     en: 'Micro Environment Analysis',
   },
   'drawer.disclaimer': {
-    id: 'Analisis dihasilkan AI — konsultasikan dengan insinyur geoteknik berlisensi untuk penilaian akhir.',
-    en: 'AI-generated analysis — consult a licensed geotechnical engineer for final assessment.',
+    id: 'Analisis dihasilkan AI. Konsultasikan dengan insinyur geoteknik berlisensi untuk penilaian akhir.',
+    en: 'AI-generated analysis. Consult a licensed geotechnical engineer for final assessment.',
   },
   'drawer.geotechnical': { id: 'Geoteknik', en: 'Geotechnical' },
   'drawer.seismicLabel': { id: 'Seismik', en: 'Seismic' },

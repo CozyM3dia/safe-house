@@ -35,7 +35,7 @@ export const KEYBOARD_SHORTCUTS = [
   { keys: ['Esc'], action: 'Close drawer / panel' },
   { keys: ['C'], action: 'Focus chatbot' },
   { keys: ['L'], action: 'Toggle left panel' },
-  { keys: ['B'], action: 'Toggle battle mode' },
+  { keys: ['B'], action: 'Toggle mode bandingkan' },
 ];
 
 export const SUGGESTED_PROMPTS_ID = [

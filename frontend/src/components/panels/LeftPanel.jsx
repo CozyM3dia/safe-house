@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { MapPin, Sparkles, FileText, Loader2, Swords, ChevronRight, Zap, Share2, Download } from 'lucide-react';
+import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Share2, Download, Search, Mountain, Waves, Activity } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
 import { createShare } from '../../services/api';
@@ -16,7 +16,8 @@ import { RadarCard } from '../cards/RadarCard';
 import { SeismicWaveform } from '../cards/SeismicWaveform';
 import { GaussianCard } from '../cards/GaussianCard';
 import { AddressCard } from '../cards/AddressCard';
-import { BattleCard } from '../cards/BattleCard';
+import { VerdictCard } from '../cards/VerdictCard';
+import { CompareSetup } from '../cards/CompareSetup';
 
 const container = {
   hidden: { opacity: 0 },
@@ -58,12 +59,12 @@ export function LeftPanel() {
         >
           <div className="flex-1 overflow-y-auto scrollbar-none">
             <AnimatePresence mode="wait">
-              {!propertyA && !loading && (
+              {!propertyA && !loading && mode === 'audit' && (
                 <motion.div key="empty" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
                   <EmptyState />
                 </motion.div>
               )}
-              {loading && (
+              {loading && mode === 'audit' && (
                 <motion.div key="skeleton" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
                   <SkeletonState />
                 </motion.div>
@@ -76,11 +77,12 @@ export function LeftPanel() {
                   />
                 </motion.div>
               )}
-              {propertyA && !loading && mode === 'battle' && (
+              {mode === 'battle' && (
                 <motion.div key="battle" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
-                  <BattleState
+                  <CompareState
                     propertyA={propertyA}
                     propertyB={propertyB}
+                    loading={loading}
                     onOpenDrawer={() => setAuditDrawer(true)}
                     onGenerateReport={() => runBattleReportAction()}
                     battleReportContent={battleReportContent}
@@ -118,67 +120,103 @@ function Shimmer({ className }) {
 
 // ── States ──────────────────────────────────────────────────────
 
+// Lokasi contoh: satu klik langsung menghasilkan audit sungguhan. Layar
+// kosong sebelumnya hanya memberi instruksi lalu menunggu; pengguna baru
+// harus menebak titik mana di peta yang layak dicoba.
+const SAMPLE_SITES = [
+  { label: 'Bandar Lampung', sub: 'Pesisir, tanah lunak', lat: -5.4292, lon: 105.261 },
+  { label: 'Jakarta Pusat', sub: 'Cekungan aluvial', lat: -6.2088, lon: 106.8456 },
+  { label: 'Bandung', sub: 'Dekat Sesar Lembang', lat: -6.9175, lon: 107.6191 },
+];
+
+const CAPABILITIES = [
+  { icon: Mountain, label: 'Vs30 & kelas situs', desc: 'PGA desain SNI 1726:2019' },
+  { icon: Waves, label: 'Likuefaksi & banjir', desc: 'FS dan bahaya InaRISK BNPB' },
+  { icon: Activity, label: 'Sesar aktif terdekat', desc: 'Geometri PuSGeN 2024' },
+  { icon: Sparkles, label: 'Penjelasan AI', desc: 'Ditulis dari angka audit, bukan dikarang' },
+];
+
 function EmptyState() {
   const t = useT();
+  const setCmdPalette = useAppStore((s) => s.setCmdPalette);
+  const processLocation = useAppStore((s) => s.processLocation);
+
   return (
     <motion.div
       variants={container}
       initial="hidden"
       animate="show"
-      className="flex h-full flex-col items-center justify-center px-6 py-8 text-center"
+      className="flex flex-col px-5 py-7"
     >
-      <motion.div variants={item} className="relative mb-5">
-        <div className="absolute inset-0 rounded-full bg-accent/15 blur-2xl" />
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-accent/30 bg-accent/10">
-          <MapPin className="h-9 w-9 text-accent" strokeWidth={1.5} />
+      <motion.div variants={item}>
+        <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-accent">
+          {t('empty.badge')}
+        </span>
+        <h2 className="mt-2.5 font-display text-[22px] font-bold leading-tight text-text-primary">
+          {t('empty.title')}
+        </h2>
+        <p className="mt-2 max-w-[34ch] text-[12px] leading-relaxed text-text-secondary">
+          Klik titik mana pun di peta Indonesia untuk menjalankan audit geoteknik.
+        </p>
+      </motion.div>
+
+      {/* Aksi utama. Kartu lama punya efek hover tapi tidak bisa diklik sama
+          sekali, jadi satu-satunya jalan masuk justru tidak terlihat. */}
+      <motion.div variants={item} className="mt-5 flex items-center gap-2">
+        <Button size="sm" className="flex-1" onClick={() => setCmdPalette(true)}>
+          <Search className="h-3.5 w-3.5" />
+          Cari lokasi
+        </Button>
+        <kbd className="shrink-0 rounded border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-[10px] text-text-muted">
+          Ctrl K
+        </kbd>
+      </motion.div>
+
+      {/* Lokasi contoh */}
+      <motion.div variants={item} className="mt-7">
+        <h3 className="mb-2.5 text-[9px] font-bold uppercase tracking-[0.22em] text-text-muted/70">
+          Coba lokasi contoh
+        </h3>
+        <div className="flex flex-col">
+          {SAMPLE_SITES.map((site) => (
+            <button
+              key={site.label}
+              type="button"
+              onClick={() => processLocation(site.lat, site.lon)}
+              className="group flex items-center gap-3 border-b border-white/[0.06] py-2.5 text-left last:border-b-0"
+            >
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-text-muted transition-colors group-hover:text-accent" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-semibold text-text-primary">
+                  {site.label}
+                </span>
+                <span className="block text-[10px] text-text-muted">{site.sub}</span>
+              </span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-text-muted/50 transition-all group-hover:translate-x-0.5 group-hover:text-accent" />
+            </button>
+          ))}
         </div>
       </motion.div>
 
-      <motion.div variants={item}>
-        <Badge variant="accent" className="mb-3">
-          <Sparkles className="h-2.5 w-2.5" />
-          {t('empty.badge')}
-        </Badge>
-      </motion.div>
-
-      <motion.h2
-        variants={item}
-        className="mb-2 font-display text-lg font-semibold text-text-primary"
-      >
-        {t('empty.title')}
-      </motion.h2>
-      <motion.p
-        variants={item}
-        className="max-w-[260px] text-xs leading-relaxed text-text-muted mb-6"
-      >
-        {t('empty.description')}{' '}
-        <kbd className="rounded bg-white/8 px-1 py-0.5 font-mono text-[10px]">
-          Ctrl+K
-        </kbd>{' '}
-        {t('empty.descriptionEnd')}
-      </motion.p>
-
-      <motion.div variants={item} className="flex w-full flex-col gap-2">
-        <FeatureCard icon="📍" label={t('empty.vs30')} desc={t('empty.vs30desc')} />
-        <FeatureCard icon="🌊" label={t('empty.flood')} desc={t('empty.flooddesc')} />
-        <FeatureCard icon="🌋" label={t('empty.fault')} desc={t('empty.faultdesc')} />
-        <FeatureCard icon="🤖" label={t('empty.ai')} desc={t('empty.aidesc')} />
+      {/* Apa yang dihasilkan satu audit. Dulu empat kartu seragam berikon
+          emoji, padahal seluruh aplikasi memakai ikon lucide. */}
+      <motion.div variants={item} className="mt-7">
+        <h3 className="mb-3 text-[9px] font-bold uppercase tracking-[0.22em] text-text-muted/70">
+          Yang Anda dapat
+        </h3>
+        <ul className="flex flex-col gap-3">
+          {CAPABILITIES.map(({ icon: Icon, label, desc }) => (
+            <li key={label} className="flex gap-2.5">
+              <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent/70" />
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-text-primary">{label}</p>
+                <p className="mt-0.5 text-[10px] leading-snug text-text-muted">{desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
       </motion.div>
     </motion.div>
-  );
-}
-
-function FeatureCard({ icon, label, desc }) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2.5 text-left transition-colors hover:border-accent/25 hover:bg-white/[0.04]">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-white/[0.03] text-sm">
-        {icon}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-bold text-text-primary">{label}</p>
-        <p className="mt-0.5 text-[10px] leading-snug text-text-muted">{desc}</p>
-      </div>
-    </div>
   );
 }
 
@@ -351,13 +389,13 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
 
       {/* Metrics section */}
       <motion.div variants={item}>
-        <SectionLabel>Technical Metrics</SectionLabel>
+        <SectionLabel>{t('panel.technicalMetrics')}</SectionLabel>
         <MetricsGrid property={propertyA} />
       </motion.div>
 
       {/* Analysis section */}
       <motion.div variants={item}>
-        <SectionLabel>Risk Analysis</SectionLabel>
+        <SectionLabel>{t('panel.riskAnalysis')}</SectionLabel>
         <RadarCard propertyA={propertyA} />
       </motion.div>
 
@@ -452,9 +490,9 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
   );
 }
 
-function BattleState({ propertyA, propertyB, onOpenDrawer, onGenerateReport, battleReportContent, battleReportLoading }) {
+function CompareState({ propertyA, propertyB, loading, onOpenDrawer, onGenerateReport, battleReportContent, battleReportLoading }) {
   const t = useT();
-  const hasBothSites = propertyA && propertyB;
+  const hasBothSites = Boolean(propertyA && propertyB);
 
   return (
     <motion.div
@@ -463,60 +501,41 @@ function BattleState({ propertyA, propertyB, onOpenDrawer, onGenerateReport, bat
       animate="show"
       className="flex flex-col gap-3 p-4 pb-6"
     >
-      <motion.div variants={item} className="flex items-center justify-between">
-        <Badge variant="danger" className="mb-1">
-          <Swords className="h-2.5 w-2.5" />
+      {/* Di bawah `sm` panel selebar layar, sehingga judul kanan bertabrakan
+          dengan tombol layer peta yang melayang di pojok kanan atas. */}
+      <motion.div variants={item} className="flex items-center justify-between gap-2 pr-11 sm:pr-0">
+        <Badge variant="accent" className="mb-1">
+          <GitCompareArrows className="h-2.5 w-2.5" />
           {t('panel.battleMode')}
         </Badge>
-        <h2 className="font-display text-sm font-semibold text-text-primary">
+        <h2 className="truncate font-display text-sm font-semibold text-text-primary">
           {t('panel.headToHead')}
         </h2>
       </motion.div>
 
+      {/* Penyiapan tiga langkah — juga menampung tombol laporan di langkah 3. */}
       <motion.div variants={item}>
-        <BattleCard propertyA={propertyA} propertyB={propertyB} />
-      </motion.div>
-
-      <motion.div variants={item}>
-        <SectionLabel>Comparison</SectionLabel>
-        <RadarCard propertyA={propertyA} propertyB={propertyB} />
+        <CompareSetup
+          propertyA={propertyA}
+          propertyB={propertyB}
+          loading={loading}
+          onGenerateReport={onGenerateReport}
+          onOpenReport={onOpenDrawer}
+          reportContent={battleReportContent}
+          reportLoading={battleReportLoading}
+        />
       </motion.div>
 
       {hasBothSites && (
-        <motion.div variants={item} className="flex flex-col gap-2">
-          {!battleReportContent && (
-            <Button
-              onClick={onGenerateReport}
-              variant="default"
-              size="lg"
-              className="w-full"
-              disabled={battleReportLoading}
-            >
-              {battleReportLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('panel.battleReportLoading')}
-                </>
-              ) : (
-                <>
-                  <Swords className="h-4 w-4" />
-                  {t('panel.generateBattleReport')}
-                </>
-              )}
-            </Button>
-          )}
-          {battleReportContent && (
-            <Button
-              onClick={onOpenDrawer}
-              variant="default"
-              size="lg"
-              className="w-full group"
-            >
-              <FileText className="h-4 w-4" />
-              {t('panel.viewBattleReport')}
-              <ChevronRight className="h-3.5 w-3.5 ml-auto opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-            </Button>
-          )}
+        <motion.div variants={item}>
+          <VerdictCard propertyA={propertyA} propertyB={propertyB} />
+        </motion.div>
+      )}
+
+      {propertyA && (
+        <motion.div variants={item}>
+          <SectionLabel>{t('panel.riskProfile')}</SectionLabel>
+          <RadarCard propertyA={propertyA} propertyB={propertyB} />
         </motion.div>
       )}
     </motion.div>

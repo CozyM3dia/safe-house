@@ -1,8 +1,10 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { riskHex, riskLabel } from '../../lib/utils';
+import { useT } from '../../hooks/useTranslation';
+import { useCountUp } from '../../hooks/useCountUp';
 
 function computeScore(p) {
   // Backend adalah sumber kebenaran. Skor sudah dihitung deterministik di
@@ -10,24 +12,6 @@ function computeScore(p) {
   // ulang, supaya angka di gauge sama dengan laporan.
   if (typeof p?.safe_score === 'number') return p.safe_score;
   return null;
-}
-
-function useCountUp(end, duration = 1500) {
-  const [current, setCurrent] = useState(0);
-  const rafRef = useRef();
-  useEffect(() => {
-    let startTime = null;
-    const animate = (ts) => {
-      if (!startTime) startTime = ts;
-      const progress = Math.min((ts - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCurrent(Math.round(eased * end));
-      if (progress < 1) rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [end, duration]);
-  return current;
 }
 
 // SVG arc gauge
@@ -122,6 +106,7 @@ function ArcGauge({ score, hex, size = 140 }) {
 }
 
 export function SafeScoreCard({ property }) {
+  const t = useT();
   const rawScore = useMemo(() => computeScore(property), [property]);
   const hasScore = Number.isFinite(rawScore);
   const score = hasScore ? rawScore : 0;
@@ -204,11 +189,11 @@ export function SafeScoreCard({ property }) {
 
           {/* Mini risk breakdown */}
           <div className="space-y-1.5">
-            <MiniBar label="Seismic" value={property?.hazard?.radar?.seismic ?? 0} />
-            <MiniBar label="Flood" value={property?.hazard?.radar?.flood ?? 0} />
-            <MiniBar label="Soil" value={property?.hazard?.radar?.soil ?? 0} />
-            <MiniBar label="Landslide" value={property?.hazard?.radar?.landslide ?? 0} />
-            <MiniBar label="Subsidence" value={property?.hazard?.radar?.subsidence ?? 50} />
+            <MiniBar label={t('axis.seismic')} value={property?.hazard?.radar?.seismic ?? 0} />
+            <MiniBar label={t('axis.flood')} value={property?.hazard?.radar?.flood ?? 0} />
+            <MiniBar label={t('axis.soil')} value={property?.hazard?.radar?.soil ?? 0} />
+            <MiniBar label={t('axis.landslide')} value={property?.hazard?.radar?.landslide ?? 0} />
+            <MiniBar label={t('axis.subsidence')} value={property?.hazard?.radar?.subsidence ?? 50} />
           </div>
         </div>
       </div>

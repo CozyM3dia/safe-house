@@ -15,8 +15,12 @@ async function geocode(q) {
   
   // 1. Try Photon (extremely fast, doesn't block cloud or client IPs)
   try {
+    // Photon hanya menerima lang de/en/fr/it. Mengirim lang=id membuat setiap
+    // pencarian dibalas 400 lalu diam-diam jatuh ke Nominatim, jadi geocoder
+    // cepat ini praktis tidak pernah terpakai. Parameternya dihapus: nama
+    // tempat Indonesia memang dikembalikan apa adanya.
     const res = await axios.get(PHOTON, {
-      params: { q: q.trim(), limit: 12, lang: 'id' },
+      params: { q: q.trim(), limit: 12 },
       timeout: 4000,
     });
     const features = res.data?.features || [];
@@ -53,14 +57,16 @@ async function geocode(q) {
     console.warn("Photon geocoding failed, trying Nominatim...", err.message || err);
   }
 
-  // 2. Fallback to Nominatim with standard User-Agent header (OSM compliance)
+  // 2. Fallback ke Nominatim.
+  // User-Agent TIDAK diset di sini: itu forbidden header name di browser,
+  // jadi permintaannya ditolak dan setiap pencarian meninggalkan error
+  // "Refused to set unsafe header" di konsol. Browser sudah mengirim
+  // User-Agent-nya sendiri; kewajiban UA pada kebijakan OSM berlaku untuk
+  // klien sisi server.
   try {
     const res = await axios.get(NOMINATIM, {
       params: { q: q.trim(), format: 'json', limit: 7, addressdetails: 1, countrycodes: 'id' },
-      headers: { 
-        'Accept-Language': 'id',
-        'User-Agent': 'SAFE-House-Geophysics-App/1.0 (contact@example.com)'
-      },
+      headers: { 'Accept-Language': 'id' },
       timeout: 4000,
     });
     return res.data.map((r) => ({

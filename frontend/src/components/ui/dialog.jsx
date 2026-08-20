@@ -45,7 +45,7 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
           strokeWidth={2}
           className="opacity-60 transition-opacity group-hover:opacity-100 text-text-secondary"
         />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">Tutup</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
