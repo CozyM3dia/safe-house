@@ -29,11 +29,11 @@ export function RadarCard({ propertyA, propertyB }) {
   const b = propertyB ? buildData(propertyB) : null;
 
   const data = [
-    { axis: 'Flood', A: a.flood, B: b?.flood ?? 0 },
-    { axis: 'Soil', A: a.soil, B: b?.soil ?? 0 },
-    { axis: 'Seismic', A: a.seismic, B: b?.seismic ?? 0 },
-    { axis: 'Landslide', A: a.landslide, B: b?.landslide ?? 0 },
-    { axis: 'Subsidence', A: a.subsidence, B: b?.subsidence ?? 50 },
+    { axis: 'Banjir', A: a.flood, B: b?.flood ?? 0 },
+    { axis: 'Tanah', A: a.soil, B: b?.soil ?? 0 },
+    { axis: 'Seismik', A: a.seismic, B: b?.seismic ?? 0 },
+    { axis: 'Longsor', A: a.landslide, B: b?.landslide ?? 0 },
+    { axis: 'Penurunan', A: a.subsidence, B: b?.subsidence ?? 50 },
   ];
 
   return (

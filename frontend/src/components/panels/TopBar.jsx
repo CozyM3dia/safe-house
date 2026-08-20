@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Search, Activity, Swords, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Search, Activity, GitCompareArrows, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Badge } from '../ui/badge';
@@ -114,7 +114,7 @@ export function TopBar() {
                 : 'text-text-muted hover:text-text-secondary'
             )}
           >
-            <Swords className="h-3 w-3" />
+            <GitCompareArrows className="h-3 w-3" />
             <span className="hidden sm:inline">{t('mode.battle')}</span>
           </button>
         </div>

@@ -3,7 +3,7 @@ import { Drawer } from 'vaul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, FileText, AlertTriangle, MapPin, Swords, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award } from 'lucide-react';
+import { Copy, Check, X, FileText, AlertTriangle, MapPin, GitCompareArrows, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -783,7 +783,7 @@ export function AuditDrawer() {
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 border border-accent/30">
                 {isBattle
-                  ? <Swords className="h-4 w-4 text-risk-danger" />
+                  ? <GitCompareArrows className="h-4 w-4 text-accent" />
                   : <FileText className="h-4 w-4 text-accent" />
                 }
               </div>

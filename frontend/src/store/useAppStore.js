@@ -34,6 +34,11 @@ export const useAppStore = create(
       aiLoading: false,
       currentAiAbortController: null,
       mode: 'audit', // 'audit' | 'battle'
+      // Slot yang sedang menunggu klik peta: 'A' | 'B' | null. Boolean lama
+      // tidak bisa mengungkapkan "sedang mengganti Lokasi A", jadi slot inilah
+      // sumber kebenarannya. `selectingBattlePin` dipertahankan sebagai cermin
+      // (armedSlot === 'B') supaya MapArea & AuditConfirmDialog tak berubah.
+      armedSlot: null,
       selectingBattlePin: false,
       pendingAudit: null, // { lat: number, lng: number, isBattlePin?: boolean }
       auditDrawerOpen: false,
@@ -68,8 +73,50 @@ export const useAppStore = create(
         set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
       setAuditDrawer: (open) => set({ auditDrawerOpen: open }),
       setCmdPalette: (open) => set({ cmdPaletteOpen: open }),
-      setMode: (mode) => set({ mode, selectingBattlePin: false, battleReportContent: null, battleReportMeta: null, battleReportLoading: false, pendingAudit: null }),
-      setSelectingBattlePin: (v) => set({ selectingBattlePin: v }),
+      // Pindah mode hanya mereset kontrol transien. Lokasi B dan laporan yang
+      // sudah jadi TIDAK dihapus — mampir ke mode audit untuk melihat Lokasi A
+      // sendirian tidak boleh membuang pekerjaan pengguna.
+      setMode: (mode) => set({ mode, armedSlot: null, selectingBattlePin: false, pendingAudit: null }),
+
+      armSlot: (slot) =>
+        set({ armedSlot: slot, selectingBattlePin: slot === 'B' }),
+
+      setSelectingBattlePin: (v) =>
+        set({ armedSlot: v ? 'B' : null, selectingBattlePin: Boolean(v) }),
+
+      clearPropertyB: () =>
+        set({
+          propertyB: null,
+          armedSlot: null,
+          selectingBattlePin: false,
+          battleReportContent: null,
+          battleReportMeta: null,
+        }),
+
+      swapSites: () => {
+        const { propertyA, propertyB } = get();
+        if (!propertyA || !propertyB) return;
+        set({
+          propertyA: propertyB,
+          propertyB: propertyA,
+          armedSlot: null,
+          selectingBattlePin: false,
+          battleReportContent: null,
+          battleReportMeta: null,
+        });
+      },
+
+      // Satu-satunya tempat yang memutuskan hasil audit masuk slot mana.
+      // Dulu logikanya `isBattle || mode === 'battle'`, yang membuat klik
+      // pertama di mode bandingkan jatuh ke propertyB sementara propertyA tetap
+      // null — panel kiri lalu terkunci di EmptyState selamanya.
+      resolveSlot: (explicitBattlePin = false) => {
+        const { mode, propertyA, armedSlot } = get();
+        if (mode !== 'battle') return 'A';
+        if (!propertyA) return 'A';
+        if (explicitBattlePin || armedSlot === 'B') return 'B';
+        return 'A';
+      },
       setPendingAudit: (pendingAudit) => set({ pendingAudit }),
       confirmPendingAudit: () => {
         const { pendingAudit, processLocation } = get();
@@ -175,8 +222,9 @@ export const useAppStore = create(
           return;
         }
 
-        const { mode, currentAiAbortController, lang } = get();
-        const battleTarget = isBattle || mode === 'battle';
+        const { currentAiAbortController, lang } = get();
+        const slot = get().resolveSlot(isBattle);
+        const battleTarget = slot === 'B';
 
         // Token pembatal sederhana: klik baru membatalkan hasil klik lama.
         // Backend tidak dibatalkan, tapi hasil basi diabaikan saat tiba.
@@ -198,19 +246,38 @@ export const useAppStore = create(
             return;
           }
 
+          // Menulis slot mana pun membuat laporan perbandingan lama basi:
+          // laporan itu dibuat untuk pasangan lokasi yang sudah tidak berlaku.
+          const staleReport = {
+            battleReportContent: null,
+            battleReportMeta: null,
+          };
+
           if (battleTarget) {
-            set({ propertyB: data, loading: false, selectingBattlePin: false });
-          } else {
             set({
+              propertyB: data,
+              loading: false,
+              armedSlot: null,
+              selectingBattlePin: false,
+              leftPanelOpen: true,
+              ...staleReport,
+            });
+          } else {
+            set((state) => ({
               propertyA: {
                 ...data,
                 aiReport: { reportLoading: true },
               },
-              propertyB: null,
+              // Di mode bandingkan, mengganti Lokasi A mempertahankan Lokasi B.
+              // Di mode audit, audit baru memulai dari bersih.
+              propertyB: state.mode === 'battle' ? state.propertyB : null,
               loading: false,
               aiLoading: true,
+              armedSlot: null,
+              selectingBattlePin: false,
               leftPanelOpen: true,
-            });
+              ...staleReport,
+            }));
           }
 
           get().addRecentSearch({ label: data.address, lat, lng, timestamp: Date.now() });
@@ -340,6 +407,8 @@ export const useAppStore = create(
           battleReportContent: null,
           battleReportMeta: null,
           battleReportLoading: false,
+          armedSlot: null,
+          selectingBattlePin: false,
           mode: 'audit',
         }),
     }),
