@@ -41,7 +41,7 @@ export function AddressCard({ property }) {
           onClick={handleCopy}
           aria-label={copied ? 'Coordinates copied' : 'Copy coordinates'}
           className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-mono text-text-muted transition-colors hover:bg-white/8 hover:text-accent btn-press"
-          title="Copy coordinates"
+          title="Salin koordinat"
         >
           {copied ? <Check className="h-2.5 w-2.5 text-risk-safe" /> : <Copy className="h-2.5 w-2.5" />}
           {copied ? 'Copied' : 'Copy'}
