@@ -73,10 +73,19 @@ export const useAppStore = create(
         set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
       setAuditDrawer: (open) => set({ auditDrawerOpen: open }),
       setCmdPalette: (open) => set({ cmdPaletteOpen: open }),
-      // Pindah mode hanya mereset kontrol transien. Lokasi B dan laporan yang
-      // sudah jadi TIDAK dihapus — mampir ke mode audit untuk melihat Lokasi A
-      // sendirian tidak boleh membuang pekerjaan pengguna.
-      setMode: (mode) => set({ mode, armedSlot: null, selectingBattlePin: false, pendingAudit: null }),
+      // Pindah mode ke audit mereset state lokasi A & B kembali ke awal
+      setMode: (mode) => {
+        if (mode === 'audit') {
+          get().reset();
+        } else {
+          set({
+            mode: 'battle',
+            armedSlot: null,
+            selectingBattlePin: false,
+            pendingAudit: null,
+          });
+        }
+      },
 
       armSlot: (slot) =>
         set({ armedSlot: slot, selectingBattlePin: slot === 'B' }),
@@ -395,12 +404,15 @@ export const useAppStore = create(
       runBattleReportAction: () => get().runBattleReport(),
 
       // ─── Reset ─────────────────────────────────────────────────
-      reset: () =>
+      reset: () => {
+        const { currentAiAbortController } = get();
+        if (currentAiAbortController) currentAiAbortController.abort();
         set({
           propertyA: null,
           propertyB: null,
           loading: false,
           aiLoading: false,
+          currentAiAbortController: null,
           simulatedPga: null,
           pendingAudit: null,
           auditDrawerOpen: false,
@@ -410,7 +422,8 @@ export const useAppStore = create(
           armedSlot: null,
           selectingBattlePin: false,
           mode: 'audit',
-        }),
+        });
+      },
     }),
     {
       name: 'safe-house-store',
