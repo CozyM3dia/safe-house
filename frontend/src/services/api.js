@@ -24,16 +24,19 @@ const client = axios.create({
  * Backend sudah mengirim `detail` berbahasa Indonesia untuk galat yang
  * diketahui; sisanya diberi pesan cadangan.
  */
-function toReadableError(err) {
+function toReadableError(err, lang = 'id') {
+  const english = lang === 'en';
   if (err.code === 'ECONNABORTED') {
-    return 'Permintaan terlalu lama. Coba lagi beberapa saat lagi.';
+    return english ? 'The request took too long. Please try again shortly.' : 'Permintaan terlalu lama. Coba lagi beberapa saat lagi.';
   }
   const detail = err.response?.data?.detail;
-  if (typeof detail === 'string') return detail;
-  if (!err.response) {
-    return 'Tidak dapat menghubungi server. Periksa koneksi Anda.';
+  if (typeof detail === 'string') {
+    return english ? 'The server could not complete this request. Please try again.' : detail;
   }
-  return 'Terjadi kesalahan pada server. Coba lagi.';
+  if (!err.response) {
+    return english ? 'The server could not be reached. Check your connection.' : 'Tidak dapat menghubungi server. Periksa koneksi Anda.';
+  }
+  return english ? 'The server returned an error. Please try again.' : 'Terjadi kesalahan pada server. Coba lagi.';
 }
 
 export async function checkHealth() {
@@ -50,7 +53,7 @@ export async function runAudit(lat, lon, lang = 'id', signal = undefined) {
     const { data } = await client.post('/api/audit', { lat, lon, lang }, { signal });
     return data;
   } catch (err) {
-    throw new Error(toReadableError(err), { cause: err });
+    throw new Error(toReadableError(err, lang), { cause: err });
   }
 }
 
@@ -93,7 +96,7 @@ export async function generateNarrative(audit, lang = 'id', signal = undefined) 
       : await client.post('/api/narrative', { audit, lang }, { signal });
     return adaptNarrative(response.data);
   } catch (err) {
-    throw new Error(toReadableError(err), { cause: err });
+    throw new Error(toReadableError(err, lang), { cause: err });
   }
 }
 
@@ -111,7 +114,7 @@ export async function generateBattleReport(auditA, auditB, lang = 'id', signal =
       metadata: data.metadata || null,
     };
   } catch (err) {
-    throw new Error(toReadableError(err), { cause: err });
+    throw new Error(toReadableError(err, lang), { cause: err });
   }
 }
 
@@ -144,7 +147,7 @@ export async function chatWithAudit({
       followUps: data.follow_ups || [],
     };
   } catch (err) {
-    throw new Error(toReadableError(err), { cause: err });
+    throw new Error(toReadableError(err, lang), { cause: err });
   }
 }
 

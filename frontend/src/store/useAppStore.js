@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { generateBattleReport, generateNarrative, runAudit } from '../services/api';
+import { STADIA_MAPS_ENABLED } from '../lib/constants';
 import { MAP_OVERLAY_KEYS } from '../lib/hazardOverlay';
 
 const INITIAL_OVERLAYS = Object.fromEntries(
@@ -20,12 +21,29 @@ const INITIAL_OVERLAY_SOURCES = Object.fromEntries(
   MAP_OVERLAY_KEYS.map((key) => [key, 'official'])
 );
 
+const baseMapStyleForTheme = (theme) => {
+  if (!STADIA_MAPS_ENABLED) return 'street';
+  return theme === 'light' ? 'alidade' : 'alidade-dark';
+};
+
 export const useAppStore = create(
   persist(
     (set, get) => ({
       // ─── Language ────────────────────────────────────────────────
       lang: 'id',
       setLang: (lang) => set({ lang }),
+
+      // ─── Appearance ──────────────────────────────────────────────
+      // Dark remains the product default, but the selected theme is shared
+      // by every surface so the toggle never creates a local-only island.
+      theme: 'dark',
+      setTheme: (theme) => {
+        const nextTheme = theme === 'light' ? 'light' : 'dark';
+        set({
+          theme: nextTheme,
+          baseMapStyle: baseMapStyleForTheme(nextTheme),
+        });
+      },
 
       // ─── Current state ─────────────────────────────────────────
       propertyA: null,
@@ -51,7 +69,7 @@ export const useAppStore = create(
       battleReportLoading: false,
 
       // ─── Map Overlays & RAG Documents ──────────────────────────
-      baseMapStyle: 'street', // 'terrain' | 'street' | 'satellite'
+      baseMapStyle: baseMapStyleForTheme('dark'), // 'alidade' | 'alidade-dark' | 'terrain' | 'street' | 'satellite'
       overlays: INITIAL_OVERLAYS,
       overlayOpacities: INITIAL_OVERLAY_OPACITIES,
       overlayStatuses: INITIAL_OVERLAY_STATUSES,
@@ -431,8 +449,21 @@ export const useAppStore = create(
         recentSearches: state.recentSearches,
         favorites: state.favorites,
         lang: state.lang,
+        theme: state.theme,
         hasSeenOnboarding: state.hasSeenOnboarding,
       }),
+      merge: (persistedState, currentState) => {
+        const savedState = persistedState && typeof persistedState === 'object'
+          ? persistedState
+          : {};
+        const theme = savedState.theme === 'light' ? 'light' : 'dark';
+        return {
+          ...currentState,
+          ...savedState,
+          theme,
+          baseMapStyle: baseMapStyleForTheme(theme),
+        };
+      },
     }
   )
 );

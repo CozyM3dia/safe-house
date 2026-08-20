@@ -100,12 +100,12 @@ Layout: peta full-canvas + panel + kontrol mengapung.
 
 ### 4.1 Peta (inti)
 - **MapArea** — kanvas Leaflet full-screen. Basemap:
-  - Analysis: Stadia Alidade Smooth (rencana, muted) — DEFAULT tetap CARTO
-    sampai terverifikasi
-  - Street: CARTO Positron
+  - Alidade: Stadia Alidade Smooth (optional, muted, marker-friendly)
+  - Alidade Dark: Stadia Alidade Smooth Dark (optional, native SAFE House dark mode)
+  - Street: Esri World Street Map fallback
   - Satellite: Esri World Imagery
-- **MapControls** — selektor basemap segmented (Analysis/Street/Satellite),
-  ikon + label, badge basemap aktif
+- **MapControls** — selector basemap Street/Topography/Satellite plus optional
+  Stadia Alidade light/dark themes, ikon + label, badge basemap aktif
 - **MapMarker** — pin properti + scan ring (animasi pulse saat audit)
 - **MapLegend** — legend klasifikasi bahaya (istilah selaras BNPB/ESDM)
 - **NationwideOverlays / RiskZoneOverlay** — overlay hazard nasional

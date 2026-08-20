@@ -118,20 +118,21 @@ function SectionLabel({ children, icon: Icon }) {
 // kosong sebelumnya hanya memberi instruksi lalu menunggu; pengguna baru
 // harus menebak titik mana di peta yang layak dicoba.
 const SAMPLE_SITES = [
-  { label: 'Bandar Lampung', sub: 'Pesisir, tanah lunak', lat: -5.4292, lon: 105.261 },
-  { label: 'Jakarta Pusat', sub: 'Cekungan aluvial', lat: -6.2088, lon: 106.8456 },
-  { label: 'Bandung', sub: 'Dekat Sesar Lembang', lat: -6.9175, lon: 107.6191 },
+  { label: 'Bandar Lampung', subId: 'Pesisir, tanah lunak', subEn: 'Coastal, soft soil', lat: -5.4292, lon: 105.261 },
+  { label: 'Jakarta Pusat', subId: 'Cekungan aluvial', subEn: 'Alluvial basin', lat: -6.2088, lon: 106.8456 },
+  { label: 'Bandung', subId: 'Dekat Sesar Lembang', subEn: 'Near Lembang Fault', lat: -6.9175, lon: 107.6191 },
 ];
 
 const CAPABILITIES = [
-  { icon: Mountain, label: 'Vs30 & kelas situs', desc: 'PGA desain SNI 1726:2019' },
-  { icon: Waves, label: 'Likuefaksi & banjir', desc: 'FS dan bahaya InaRISK BNPB' },
-  { icon: Activity, label: 'Sesar aktif terdekat', desc: 'Geometri PuSGeN 2024' },
-  { icon: Sparkles, label: 'Penjelasan AI', desc: 'Ditulis dari angka audit, bukan dikarang' },
+  { icon: Mountain, labelKey: 'empty.capabilityVs30', descKey: 'empty.capabilityVs30Desc' },
+  { icon: Waves, labelKey: 'empty.capabilityLiquefaction', descKey: 'empty.capabilityLiquefactionDesc' },
+  { icon: Activity, labelKey: 'empty.capabilityFault', descKey: 'empty.capabilityFaultDesc' },
+  { icon: Sparkles, labelKey: 'empty.capabilityAi', descKey: 'empty.capabilityAiDesc' },
 ];
 
 function EmptyState() {
   const t = useT();
+  const lang = useAppStore((s) => s.lang);
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
   const processLocation = useAppStore((s) => s.processLocation);
 
@@ -157,7 +158,7 @@ function EmptyState() {
               {t('empty.title')}
             </h2>
             <p className="mt-3 max-w-[32ch] text-[13px] leading-6 text-text-secondary">
-              Satu titik di peta menjadi briefing risiko yang bisa Anda pahami dalam hitungan menit.
+              {t('empty.briefing')}
             </p>
           </div>
           <div className="hidden shrink-0 pt-1 sm:block" aria-hidden="true">
@@ -182,7 +183,7 @@ function EmptyState() {
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 transition-transform group-hover:scale-105">
               <Crosshair className="h-4 w-4" />
             </span>
-            Pilih titik di peta
+            {t('empty.selectOnMap')}
           </span>
           <ArrowUpRight className="h-4 w-4 text-accent/80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </Button>
@@ -190,9 +191,9 @@ function EmptyState() {
 
       <motion.div variants={item} className="mt-5 grid grid-cols-3 gap-2 border-y border-white/[0.08] py-3">
         {[
-          ['01', 'Pilih', 'lokasi'],
-          ['02', 'Baca', 'evidence'],
-          ['03', 'Ambil', 'keputusan'],
+          ['01', t('empty.stepSelect'), lang === 'en' ? 'location' : 'lokasi'],
+          ['02', t('empty.stepRead'), t('empty.evidence')],
+          ['03', t('empty.stepDecide'), t('empty.decision')],
         ].map(([number, label, detail]) => (
           <div key={number} className="min-w-0 border-l border-accent/25 pl-2.5 first:border-l-0 first:pl-0">
             <span className="font-mono text-[9px] text-accent/80">{number}</span>
@@ -206,7 +207,7 @@ function EmptyState() {
       <motion.div variants={item} className="mt-6">
         <h3 className="mb-2.5 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-accent/70" />
-          Coba lokasi contoh
+          {t('empty.sampleLocations')}
         </h3>
         <div className="flex flex-col border-t border-white/[0.08]">
           {SAMPLE_SITES.map((site) => (
@@ -223,7 +224,7 @@ function EmptyState() {
                 <span className="block text-[12px] font-semibold text-text-primary transition-colors group-hover:text-accent">
                   {site.label}
                 </span>
-                <span className="mt-0.5 block text-[10px] text-text-secondary">{site.sub}</span>
+                <span className="mt-0.5 block text-[10px] text-text-secondary">{lang === 'en' ? site.subEn : site.subId}</span>
               </span>
               <ArrowUpRight className="h-4 w-4 shrink-0 text-text-muted transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
             </button>
@@ -236,17 +237,17 @@ function EmptyState() {
       <motion.div variants={item} className="mt-6">
         <h3 className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-risk-safe/80" />
-          Yang Anda dapat
+          {t('empty.whatYouGet')}
         </h3>
         <ul className="flex flex-col gap-2.5">
-          {CAPABILITIES.map(({ icon: Icon, label, desc }) => (
-            <li key={label} className="flex gap-3">
+          {CAPABILITIES.map(({ icon: Icon, labelKey, descKey }) => (
+            <li key={labelKey} className="flex gap-3">
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03]">
                 <Icon className="h-3.5 w-3.5 text-accent/75" />
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-text-primary">{label}</p>
-                <p className="mt-0.5 text-[10px] leading-snug text-text-secondary">{desc}</p>
+                <p className="text-[11px] font-semibold text-text-primary">{t(labelKey)}</p>
+                <p className="mt-0.5 text-[10px] leading-snug text-text-secondary">{t(descKey)}</p>
               </div>
             </li>
           ))}
@@ -254,7 +255,7 @@ function EmptyState() {
       </motion.div>
 
       <motion.p variants={item} className="mt-6 border-t border-white/[0.08] pt-4 text-[10px] leading-relaxed text-text-muted">
-        Screening awal berbasis data, bukan pengganti penyelidikan geoteknik profesional.
+        {t('empty.disclaimer')}
       </motion.p>
     </motion.div>
   );

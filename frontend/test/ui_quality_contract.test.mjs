@@ -115,3 +115,11 @@ test('dashboard cards do not leak hardcoded English labels in Indonesian mode', 
   assert.doesNotMatch(metrics, /High shaking|Peak accel\.|High risk|Flood prone|Standard/);
   assert.doesNotMatch(score, />\s*Provisional\s*<|>\s*Seismic\s*<|>\s*Flood\s*<|>\s*Landslide\s*<|>\s*Subsidence\s*</);
 });
+
+test('light and dark themes select their matching Alidade basemaps', async () => {
+  const store = await source('store/useAppStore.js');
+
+  assert.match(store, /theme === 'light' \? 'alidade' : 'alidade-dark'/);
+  assert.match(store, /baseMapStyle: baseMapStyleForTheme\(nextTheme\)/);
+  assert.match(store, /baseMapStyle: baseMapStyleForTheme\(theme\)/);
+});

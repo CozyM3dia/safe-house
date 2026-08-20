@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -65,6 +66,8 @@
     "prettier-plugin-tailwindcss": "^0.8.0",
     "puppeteer": "^25.0.4",
     "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^8.0.12"
   }
 }

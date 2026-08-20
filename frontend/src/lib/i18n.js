@@ -23,12 +23,23 @@ const translations = {
   'accessibility.togglePanel': { id: 'Buka atau tutup panel audit', en: 'Toggle audit panel' },
   'accessibility.search': { id: 'Cari lokasi atau jalankan perintah', en: 'Search location or run a command' },
   'accessibility.close': { id: 'Tutup', en: 'Close' },
+  'accessibility.language': { id: 'Pilih bahasa', en: 'Choose language' },
+  'accessibility.languageOptions': { id: 'Pilihan bahasa', en: 'Language options' },
+  'theme.switchToLight': { id: 'Gunakan mode terang', en: 'Switch to light mode' },
+  'theme.switchToDark': { id: 'Gunakan mode gelap', en: 'Switch to dark mode' },
   'panel.mapView': { id: 'Tampilan Peta', en: 'Map View' },
   'panel.mapLayerControls': { id: 'Kontrol layer referensi', en: 'Reference layer controls' },
   'panel.closeMapPanel': { id: 'Tutup panel peta', en: 'Close map panel' },
   'panel.topography': { id: 'Topografi', en: 'Topography' },
   'panel.street': { id: 'Biasa', en: 'Street' },
   'panel.satellite': { id: 'Satelit', en: 'Satellite' },
+  'panel.stadiaThemes': { id: 'Tema Stadia', en: 'Stadia themes' },
+  'panel.alidadeSmooth': { id: 'Alidade', en: 'Alidade' },
+  'panel.alidadeSmoothDark': { id: 'Alidade Dark', en: 'Alidade Dark' },
+  'panel.stadiaKeyRequired': {
+    id: 'Tambahkan VITE_STADIA_MAPS_API_KEY untuk mengaktifkan tema ini.',
+    en: 'Add VITE_STADIA_MAPS_API_KEY to enable these themes.',
+  },
   'panel.useBasemap': { id: 'Gunakan peta dasar', en: 'Use basemap' },
   'panel.hazardLayers': { id: 'Layer bahaya', en: 'Hazard layers' },
   'panel.referenceLayers': { id: 'Layer referensi', en: 'Reference layers' },
@@ -116,6 +127,30 @@ const translations = {
     id: 'Ringkasan risiko & rekomendasi berbasis AI',
     en: 'AI-grounded risk summary & recommendations',
   },
+  'empty.briefing': {
+    id: 'Satu titik di peta menjadi briefing risiko yang bisa Anda pahami dalam hitungan menit.',
+    en: 'One point on the map becomes a risk briefing you can understand in minutes.',
+  },
+  'empty.selectOnMap': { id: 'Pilih titik di peta', en: 'Select a point on the map' },
+  'empty.stepSelect': { id: 'Pilih', en: 'Select' },
+  'empty.stepRead': { id: 'Baca', en: 'Read' },
+  'empty.stepDecide': { id: 'Ambil', en: 'Decide' },
+  'empty.evidence': { id: 'evidence', en: 'evidence' },
+  'empty.decision': { id: 'keputusan', en: 'decision' },
+  'empty.sampleLocations': { id: 'Coba lokasi contoh', en: 'Try a sample location' },
+  'empty.whatYouGet': { id: 'Yang Anda dapat', en: 'What you get' },
+  'empty.disclaimer': {
+    id: 'Screening awal berbasis data, bukan pengganti penyelidikan geoteknik profesional.',
+    en: 'Data-based screening, not a replacement for a professional geotechnical investigation.',
+  },
+  'empty.capabilityVs30': { id: 'Vs30 & kelas situs', en: 'Vs30 & site class' },
+  'empty.capabilityVs30Desc': { id: 'PGA desain SNI 1726:2019', en: 'SNI 1726:2019 design PGA' },
+  'empty.capabilityLiquefaction': { id: 'Likuefaksi & banjir', en: 'Liquefaction & flood' },
+  'empty.capabilityLiquefactionDesc': { id: 'FS dan bahaya InaRISK BNPB', en: 'FS and InaRISK BNPB hazards' },
+  'empty.capabilityFault': { id: 'Sesar aktif terdekat', en: 'Nearest active fault' },
+  'empty.capabilityFaultDesc': { id: 'Geometri PuSGeN 2024', en: 'PuSGeN 2024 geometry' },
+  'empty.capabilityAi': { id: 'Penjelasan AI', en: 'AI explanation' },
+  'empty.capabilityAiDesc': { id: 'Ditulis dari angka audit, bukan dikarang', en: 'Grounded in audit values, not invented' },
 
   // ─── Left Panel — Populated State ──────────────────────────────
   'panel.siteAnalysis': { id: 'Analisis Situs', en: 'Site Analysis' },
@@ -275,6 +310,61 @@ const translations = {
     id: 'Laporan AI masih dimuat atau tidak tersedia.',
     en: 'AI report is still loading or unavailable.',
   },
+  'drawer.auditResult': { id: 'Hasil Audit Properti', en: 'Property Audit Result' },
+  'drawer.aiUnavailable': { id: 'AI belum dapat membuat penjelasan', en: 'AI could not create an explanation' },
+  'drawer.deterministicValid': {
+    id: 'Angka dan klasifikasi audit tetap valid karena dihitung mesin audit S.A.F.E House, bukan oleh AI.',
+    en: 'The audit scores and classifications remain valid because they come from the S.A.F.E House deterministic engine, not the AI.',
+  },
+  'drawer.nearbyContext': { id: 'Konteks sekitar. ', en: 'Nearby context. ' },
+  'drawer.keyParameters': { id: 'Parameter Kunci', en: 'Key Parameters' },
+  'drawer.dataCoverage': { id: 'Kelengkapan Data', en: 'Data Coverage' },
+  'drawer.cached': { id: 'dibuat sebelumnya', en: 'created earlier' },
+  'drawer.auditDataInsufficient': { id: 'Data tidak cukup', en: 'Insufficient data' },
+  'drawer.relativeBuildable': { id: 'Relatif aman untuk dibangun', en: 'Relatively suitable for building' },
+  'drawer.needsMitigation': { id: 'Layak dengan catatan teknis', en: 'Suitable with technical conditions' },
+  'drawer.seriousMitigation': { id: 'Perlu mitigasi serius sebelum membangun', en: 'Serious mitigation needed before building' },
+  'drawer.siteClass': { id: 'Kelas situs', en: 'Site class' },
+  'drawer.liquefaction': { id: 'FS likuefaksi', en: 'Liquefaction FS' },
+  'drawer.surfacePga': { id: 'PGA permukaan', en: 'Surface PGA' },
+  'drawer.nearestFault': { id: 'Sesar terdekat', en: 'Nearest fault' },
+  'drawer.floodHazard': { id: 'Bahaya banjir', en: 'Flood hazard' },
+  'drawer.dataUnavailable': { id: 'data tidak tersedia', en: 'data unavailable' },
+  'drawer.coverageComplete': { id: 'Semua field terisi; sebagian memakai estimasi model yang diberi label.', en: 'All fields are populated; some use clearly labelled model estimates.' },
+  'drawer.coverageUnavailable': { id: 'Field yang belum tersedia ditandai terbuka, bukan dianggap aman.', en: 'Unavailable fields are marked openly, not treated as safe.' },
+  'drawer.bestAvailable': { id: 'TERBAIK TERSEDIA', en: 'BEST AVAILABLE' },
+  'drawer.strict': { id: 'KETAT', en: 'STRICT' },
+  'drawer.modelProxy': { id: 'MODEL/proxy:', en: 'MODEL/proxy:' },
+  'drawer.soilStrength': { id: 'Kelas Kekerasan Tanah (Vs30)', en: 'Soil Stiffness Class (Vs30)' },
+  'drawer.liquefactionSafety': { id: 'Faktor Keamanan Likuefaksi (FS)', en: 'Liquefaction Factor of Safety (FS)' },
+  'drawer.liquefactionCritical': { id: 'Batas Kritis', en: 'Critical Limit' },
+  'drawer.veryUnsafe': { id: 'Sangat Rawan', en: 'Very High Risk' },
+  'drawer.verySafe': { id: 'Sangat Aman', en: 'Very Safe' },
+  'drawer.liquefactionRisk': { id: 'RAWAN LIKUEFAKSI', en: 'LIQUEFACTION RISK' },
+  'drawer.safe': { id: 'AMAN', en: 'SAFE' },
+  'drawer.maxGroundAcceleration': { id: 'Percepatan Tanah Maksimum (PGA Surface)', en: 'Peak Ground Acceleration (Surface PGA)' },
+  'drawer.activeFaultProximity': { id: 'Kedekatan dengan Sesar Aktif', en: 'Active Fault Proximity' },
+  'drawer.fault': { id: 'SESAR', en: 'FAULT' },
+  'drawer.caution': { id: 'Waspada', en: 'Caution' },
+  'drawer.sea': { id: 'LAUT', en: 'SEA' },
+  'drawer.coastalFloodLevel': { id: 'Ketinggian vs Level Banjir Rob', en: 'Elevation vs Coastal Flood Level' },
+  'drawer.coastalSurge': { id: 'Rawan Pasang Air Laut', en: 'Coastal Surge Risk' },
+  'drawer.localFlood': { id: 'Potensi Banjir Lokal', en: 'Local Flood Potential' },
+  'drawer.noFlood': { id: 'Bebas Luapan Banjir', en: 'Flood Overflow Unlikely' },
+  'drawer.airQuality': { id: 'Indeks Kualitas Udara (European AQI)', en: 'Air Quality Index (European AQI)' },
+  'drawer.veryUnhealthy': { id: 'SANGAT BURUK', en: 'VERY UNHEALTHY' },
+  'drawer.healthy': { id: 'SEHAT', en: 'HEALTHY' },
+  'drawer.unhealthy': { id: 'Tidak Sehat', en: 'Unhealthy' },
+  'drawer.cost': { id: 'Biaya:', en: 'Cost:' },
+  'drawer.action': { id: 'Tindakan: ', en: 'Action: ' },
+  'drawer.reason': { id: 'Alasan: ', en: 'Why: ' },
+  'drawer.soft': { id: 'Lunak', en: 'Soft' },
+  'drawer.medium': { id: 'Sedang', en: 'Medium' },
+  'drawer.hard': { id: 'Keras', en: 'Hard' },
+  'drawer.rock': { id: 'Batuan', en: 'Rock' },
+  'drawer.low': { id: 'Rendah', en: 'Low' },
+  'drawer.high': { id: 'Tinggi', en: 'High' },
+  'drawer.veryHigh': { id: 'Sangat Tinggi', en: 'Very High' },
 
   // ─── Command Palette ───────────────────────────────────────────
   'cmd.searchPlaceholder': {
@@ -398,12 +488,13 @@ const translations = {
 
 /**
  * Get a translation function bound to the given language.
- * Falls back to Indonesian if key is missing.
+ * Never silently falls back across languages: a missing English string must
+ * remain visible as a missing-key marker instead of leaking Indonesian UI.
  */
 export function createT(lang = 'id') {
   return function t(key) {
     const entry = translations[key];
     if (!entry) return key;
-    return entry[lang] ?? entry.id ?? key;
+    return entry[lang] ?? `[missing ${lang} translation: ${key}]`;
   };
 }

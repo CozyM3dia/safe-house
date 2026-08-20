@@ -42,12 +42,15 @@ export function truncate(str, n = 40) {
   return str.slice(0, n - 1) + '…';
 }
 
-// Nama kelas situs SNI 1726:2019 dalam Bahasa Indonesia. Kode kelasnya
-// (SE/SD/SC/SB) baku dan tidak diterjemahkan.
-export function siteClass(vs30) {
+// Kode kelas SNI tetap baku; the descriptive label follows the active UI
+// language when a caller provides it.
+export function siteClass(vs30, lang = 'id') {
   if (!vs30) return '—';
-  if (vs30 < 180) return 'SE (Tanah Lunak)';
-  if (vs30 < 360) return 'SD (Tanah Sedang)';
-  if (vs30 < 760) return 'SC (Tanah Keras)';
-  return 'SB (Batuan)';
+  const labels = lang === 'en'
+    ? { soft: 'Soft Soil', medium: 'Medium Soil', hard: 'Stiff Soil', rock: 'Rock' }
+    : { soft: 'Tanah Lunak', medium: 'Tanah Sedang', hard: 'Tanah Keras', rock: 'Batuan' };
+  if (vs30 < 180) return `SE (${labels.soft})`;
+  if (vs30 < 360) return `SD (${labels.medium})`;
+  if (vs30 < 760) return `SC (${labels.hard})`;
+  return `SB (${labels.rock})`;
 }

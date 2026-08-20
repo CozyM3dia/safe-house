@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { riskHex, riskLabel } from '../../lib/utils';
 import { useT } from '../../hooks/useTranslation';
+import { useAppStore } from '../../store/useAppStore';
 import { useCountUp } from '../../hooks/useCountUp';
 
 function computeScore(p) {
@@ -107,12 +108,13 @@ function ArcGauge({ score, hex, size = 140 }) {
 
 export function SafeScoreCard({ property }) {
   const t = useT();
+  const lang = useAppStore((s) => s.lang);
   const rawScore = useMemo(() => computeScore(property), [property]);
   const hasScore = Number.isFinite(rawScore);
   const score = hasScore ? rawScore : 0;
   const animatedScore = useCountUp(score, 1500);
   const hex = riskHex(score);
-  const label = hasScore ? riskLabel(score) : t('card.insufficientData');
+  const label = hasScore ? riskLabel(score, lang) : t('card.insufficientData');
   const isProvisional = property?.audit_status === 'provisional';
   const firedConfetti = useRef(false);
 

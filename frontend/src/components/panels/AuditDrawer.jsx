@@ -44,15 +44,16 @@ function ReportSkeleton({ label = 'Loading report' }) {
 // ─── Visualizations for Report Sections ──────────────────────────────
 
 function SoilVisual({ property }) {
+  const t = useT();
   const vs30 = property?.geotech?.vs30 ?? 180;
   const siteClass = property?.geotech?.site_class ?? 'SD';
   const fs = property?.geotech?.fs ?? 1.2;
   
   const classes = [
-    { name: 'SE', label: 'Lunak', range: '<180', color: '#ef4444' },
-    { name: 'SD', label: 'Sedang', range: '180-360', color: '#f59e0b' },
-    { name: 'SC', label: 'Keras', range: '360-760', color: '#10b981' },
-    { name: 'SB/SA', label: 'Batuan', range: '>760', color: '#06b6d4' }
+    { name: 'SE', label: t('drawer.soft'), range: '<180', color: '#ef4444' },
+    { name: 'SD', label: t('drawer.medium'), range: '180-360', color: '#f59e0b' },
+    { name: 'SC', label: t('drawer.hard'), range: '360-760', color: '#10b981' },
+    { name: 'SB/SA', label: t('drawer.rock'), range: '>760', color: '#06b6d4' }
   ];
   
   let activeIdx = 0;
@@ -65,8 +66,8 @@ function SoilVisual({ property }) {
       {/* Vs30 Scale */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Kelas Kekerasan Tanah (Vs30)</span>
-          <span className="text-[11px] font-mono font-bold text-accent">{vs30} m/s (Kelas {siteClass})</span>
+          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.soilStrength')}</span>
+          <span className="text-[11px] font-mono font-bold text-accent">{vs30} m/s ({t('drawer.siteClass')} {siteClass})</span>
         </div>
         <div className="grid grid-cols-4 gap-2">
           {classes.map((c, idx) => {
@@ -92,9 +93,9 @@ function SoilVisual({ property }) {
       {/* Liquefaction Factor of Safety (FS) scale */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Faktor Keamanan Likuefaksi (FS)</span>
+          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.liquefactionSafety')}</span>
           <span className="text-[11px] font-mono font-bold" style={{ color: fs < 1.0 ? '#ef4444' : '#10b981' }}>
-            FS = {fs.toFixed(2)} ({fs < 1.0 ? 'RAWAN LIKUEFAKSI' : 'AMAN'})
+            FS = {fs.toFixed(2)} ({fs < 1.0 ? t('drawer.liquefactionRisk') : t('drawer.safe')})
           </span>
         </div>
         <div className="relative h-2.5 rounded-full bg-white/5 overflow-hidden">
@@ -108,9 +109,9 @@ function SoilVisual({ property }) {
           />
         </div>
         <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>0.0 (Sangat Rawan)</span>
-          <span>1.0 (Batas Kritis)</span>
-          <span>2.0+ (Sangat Aman)</span>
+          <span>0.0 ({t('drawer.veryUnsafe')})</span>
+          <span>1.0 ({t('drawer.liquefactionCritical')})</span>
+          <span>2.0+ ({t('drawer.verySafe')})</span>
         </div>
       </div>
     </div>
@@ -118,6 +119,7 @@ function SoilVisual({ property }) {
 }
 
 function SeismicVisual({ property }) {
+  const t = useT();
   const pga = property?.geotech?.pga_surface ?? property?.seismic?.pgaSurface ?? 0.35;
   const faultName = property?.geotech?.nearest_fault?.name ?? 'N/A';
   const faultDist = property?.geotech?.nearest_fault?.distance_km ?? 999;
@@ -127,7 +129,7 @@ function SeismicVisual({ property }) {
       {/* PGA Surface Scale */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Percepatan Tanah Maksimum (PGA Surface)</span>
+          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.maxGroundAcceleration')}</span>
           <span className="text-[11px] font-mono font-bold text-accent">{pga.toFixed(3)}g</span>
         </div>
         <div className="relative h-2.5 rounded-full bg-white/5 overflow-hidden">
@@ -139,22 +141,22 @@ function SeismicVisual({ property }) {
           />
         </div>
         <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>0.1g (Aman)</span>
-          <span>0.4g (Sedang)</span>
-          <span>0.8g+ (Sangat Tinggi)</span>
+          <span>0.1g ({t('drawer.safe')})</span>
+          <span>0.4g ({t('drawer.medium')})</span>
+          <span>0.8g+ ({t('drawer.veryHigh')})</span>
         </div>
       </div>
 
       {/* Fault Distance Proximity Line */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Kedekatan dengan Sesar Aktif ({faultName})</span>
+          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.activeFaultProximity')} ({faultName})</span>
           <span className="text-[11px] font-mono font-bold" style={{ color: faultDist < 10 ? '#ef4444' : faultDist < 30 ? '#f59e0b' : '#10b981' }}>
             {faultDist.toFixed(1)} km
           </span>
         </div>
         <div className="flex items-center gap-2 bg-bg/25 rounded-xl px-3 py-2 border border-white/5">
-          <span className="text-[8.5px] font-extrabold text-red-400 font-mono shrink-0">SESAR</span>
+          <span className="text-[8.5px] font-extrabold text-red-400 font-mono shrink-0">{t('drawer.fault')}</span>
           <div className="flex-1 relative h-3 flex items-center">
             {/* Dotted horizontal line */}
             <div className="w-full h-px border-t border-dashed border-white/20" />
@@ -169,12 +171,12 @@ function SeismicVisual({ property }) {
               🏠
             </div>
           </div>
-          <span className="text-[8.5px] font-extrabold text-text-muted font-mono shrink-0">AMAN</span>
+          <span className="text-[8.5px] font-extrabold text-text-muted font-mono shrink-0">{t('drawer.safe')}</span>
         </div>
         <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>Sangat Rawan (&lt;10km)</span>
-          <span>Waspada (10-30km)</span>
-          <span>Aman (&gt;50km)</span>
+          <span>{t('drawer.veryUnsafe')} (&lt;10km)</span>
+          <span>{t('drawer.caution')} (10-30km)</span>
+          <span>{t('drawer.safe')} (&gt;50km)</span>
         </div>
       </div>
     </div>
@@ -182,6 +184,7 @@ function SeismicVisual({ property }) {
 }
 
 function EnvironmentVisual({ property }) {
+  const t = useT();
   const elevasi = property?.elevation ?? property?.geotech?.elevation_m ?? 0;
   const aqi = property?.environment?.aqi ?? 20;
   
@@ -190,12 +193,12 @@ function EnvironmentVisual({ property }) {
       {/* Elevation Visual scale */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Ketinggian vs Level Banjir Rob</span>
+          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.coastalFloodLevel')}</span>
           <span className="text-[11px] font-mono font-bold text-accent">{elevasi} mdpl</span>
         </div>
         <div className="flex items-end gap-3 h-10 pb-1.5 relative border-b border-white/10 px-1 bg-bg/15 rounded-xl border border-white/5 pt-2">
           {/* Sea */}
-          <div className="w-1/4 h-2 bg-blue-500/30 border-t border-blue-400 rounded-l text-center text-[7px] text-blue-300 font-mono font-bold pt-0.5 leading-none">LAUT</div>
+          <div className="w-1/4 h-2 bg-blue-500/30 border-t border-blue-400 rounded-l text-center text-[7px] text-blue-300 font-mono font-bold pt-0.5 leading-none">{t('drawer.sea')}</div>
           {/* Coastal flat */}
           <div className="w-1/4 h-4 bg-white/5 border-t border-white/10 text-center text-[7px] text-text-muted font-mono font-bold pt-1 leading-none border-r border-dashed border-white/10">0-10m</div>
           {/* Hills */}
@@ -216,18 +219,18 @@ function EnvironmentVisual({ property }) {
           </div>
         </div>
         <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>Rawan Pasang Air Laut</span>
-          <span>Potensi Banjir Lokal</span>
-          <span>Bebas Luapan Banjir</span>
+          <span>{t('drawer.coastalSurge')}</span>
+          <span>{t('drawer.localFlood')}</span>
+          <span>{t('drawer.noFlood')}</span>
         </div>
       </div>
 
       {/* Air Quality (AQI) bar */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Indeks Kualitas Udara (European AQI)</span>
+          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.airQuality')}</span>
           <span className="text-[11px] font-mono font-bold" style={{ color: aqi >= 100 ? '#ef4444' : aqi >= 50 ? '#f59e0b' : '#10b981' }}>
-            AQI = {aqi} ({aqi >= 100 ? 'SANGAT BURUK' : aqi >= 50 ? 'SEDANG' : 'SEHAT'})
+            AQI = {aqi} ({aqi >= 100 ? t('drawer.veryUnhealthy') : aqi >= 50 ? t('drawer.medium') : t('drawer.healthy')})
           </span>
         </div>
         <div className="relative h-2.5 rounded-full bg-white/5 overflow-hidden">
@@ -239,9 +242,9 @@ function EnvironmentVisual({ property }) {
           />
         </div>
         <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>0 (Sangat Sehat)</span>
-          <span>50 (Sedang)</span>
-          <span>100+ (Tidak Sehat)</span>
+          <span>0 ({t('drawer.healthy')})</span>
+          <span>50 ({t('drawer.medium')})</span>
+          <span>100+ ({t('drawer.unhealthy')})</span>
         </div>
       </div>
     </div>
@@ -453,6 +456,7 @@ const getSectionMeta = (title) => {
 // ─── Generative UI Subcomponents ───────────────────────────────────
 
 function MitigationCard({ item }) {
+  const t = useT();
   const { title, action, why, cost, priority } = item;
   const p = priority.toLowerCase();
   let priorityLabel = priority;
@@ -495,7 +499,7 @@ function MitigationCard({ item }) {
         {cost && (
           <div className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/6 px-2.5 py-1 text-[10px] font-mono text-text-primary mb-3.5 shadow-sm">
             <Award className="h-3 w-3 text-accent" />
-            <span className="text-text-muted">Biaya:</span>
+            <span className="text-text-muted">{t('drawer.cost')}</span>
             <span className="font-extrabold text-accent">{cost}</span>
           </div>
         )}
@@ -505,7 +509,7 @@ function MitigationCard({ item }) {
             <div className="flex gap-2">
               <span className="text-text-muted/50 select-none shrink-0 mt-0.5">✦</span>
               <p className="text-text-secondary leading-relaxed text-[11px]">
-                <span className="font-bold text-text-primary">Tindakan: </span>
+                <span className="font-bold text-text-primary">{t('drawer.action')}</span>
                 {action}
               </p>
             </div>
@@ -514,7 +518,7 @@ function MitigationCard({ item }) {
             <div className="flex gap-2">
               <span className="text-text-muted/50 select-none shrink-0 mt-0.5">✦</span>
               <p className="text-text-secondary leading-relaxed text-[11px]">
-                <span className="font-bold text-text-primary">Alasan: </span>
+                <span className="font-bold text-text-primary">{t('drawer.reason')}</span>
                 {why}
               </p>
             </div>
@@ -595,6 +599,7 @@ function stripMarkdownNode(props) {
 }
 
 function SectionCard({ title, content, defaultExpanded = false, property }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const { icon: Icon } = getSectionMeta(title);
   
@@ -610,7 +615,7 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
       <button
         type="button"
         aria-expanded={expanded}
-        aria-label={`${expanded ? 'Tutup' : 'Buka'} ${title}`}
+        aria-label={`${expanded ? t('accessibility.close') : t('cmd.select')} ${title}`}
         onClick={() => setExpanded(!expanded)}
         className="group flex w-full items-center gap-3 py-3.5 text-left"
       >
@@ -804,7 +809,7 @@ export function AuditDrawer() {
                     }`}>
                       {aiReport.deliveryMode === 'live' ? `LIVE · ${aiReport.aiModel || ''}` :
                        aiReport.deliveryMode === 'fallback' ? `FALLBACK · ${aiReport.aiModel || ''}` :
-                       'CACHED · dibuat sebelumnya'}
+                       `CACHED · ${t('drawer.cached')}`}
                     </span>
                   )}
                   {isBattle && (
@@ -837,7 +842,7 @@ export function AuditDrawer() {
               {!isBattle && propertyA && (
                 <header className="mb-8">
                   <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-accent">
-                    Hasil Audit Properti
+                    {t('drawer.auditResult')}
                   </span>
                   {/* Alamat penuh dulu dipangkas paksa dengan `truncate`, jadi
                       nama jalan sering hilang. Dua baris cukup untuk alamat
@@ -924,12 +929,10 @@ export function AuditDrawer() {
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-risk-danger" />
                         <div>
                           <p className="mb-1 text-sm font-semibold text-risk-danger">
-                            AI belum dapat membuat penjelasan
+                            {t('drawer.aiUnavailable')}
                           </p>
                           <p className="text-xs leading-relaxed text-text-muted">
-                            {lang === 'en'
-                              ? 'The AI explanation could not be generated. The scores and classifications remain valid — they are calculated by the S.A.F.E House deterministic engine.'
-                              : 'Angka dan klasifikasi audit tetap valid karena dihitung mesin audit S.A.F.E House, bukan oleh AI.'}
+                            {t('drawer.deterministicValid')}
                           </p>
                         </div>
                       </div>
@@ -971,7 +974,7 @@ export function AuditDrawer() {
 
                     {aiReport?.microAnalysis && (
                       <p className="mt-7 max-w-[72ch] border-t border-white/6 pt-4 text-[11px] leading-relaxed text-text-muted">
-                        <span className="font-semibold text-text-secondary">Konteks sekitar. </span>
+                        <span className="font-semibold text-text-secondary">{t('drawer.nearbyContext')}</span>
                         {aiReport.microAnalysis}
                       </p>
                     )}
@@ -997,12 +1000,14 @@ export function AuditDrawer() {
 // adalah kesimpulan seluruh audit. Rel band memberi konteks yang tidak
 // dimiliki angka telanjang: seberapa jauh lokasi ini dari band berikutnya.
 const SCORE_BANDS = [
-  { max: 39, label: 'WASPADA', meaning: 'Perlu mitigasi serius sebelum membangun' },
-  { max: 69, label: 'SEDANG', meaning: 'Layak dengan catatan teknis' },
-  { max: 100, label: 'AMAN', meaning: 'Relatif aman untuk dibangun' },
+  { max: 39, label: 'WASPADA', meaningKey: 'drawer.seriousMitigation' },
+  { max: 69, label: 'SEDANG', meaningKey: 'drawer.needsMitigation' },
+  { max: 100, label: 'AMAN', meaningKey: 'drawer.relativeBuildable' },
 ];
 
 function HeroScore({ score, ready, status }) {
+  const t = useT();
+  const lang = useAppStore((s) => s.lang);
   const value = ready ? score : 0;
   const hex = riskHex(value);
   const band = SCORE_BANDS.find((b) => value <= b.max) || SCORE_BANDS[2];
@@ -1024,7 +1029,7 @@ function HeroScore({ score, ready, status }) {
           className="text-[11px] font-bold uppercase tracking-[0.18em]"
           style={{ color: ready ? hex : undefined }}
         >
-          {ready ? riskLabel(score) : 'Data tidak cukup'}
+          {ready ? riskLabel(score, lang) : t('drawer.auditDataInsufficient')}
         </span>
         {status && status !== 'valid' && (
           <span className="rounded-full border border-risk-moderate/30 bg-risk-moderate/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-risk-moderate">
@@ -1036,7 +1041,7 @@ function HeroScore({ score, ready, status }) {
       {ready && (
         <>
           <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">
-            {band.meaning}
+            {t(band.meaningKey)}
           </p>
 
           {/* Rel band 0-39 / 40-69 / 70-100 */}
@@ -1069,6 +1074,8 @@ function HeroScore({ score, ready, status }) {
 // Angkanya dibaca langsung dari AuditResult, jadi tidak bergantung AI dan
 // tidak mengulang isi laporan naratif di sebelahnya.
 function KeyParameters({ property }) {
+  const t = useT();
+  const lang = useAppStore((s) => s.lang);
   const geo = property?.geotech;
   if (!geo) return null;
 
@@ -1080,28 +1087,28 @@ function KeyParameters({ property }) {
     {
       label: 'Vs30',
       value: `${geo.vs30} m/s`,
-      note: siteClass(geo.vs30),
+      note: siteClass(geo.vs30, lang),
     },
     {
-      label: 'FS likuefaksi',
+      label: t('drawer.liquefaction'),
       value: Number(geo.fs).toFixed(2),
       note: geo.status,
       tone: geo.fs < 1 ? 'danger' : 'safe',
     },
     {
-      label: 'PGA permukaan',
+      label: t('drawer.surfacePga'),
       value: `${Number(geo.pga_surface).toFixed(3)} g`,
       note: null,
     },
     {
-      label: 'Sesar terdekat',
+      label: t('drawer.nearestFault'),
       value: fault.distance_km != null ? `${Number(fault.distance_km).toFixed(1)} km` : '—',
       note: fault.name || null,
     },
     {
-      label: 'Bahaya banjir',
+      label: t('drawer.floodHazard'),
       value: floodKnown ? (hazard.flood_label || '—') : '—',
-      note: floodKnown ? null : 'data tidak tersedia',
+      note: floodKnown ? null : t('drawer.dataUnavailable'),
       wide: true,
     },
   ];
@@ -1114,7 +1121,7 @@ function KeyParameters({ property }) {
   return (
     <section>
       <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-text-muted">
-        Parameter Kunci
+        {t('drawer.keyParameters')}
       </h2>
       <dl className="divide-y divide-white/[0.06]">
         {rows.map((row) => (
@@ -1162,7 +1169,32 @@ const COVERAGE_LABELS = {
   official_pga_grid: 'Grid PGA resmi',
 };
 
+const COVERAGE_LABELS_EN = {
+  location: 'Location',
+  elevation: 'Elevation',
+  soil: 'Soil / Vs30',
+  seismic: 'PGA',
+  fault_reference: 'Fault reference',
+  flood: 'Flood',
+  landslide: 'Landslide',
+  subsidence: 'Subsidence',
+  weather: 'Weather',
+  soil_moisture: 'Soil moisture',
+  air_quality: 'Air quality',
+  earthquake_history: 'Earthquake history',
+  nearby: 'Nearby objects',
+  tsunami: 'Tsunami',
+  tsunami_map: 'InaRISK tsunami map',
+  liquefaction_map: 'InaRISK liquefaction map',
+  volcanic_map: 'InaRISK volcanic map',
+  coastal_map: 'InaRISK coastal map',
+  official_vs30_grid: 'Official Vs30 grid',
+  official_pga_grid: 'Official PGA grid',
+};
+
 function DataCoverageSummary({ property }) {
+  const t = useT();
+  const lang = useAppStore((s) => s.lang);
   // Blok ini berisi 16 chip status field. Berguna sebagai bukti provenance,
   // tapi kalau selalu terbuka ia mendominasi layar dan mendorong skor serta
   // analisis AI keluar dari pandangan pertama. Ringkasan satu baris tetap
@@ -1170,16 +1202,17 @@ function DataCoverageSummary({ property }) {
   const [open, setOpen] = useState(false);
   const quality = property?.data_quality || {};
   const fields = quality.fields || {};
-  const entries = Object.entries(COVERAGE_LABELS)
+  const labels = lang === 'en' ? COVERAGE_LABELS_EN : COVERAGE_LABELS;
+  const entries = Object.entries(labels)
     .filter(([key]) => fields[key])
     .map(([key, label]) => [key, label, fields[key]]);
 
   const statusLabel = (status) => ({
-    official: 'RESMI',
+    official: lang === 'en' ? 'OFFICIAL' : 'RESMI',
     model: 'MODEL',
-    reference: 'REFERENSI',
+    reference: lang === 'en' ? 'REFERENCE' : 'REFERENSI',
     open_data: 'OPEN DATA',
-    unavailable: 'BELUM TERSEDIA',
+    unavailable: lang === 'en' ? 'UNAVAILABLE' : 'BELUM TERSEDIA',
   }[status] || String(status || '—').toUpperCase());
 
   const statusClass = (status) => ({
@@ -1194,11 +1227,11 @@ function DataCoverageSummary({ property }) {
     <div className="mb-6 rounded-2xl border border-accent/15 bg-accent/[0.025] p-4 relative z-10">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
-          <p className="text-[9px] font-bold tracking-[0.2em] text-accent uppercase">KELENGKAPAN DATA</p>
+          <p className="text-[9px] font-bold tracking-[0.2em] text-accent uppercase">{t('drawer.dataCoverage')}</p>
           <p className="mt-1 text-[11px] text-text-secondary">
             {quality.coverage_status === 'complete_with_estimates'
-              ? 'Semua field terisi; sebagian memakai estimasi model yang diberi label.'
-              : 'Field yang belum tersedia ditandai terbuka, bukan dianggap aman.'}
+              ? t('drawer.coverageComplete')
+              : t('drawer.coverageUnavailable')}
           </p>
         </div>
         <button
@@ -1207,7 +1240,7 @@ function DataCoverageSummary({ property }) {
           aria-expanded={open}
           className="flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent/15"
         >
-          {quality.mode === 'best_available' ? 'BEST AVAILABLE' : 'STRICT'}
+          {quality.mode === 'best_available' ? t('drawer.bestAvailable') : t('drawer.strict')}
           <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
       </div>
@@ -1228,7 +1261,7 @@ function DataCoverageSummary({ property }) {
           sini membuat satu layar memuat peringatan yang sama dua kali. */}
       {quality.estimated_fields?.length > 0 && (
         <p className="mt-3 text-[9px] leading-relaxed text-amber-200/80">
-          MODEL/proxy: {quality.estimated_fields.map((name) => COVERAGE_LABELS[name] || name).join(', ')}.
+          {t('drawer.modelProxy')} {quality.estimated_fields.map((name) => labels[name] || name).join(', ')}.
         </p>
       )}
     </div>

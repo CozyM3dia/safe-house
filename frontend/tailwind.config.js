@@ -6,18 +6,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ── Warm Dark Theme — "Mocha Command Center" ─────────────
+        // ── Theme tokens — values are switched by html[data-theme] ──
         bg: {
-          DEFAULT: '#0f0b08',
-          surface: 'rgba(22, 14, 8, 0.88)',
-          elevated: '#1a1208',
+          DEFAULT: 'hsl(var(--safe-bg) / <alpha-value>)',
+          surface: 'hsl(var(--safe-bg-surface) / <alpha-value>)',
+          elevated: 'hsl(var(--safe-bg-elevated) / <alpha-value>)',
         },
         text: {
-          primary: '#f0e4cc',
-          secondary: '#c4a87e',
-          // Secondary metadata still needs to be readable over the warm dark
-          // surfaces. This is 6.14:1 on bg and 5.81:1 on elevated panels.
-          muted: '#a98b69',
+          primary: 'hsl(var(--safe-text-primary) / <alpha-value>)',
+          secondary: 'hsl(var(--safe-text-secondary) / <alpha-value>)',
+          muted: 'hsl(var(--safe-text-muted) / <alpha-value>)',
         },
         risk: {
           safe: '#10b981',
@@ -25,8 +23,8 @@ export default {
           danger: '#ef4444',
         },
         accent: {
-          DEFAULT: '#d4956a',
-          hover: '#b87a52',
+          DEFAULT: 'hsl(var(--safe-accent) / <alpha-value>)',
+          hover: 'hsl(var(--safe-accent-hover) / <alpha-value>)',
         },
       },
       fontFamily: {

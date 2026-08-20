@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, ChevronRight, GitBranch, Map as MapIcon, Mountain, Satellite } from 'lucide-react';
+import { Layers, ChevronRight, GitBranch, Map as MapIcon, Mountain, Satellite, Sun, Moon } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { cn } from '../../lib/utils';
 import { MapLegend } from './MapLegend';
 import { INARISK_HAZARDS } from '../../lib/hazardOverlay';
+import { STADIA_MAPS_ENABLED } from '../../lib/constants';
 import { Skeleton } from '../ui/skeleton';
 
 export function DisasterLayersPanel() {
@@ -89,6 +90,60 @@ export function DisasterLayersPanel() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Stadia themes: the dark variant is the native SAFE House map mode. */}
+            <div className="mt-3 border-t border-white/8 pt-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
+                  {t('panel.stadiaThemes')}
+                </span>
+                <span className={cn(
+                  'text-[9px] font-mono',
+                  STADIA_MAPS_ENABLED ? 'text-risk-safe' : 'text-text-muted'
+                )}>
+                  {STADIA_MAPS_ENABLED ? 'READY' : 'KEY REQUIRED'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                {[
+                  { id: 'alidade', label: t('panel.alidadeSmooth'), Icon: Sun },
+                  { id: 'alidade-dark', label: t('panel.alidadeSmoothDark'), Icon: Moon },
+                ].map((style) => {
+                  const isActive = baseMapStyle === style.id;
+                  const disabled = !STADIA_MAPS_ENABLED;
+                  return (
+                    <button
+                      key={style.id}
+                      type="button"
+                      data-testid={`basemap-toggle-${style.id}`}
+                      aria-pressed={isActive}
+                      aria-label={`${t('panel.useBasemap')}: ${style.label}`}
+                      title={disabled ? t('panel.stadiaKeyRequired') : `${t('panel.useBasemap')}: ${style.label}`}
+                      onClick={() => {
+                        if (!disabled) setBaseMapStyle(style.id);
+                      }}
+                      disabled={disabled}
+                      className={cn(
+                        'flex min-h-[44px] items-center justify-center gap-2 rounded-lg border px-2 py-2 text-[10px] font-bold transition-all',
+                        disabled
+                          ? 'cursor-not-allowed border-white/6 bg-white/[0.015] text-text-muted/60'
+                          : isActive
+                            ? 'border-accent/35 bg-accent/12 text-accent'
+                            : 'border-white/6 bg-white/[0.02] text-text-muted hover:border-accent/25 hover:text-text-primary'
+                      )}
+                    >
+                      <style.Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                      {style.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {!STADIA_MAPS_ENABLED && (
+                <p className="mt-2 text-[9px] leading-relaxed text-text-muted">
+                  {t('panel.stadiaKeyRequired')}
+                </p>
+              )}
             </div>
 
             {/* Nationwide hazard rasters */}

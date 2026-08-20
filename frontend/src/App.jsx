@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Toaster } from 'sonner';
@@ -54,6 +54,7 @@ function AppShell() {
   const setCmdPalette = useAppStore((s) => s.setCmdPalette);
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
   const setChatExpanded = useAppStore((s) => s.setChatExpanded);
+  const theme = useAppStore((s) => s.theme);
 
   useHotkeys('mod+k', (e) => {
     e.preventDefault();
@@ -99,20 +100,33 @@ function AppShell() {
       {/* z-50: Sonner Toaster */}
       <Toaster
         position="bottom-center"
-        theme="dark"
+        theme={theme}
         richColors
         closeButton
         toastOptions={{
           style: {
-            background: 'rgba(26, 17, 10, 0.94)',
-            border: '1px solid rgba(255, 210, 170, 0.14)',
+            background: theme === 'dark' ? 'rgba(26, 17, 10, 0.94)' : 'rgba(255, 250, 242, 0.96)',
+            border: theme === 'dark' ? '1px solid rgba(255, 210, 170, 0.14)' : '1px solid rgba(91, 67, 48, 0.16)',
             backdropFilter: 'blur(24px)',
-            color: '#f0e4cc',
+            color: theme === 'dark' ? '#f0e4cc' : '#30241d',
           },
         }}
       />
     </div>
   );
+}
+
+function AppPreferences() {
+  const theme = useAppStore((s) => s.theme);
+  const lang = useAppStore((s) => s.lang);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.style.colorScheme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.lang = lang === 'en' ? 'en' : 'id';
+  }, [theme, lang]);
+
+  return null;
 }
 
 function AppPage() {
@@ -128,6 +142,7 @@ function AppPage() {
 export default function App() {
   return (
     <BrowserRouter>
+      <AppPreferences />
       <Routes>
         <Route
           path="/"

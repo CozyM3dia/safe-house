@@ -75,10 +75,10 @@ def _safe_number(value: Any) -> Optional[float | int]:
 def _safe_chat_refusal(lang: str) -> ChatResult:
     if lang == "en":
         answer = (
-            "Saya hanya dapat menjawab berdasarkan data audit yang terverifikasi. "
-            "Saya tidak dapat membuka prompt internal, rahasia, API key, atau mengubah skor audit."
+            "I can only answer from verified audit data. "
+            "I cannot reveal internal prompts, secrets, API keys, or change the audit score."
         )
-        follow_ups = ["Apa arti skor ini?", "Data apa yang belum tersedia?", "Langkah verifikasi apa berikutnya?"]
+        follow_ups = ["What does this score mean?", "What data is still missing?", "What should be verified next?"]
     else:
         answer = (
             "Saya hanya dapat menjawab berdasarkan data audit yang terverifikasi. "
@@ -179,6 +179,9 @@ def _format_verified_chat_evidence(audit: Optional[AuditResult], message: str, l
 
     if audit is None:
         return ""
+
+    if lang == "en":
+        return _format_verified_chat_evidence_en(audit, message)
 
     geo = audit.geotech
     hazard = audit.hazard or {}
@@ -287,6 +290,113 @@ def _format_verified_chat_evidence(audit: Optional[AuditResult], message: str, l
     return "\n".join(lines)
 
 
+def _format_verified_chat_evidence_en(audit: AuditResult, message: str) -> str:
+    """English counterpart of the deterministic evidence block.
+
+    Keep this separate from the Indonesian copy so a language switch cannot
+    leak Indonesian labels into the AI response or its verified appendix.
+    """
+
+    geo = audit.geotech
+    hazard = audit.hazard or {}
+    quality = audit.data_quality or {}
+    fields = quality.get("fields") or {}
+    topic = _chat_topic(message)
+    location = _location_label(audit)
+    elevation = audit.elevation if audit.elevation is not None else geo.elevation_m
+
+    def number_text(value: Any, suffix: str = "") -> str:
+        if value is None or not isinstance(value, (int, float)) or isinstance(value, bool):
+            return "unavailable"
+        return f"{value:g}{suffix}"
+
+    def field_meta(name: str) -> tuple[str, str]:
+        item = fields.get(name) if isinstance(fields.get(name), dict) else {}
+        status = item.get("status") or hazard.get(f"{name}_data_status") or "unavailable"
+        source = item.get("source") or hazard.get(f"{name}_source") or "source unavailable"
+        return _safe_text(status, max_length=80), _safe_text(source, max_length=140)
+
+    def source_line(name: str) -> str:
+        status, source = field_meta(name)
+        return f"Source: {source} ({status})."
+
+    topic_labels = {
+        "flood": "flood",
+        "liquefaction": "liquefaction",
+        "soil": "soil",
+        "seismic": "seismic",
+        "landslide": "landslide",
+        "subsidence": "subsidence",
+        "tsunami": "tsunami",
+        "score": "S.A.F.E. score",
+        "overview": "audit",
+    }
+    lines: list[str] = [f"### Verified {topic_labels[topic]} data basis — {location}"]
+
+    if topic == "flood":
+        risk = _safe_number(hazard.get("flood_risk"))
+        label = _safe_text(hazard.get("flood_label"), max_length=140)
+        flood_class = _safe_number(hazard.get("flood_class"))
+        mapped = hazard.get("flood_mapped")
+        if risk is None:
+            lines.append("- Flood risk: unavailable; the system must not infer that the site is safe or high risk.")
+        else:
+            class_text = f", map class {flood_class:g}" if flood_class is not None else ""
+            mapped_text = "area mapping" if mapped else "estimate/model"
+            lines.append(f"- Verified flood risk: {risk:g}/100 ({label}) — {mapped_text}{class_text}.")
+        lines.append(f"- {source_line('flood')}")
+        lines.append(f"- Audit elevation: {number_text(elevation, ' m above sea level')}.")
+        coast = geo.nearest_coast
+        if coast.distance_km is not None:
+            lines.append(f"- Nearest coastal reference: {_safe_text(coast.name, max_length=100)}, {coast.distance_km:.1f} km.")
+        lines.append("- This is an area-vulnerability classification, not a current inundation measurement or a guarantee that the entire address will flood.")
+    elif topic == "liquefaction":
+        lines.append(f"- Liquefaction FS: {number_text(geo.fs)} ({_safe_text(geo.status)}); values below 1.00 are generally treated as a risk indication in this screening.")
+        lines.append(f"- Vs30 / site class: {number_text(geo.vs30, ' m/s')} / {_safe_text(geo.site_class)}.")
+        lines.append("- FS and site class are geotechnical screening outputs, not a replacement for SPT/CPT testing or a site investigation.")
+    elif topic == "soil":
+        lines.append(f"- Vs30 / site class: {number_text(geo.vs30, ' m/s')} / {_safe_text(geo.site_class)}.")
+        lines.append(f"- Liquefaction FS: {number_text(geo.fs)} ({_safe_text(geo.status)}).")
+        lines.append("- This interpretation uses the available audit proxy/model; actual soil layers still require field testing.")
+    elif topic == "seismic":
+        lines.append(f"- Base / surface PGA: {number_text(geo.pga, 'g')} / {number_text(geo.pga_surface, 'g')}.")
+        fault = geo.nearest_fault
+        lines.append(f"- Nearest fault reference: {_safe_text(fault.name, max_length=100)} ({number_text(fault.distance_km, ' km')}).")
+        lines.append("- PGA and fault distance are screening indicators, not predictions of earthquake timing or magnitude.")
+    elif topic == "landslide":
+        risk = _safe_number(hazard.get("landslide_risk"))
+        label = _safe_text(hazard.get("landslide_label"), max_length=140)
+        lines.append(f"- Landslide risk: {number_text(risk, '/100')} ({label}).")
+        lines.append(f"- {source_line('landslide')}")
+        lines.append("- Area classification does not replace checking slope, drainage, and local soil conditions.")
+    elif topic == "subsidence":
+        risk = _safe_number(hazard.get("subsidence_risk"))
+        label = _safe_text(hazard.get("subsidence_label"), max_length=140)
+        lines.append(f"- Subsidence risk: {number_text(risk, '/100')} ({label}).")
+        lines.append(f"- {source_line('subsidence')}")
+        lines.append("- Official subsidence coverage is not always available; treat estimate/proxy labels as an initial indication.")
+    elif topic == "tsunami":
+        lines.append(f"- Screening tsunami risk: {_safe_text(hazard.get('tsunami'), max_length=100)}.")
+        lines.append(f"- Elevation: {number_text(elevation, ' m above sea level')}; coastal distance: {number_text(geo.nearest_coast.distance_km, ' km')}.")
+        lines.append("- This is a distance-elevation proxy, not a detailed tsunami inundation map.")
+    elif topic == "score":
+        radar = hazard.get("radar") if isinstance(hazard.get("radar"), dict) else {}
+        lines.append(f"- S.A.F.E. Score: {number_text(audit.safe_score, '/100')} ({_safe_text(audit.risk_level)}); a higher score means lower buildability risk in this scheme.")
+        lines.append("- Risk radar: " + ", ".join(
+            f"{name} {number_text(radar.get(key), '/100')}"
+            for key, name in (("flood", "flood"), ("soil", "soil"), ("seismic", "seismic"), ("landslide", "landslide"), ("subsidence", "subsidence"))
+            if radar.get(key) is not None
+        ) + ".")
+        lines.append(f"- Audit status: {_safe_text(audit.audit_status)}.")
+    else:
+        lines.append(f"- Audit location: {location}; S.A.F.E. Score {number_text(audit.safe_score, '/100')} ({_safe_text(audit.risk_level)}).")
+        lines.append(f"- Vs30 / site class: {number_text(geo.vs30, ' m/s')} / {_safe_text(geo.site_class)}; surface PGA {number_text(geo.pga_surface, 'g')}.")
+        lines.append(f"- Audit status: {_safe_text(audit.audit_status)}.")
+
+    lines.append("- This is an initial desk study; use field investigation and qualified professional review for final decisions.")
+    return "\n".join(lines)
+
+
 class AIServiceError(RuntimeError):
     """An AI failure with a safe message and an HTTP status for the router."""
 
@@ -334,6 +444,20 @@ _FAILED_SOURCE_LABELS = {
     "nearby": "konteks objek sekitar dari Overpass tidak tersedia",
 }
 
+_FAILED_SOURCE_LABELS_EN = {
+    "geocode": "Nominatim address data unavailable",
+    "weather": "Open-Meteo elevation/weather data unavailable",
+    "air_quality": "Open-Meteo air-quality data unavailable",
+    "earthquakes": "USGS earthquake catalog unavailable",
+    "flood": "InaRISK flood hazard class unavailable",
+    "landslide": "InaRISK landslide hazard class unavailable",
+    "tsunami": "InaRISK tsunami hazard map unavailable",
+    "liquefaction": "InaRISK liquefaction hazard map unavailable",
+    "volcanic": "InaRISK volcanic-eruption hazard map unavailable",
+    "coastal": "InaRISK coastal-erosion hazard map unavailable",
+    "nearby": "Overpass nearby-context data unavailable",
+}
+
 
 def available_citations(audit: Optional[AuditResult]) -> list[ChatCitation]:
     """Return only sources that actually contributed to the supplied audit."""
@@ -364,7 +488,17 @@ def available_citations(audit: Optional[AuditResult]) -> list[ChatCitation]:
     return [_SOURCE_CATALOG[key] for key in keys]
 
 
-def deterministic_limitations(audit: AuditResult) -> list[str]:
+def deterministic_limitations(audit: AuditResult, lang: str = "id") -> list[str]:
+    if lang == "en":
+        limitations = [
+            "This is an initial desk study, not a replacement for soil investigation, detailed surveying, or a decision by an authorized professional."
+        ]
+        limitations.extend(
+            _FAILED_SOURCE_LABELS_EN.get(name, f"Data source {name} unavailable")
+            for name in audit.sources_failed
+        )
+        return limitations
+
     limitations = [
         "Hasil ini adalah desk study awal, bukan pengganti investigasi tanah, survei detail, atau keputusan tenaga ahli berwenang."
     ]
@@ -1192,13 +1326,28 @@ async def generate_narrative(
 
     citations = available_citations(audit)
     language = "English" if lang == "en" else "Bahasa Indonesia"
-    prompt = {
-        "task": (
+    if lang == "en":
+        task = (
+            "Prepare an institutional-grade geotechnical, seismic-hazard, liquefaction, and disaster-mitigation "
+            "report for this property. Analyze every verified fact and technical parameter in the audit payload."
+        )
+        detailed_report_format = (
+            "MANDATORY: use comprehensive, well-structured Markdown in English. Use these headings in this exact order:\n"
+            "1. '## Executive Summary & Site Characterization': risk decision (score and band), regional morphology, and development implications.\n"
+            "2. '## Geotechnical Conditions & Soil Stability': Vs30, SNI site class, liquefaction FS, cyclic soil behavior, and bearing capacity.\n"
+            "3. '## Seismic Hazard & Active-Fault Dynamics': base versus surface PGA, nearest PuSGeN 2024 fault distance/geometry, shaking potential, and fault mechanism.\n"
+            "4. '## Hydrometeorological & Environmental Hazards': InaRISK flood/landslide mapping, coastal flood exposure from elevation and shoreline distance, tsunami context, and AQI.\n"
+            "5. '## Spatial Context & Micro-Environment': OpenStreetMap access, nearby infrastructure, utilities, and evacuation/logistics context.\n"
+            "6. '## Mitigation & Structural Design Recommendations': 3–4 concrete numbered recommendations. Each item must use: **1. [Recommendation]**, then '- Action:', '- Rationale:', '- Estimated cost:', and '- Priority:'.\n"
+            "7. '## Building Codes & Standards': relevant Indonesian SNI and PBG references, explained in English."
+        )
+    else:
+        task = (
             "Susun laporan analisis geoteknik, bahaya kegempaan (SNI 1726:2019), potensi likuefaksi (SNI 8460:2017), "
             "dan mitigasi kebencanaan properti berstandar institusional. Analisis secara mendalam seluruh fakta dan "
             "parameter teknis pada payload audit."
-        ),
-        "detailed_report_format": (
+        )
+        detailed_report_format = (
             "WAJIB format Markdown yang komprehensif, terstruktur rapi, dan mendalam. "
             "Gunakan urutan judul '## ' berikut secara persis:\n"
             "1. '## Ringkasan Eksekutif & Karakteristik Tapak': Sintesis putusan risiko (skor, kategori), morfologi wilayah, dan dampak bagi kelayakan pembangunan properti.\n"
@@ -1206,26 +1355,25 @@ async def generate_narrative(
             "3. '## Bahaya Seismik & Dinamika Sesar Aktif': Analisis percepatan tanah batuan dasar (PGA) vs amplifikasi permukaan, jarak dan geometri sesar aktif terdekat (PuSGeN 2024), potensi guncangan maksimum, dan mekanisme sesar.\n"
             "4. '## Bahaya Hidrometeorologi & Lingkungan': Pemetaan bahaya banjir dan longsor InaRISK, risiko banjir rob/pasang air laut berdasarkan elevasi (mdpl) & jarak garis pantai, potensi bahaya tsunami pesisir, serta indeks kualitas udara (AQI).\n"
             "5. '## Konteks Spasial & Mikro-Lingkungan': Aksesibilitas, infrastruktur sekitar dari OpenStreetMap (jalan, fasilitas umum, utilitas), dan rute evakuasi/keamanan logistik.\n"
-            "6. '## Rekomendasi Mitigasi & Desain Struktur': 3-4 rekomendasi teknis bernomor yang sangat konkret. Format setiap butir: \n"
-            "   **1. [Nama Rekomendasi]**\n"
-            "   - Tindakan: [Langkah teknis spesifik: misal CPT/Sondir/SPT, pondasi tiang dalam/bored pile, sistem drainase/elevasi peil lantai, perkuatan struktur]\n"
-            "   - Alasan: [Alasan geoteknik/kebencanaan]\n"
-            "   - Estimasi biaya: [Rentang estimasi biaya umum jika relevan]\n"
-            "   - Prioritas: [WAJIB / DISARANKAN / JANGKA PANJANG]\n"
-            "7. '## Regulasi & Standar Bangunan (SNI)': Rujukan standar SNI & regulasi bangunan di Indonesia:\n"
-            "   - **SNI 1726:2019**: Tata Cara Perencanaan Ketahanan Gempa untuk Struktur Bangunan Gedung dan Non Gedung.\n"
-            "   - **SNI 8460:2017**: Persyaratan Perancangan Geoteknik (Kriteria evaluasi likuefaksi dan fondasi).\n"
-            "   - **Permen PUPR / Standar PBG**: Pemenuhan persyaratan keandalan struktur dan kelayakan teknis perizinan bangunan."
-        ),
+            "6. '## Rekomendasi Mitigasi & Desain Struktur': 3-4 rekomendasi teknis bernomor yang sangat konkret. Format setiap butir: **1. [Nama Rekomendasi]**, lalu '- Tindakan:', '- Alasan:', '- Estimasi biaya:', dan '- Prioritas:'.\n"
+            "7. '## Regulasi & Standar Bangunan (SNI)': Rujukan standar SNI dan regulasi bangunan di Indonesia."
+        )
+    prompt = {
+        "task": task,
+        "detailed_report_format": detailed_report_format,
         "output_language": language,
         "audit": compact_audit_for_ai(audit),
         "allowed_sources": [citation.title for citation in citations],
-        "required_notes": deterministic_limitations(audit),
+        "required_notes": deterministic_limitations(audit, lang),
     }
 
     try:
         raw, meta = await generate_with_fallback(
-            system_instruction=_NARRATIVE_SYSTEM_INSTRUCTION,
+            system_instruction=(
+                f"{_NARRATIVE_SYSTEM_INSTRUCTION}\n\n"
+                f"OUTPUT LANGUAGE OVERRIDE: Write every user-facing field entirely in {language}. "
+                "Do not mix Indonesian and English. Technical names, SNI codes, and official source names may remain unchanged."
+            ),
             user_payload=prompt,
             response_schema=_narrative_schema(),
             max_output_tokens=6144,
@@ -1345,8 +1493,33 @@ async def answer_chat(
         )
 
     language = "English" if lang == "en" else "Bahasa Indonesia"
+    chat_instructions = (
+        [
+            "Answer in clear, direct, technically useful English.",
+            "Use geotechnical engineering and disaster-mitigation reasoning tied to the audit parameters.",
+            "Give practical, high-value mitigation recommendations relevant to the question.",
+            "Mention the audit location from location_label in the first sentence; do not rename it.",
+            "For why/how questions, explain the physical geotechnical or seismic mechanism from verified data.",
+            "If no audit exists, explain politely that the user can select a map location first.",
+            "In compare mode, give a sharp comparative analysis of both locations.",
+            "Select only source titles that support the answer.",
+            "Provide exactly three relevant follow-up questions in English.",
+        ]
+        if lang == "en"
+        else [
+            "Jawab pertanyaan yang diajukan secara mendalam, cerdas, solutif, dan langsung ke intinya.",
+            "Gunakan analisis teknik geoteknik dan mitigasi kebencanaan yang tajam sesuai parameter audit pada payload.",
+            "Berikan wawasan rekayasa dan rekomendasi mitigasi praktis yang bernilai tinggi dan relevan.",
+            "Sebutkan lokasi audit dari field location_label pada kalimat pertama; jangan mengganti nama lokasinya.",
+            "Untuk pertanyaan mengapa/kenapa, jelaskan mekanisme fisis geoteknik/seismiknya berdasarkan data audit terverifikasi.",
+            "Jika belum ada audit, jelaskan dengan ramah bahwa pengguna dapat memilih lokasi di peta terlebih dahulu.",
+            "Jika mode bandingkan, berikan analisis komparatif yang tajam antara kedua lokasi.",
+            "Pilih judul sumber yang benar-benar menopang jawaban.",
+            "Berikan tepat tiga pertanyaan lanjutan yang cerdas, tajam, dan relevan dengan diskusi.",
+        ]
+    )
     prompt = {
-        "task": "Jawab pertanyaan pengguna berdasarkan audit yang tersedia.",
+        "task": "Answer the user's question from the available audit." if lang == "en" else "Jawab pertanyaan pengguna berdasarkan audit yang tersedia.",
         "output_language": language,
         "mode": mode,
         "audit_a": compact_audit_for_ai(audit),
@@ -1361,21 +1534,15 @@ async def answer_chat(
         ],
         "question": _safe_text(message, max_length=1800),
         "allowed_citation_titles": [citation.title for citation in citations],
-        "instructions": [
-            "Jawab pertanyaan yang diajukan secara mendalam, cerdas, solutif, dan langsung ke intinya.",
-            "Gunakan analisis teknik geoteknik dan mitigasi kebencanaan yang tajam sesuai parameter audit pada payload.",
-            "Berikan wawasan rekayasa dan rekomendasi mitigasi praktis yang bernilai tinggi dan relevan.",
-            "Sebutkan lokasi audit dari field location_label pada kalimat pertama; jangan mengganti nama lokasinya.",
-            "Untuk pertanyaan mengapa/kenapa, jelaskan mekanisme fisis geoteknik/seismiknya berdasarkan data audit terverifikasi.",
-            "Jika belum ada audit, jelaskan dengan ramah bahwa pengguna dapat memilih lokasi di peta terlebih dahulu.",
-            "Jika mode bandingkan, berikan analisis komparatif yang tajam antara kedua lokasi.",
-            "Pilih judul sumber yang benar-benar menopang jawaban.",
-            "Berikan tepat tiga pertanyaan lanjutan yang cerdas, tajam, dan relevan dengan diskusi.",
-        ],
+        "instructions": chat_instructions,
     }
 
     raw, _meta = await generate_with_fallback(
-        system_instruction=_CHAT_SYSTEM_INSTRUCTION,
+        system_instruction=(
+            f"{_CHAT_SYSTEM_INSTRUCTION}\n\n"
+            f"OUTPUT LANGUAGE OVERRIDE: Write every user-facing answer, evidence line, and follow-up question entirely in {language}. "
+            "Do not mix Indonesian and English. Keep official names, SNI codes, and source titles unchanged."
+        ),
         user_payload=prompt,
         response_schema=_chat_schema([citation.title for citation in citations]),
         max_output_tokens=1600,
@@ -1397,11 +1564,16 @@ async def answer_chat(
             return _safe_chat_refusal(lang)
 
         if audit is not None:
-            location_prefix = f"Lokasi audit: {_location_label(audit)}."
+            location_prefix = (
+                f"Audit location: {_location_label(audit)}."
+                if lang == "en"
+                else f"Lokasi audit: {_location_label(audit)}."
+            )
             if mode == "battle" and comparison is not None:
                 location_prefix = (
-                    f"Lokasi A: {_location_label(audit)}. "
-                    f"Lokasi B: {_location_label(comparison)}."
+                    f"Site A: {_location_label(audit)}. Site B: {_location_label(comparison)}."
+                    if lang == "en"
+                    else f"Lokasi A: {_location_label(audit)}. Lokasi B: {_location_label(comparison)}."
                 )
             # Dulu pengecekannya hanya startswith() persis, sehingga jawaban
             # yang sudah menyebut lokasinya dengan kalimat sendiri ("Lokasi di

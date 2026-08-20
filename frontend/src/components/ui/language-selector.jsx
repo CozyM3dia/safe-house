@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { cn } from "../../lib/utils";
 import { ChevronDown, Check } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
+import { useT } from "../../hooks/useTranslation";
 import { motion, AnimatePresence } from "framer-motion";
 
 const languages = [
@@ -12,6 +13,7 @@ const languages = [
 export function LanguageSelector() {
   const lang = useAppStore((s) => s.lang);
   const setLang = useAppStore((s) => s.setLang);
+  const t = useT();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -44,7 +46,7 @@ export function LanguageSelector() {
         onClick={() => setOpen((o) => !o)}
         whileHover="hover"
         whileTap={{ scale: 0.95 }}
-        aria-label="Pilih bahasa"
+        aria-label={t('accessibility.language')}
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
@@ -72,7 +74,7 @@ export function LanguageSelector() {
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             role="menu"
-            aria-label="Pilihan bahasa"
+            aria-label={t('accessibility.languageOptions')}
             className={cn(
               "absolute right-0 mt-2 z-50 w-48 overflow-hidden rounded-xl border border-white/10",
               "bg-bg-elevated/95 shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl"

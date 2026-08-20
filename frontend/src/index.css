@@ -8,6 +8,28 @@
 @layer base {
   :root {
     color-scheme: dark;
+    --safe-bg: 24 30% 5%;
+    --safe-bg-surface: 24 30% 8%;
+    --safe-bg-elevated: 30 33% 9%;
+    --safe-text-primary: 36 58% 87%;
+    --safe-text-secondary: 36 32% 70%;
+    --safe-text-muted: 32 27% 55%;
+    --safe-accent: 25 57% 62%;
+    --safe-accent-hover: 25 42% 52%;
+    --accent: 25 57% 62%;
+  }
+
+  html[data-theme='light'] {
+    color-scheme: light;
+    --safe-bg: 35 35% 96%;
+    --safe-bg-surface: 34 30% 99%;
+    --safe-bg-elevated: 33 25% 100%;
+    --safe-text-primary: 25 28% 16%;
+    --safe-text-secondary: 25 18% 34%;
+    --safe-text-muted: 25 12% 47%;
+    --safe-accent: 25 45% 40%;
+    --safe-accent-hover: 25 45% 33%;
+    --accent: 25 45% 40%;
   }
 
   * {
@@ -63,15 +85,27 @@
   /* Keep the reference map readable and slightly editorial, while leaving
      the separate hazard panes untouched so risk colors remain truthful. */
   .safe-map[data-basemap-style='terrain'] .leaflet-basemap-pane {
-    filter: saturate(0.74) contrast(0.98) brightness(0.99);
+    filter: saturate(0.68) contrast(0.96) brightness(1.01);
   }
 
   .safe-map[data-basemap-style='street'] .leaflet-basemap-pane {
-    filter: saturate(0.88) contrast(0.99) brightness(1.01);
+    filter: saturate(0.82) contrast(0.96) brightness(1.01);
   }
 
   .safe-map[data-basemap-style='satellite'] .leaflet-basemap-pane {
     filter: saturate(0.88) contrast(1.02) brightness(0.88);
+  }
+
+  .safe-map[data-basemap-style='alidade'] .leaflet-basemap-pane {
+    filter: saturate(0.96) contrast(0.99) brightness(1.01);
+  }
+
+  .safe-map[data-basemap-style='alidade-dark'] .leaflet-container {
+    background: #1a2225 !important;
+  }
+
+  .safe-map[data-basemap-style='alidade-dark'] .leaflet-basemap-pane {
+    filter: saturate(0.94) contrast(1.02) brightness(0.98);
   }
 
   .safe-map-edge {
@@ -81,13 +115,22 @@
     mix-blend-mode: multiply;
   }
 
-  .safe-map-crosshair,
-  .safe-map-crosshair .leaflet-container,
-  .safe-map-crosshair .leaflet-grab,
-  .safe-map-crosshair .leaflet-interactive,
-  .safe-map-crosshair .leaflet-tile-pane,
-  .safe-map-crosshair canvas {
+  html[data-theme='light'] .safe-map-crosshair,
+  html[data-theme='light'] .safe-map-crosshair .leaflet-container,
+  html[data-theme='light'] .safe-map-crosshair .leaflet-grab,
+  html[data-theme='light'] .safe-map-crosshair .leaflet-interactive,
+  html[data-theme='light'] .safe-map-crosshair .leaflet-tile-pane,
+  html[data-theme='light'] .safe-map-crosshair canvas {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='2' fill='%230f0b08' stroke='%23f0e4cc' stroke-width='1'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5' stroke='%230f0b08' stroke-width='1.5' stroke-linecap='round' filter='drop-shadow(0 0 0.8px %23f0e4cc)'/%3E%3C/svg%3E") 12 12, crosshair !important;
+  }
+
+  html:not([data-theme='light']) .safe-map-crosshair,
+  html:not([data-theme='light']) .safe-map-crosshair .leaflet-container,
+  html:not([data-theme='light']) .safe-map-crosshair .leaflet-grab,
+  html:not([data-theme='light']) .safe-map-crosshair .leaflet-interactive,
+  html:not([data-theme='light']) .safe-map-crosshair .leaflet-tile-pane,
+  html:not([data-theme='light']) .safe-map-crosshair canvas {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='2' fill='%23f0e4cc' stroke='%230f0b08' stroke-width='1'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5' stroke='%23f0e4cc' stroke-width='1.5' stroke-linecap='round' filter='drop-shadow(0 0 0.8px %230f0b08)'/%3E%3C/svg%3E") 12 12, crosshair !important;
   }
 
   .leaflet-control-attribution {
@@ -380,6 +423,115 @@
 
 .risk-tooltip::before {
   border-top-color: rgba(15, 11, 8, 0.92) !important;
+}
+
+/* Light mode keeps the same instrument-panel hierarchy, but swaps the
+   charcoal chrome for warm paper surfaces and ink-like contrast. The
+   `border-white`/`bg-white` utility selectors cover existing shadcn-style
+   translucent classes without forcing every component to duplicate variants. */
+html[data-theme='light'] body {
+  background: hsl(var(--safe-bg));
+}
+
+html[data-theme='light'] .glass,
+html[data-theme='light'] .glass-strong {
+  background: rgba(255, 252, 247, 0.86);
+  border-color: rgba(91, 67, 48, 0.14);
+  box-shadow: 0 10px 34px rgba(91, 67, 48, 0.12), 0 1px 4px rgba(91, 67, 48, 0.08);
+}
+
+html[data-theme='light'] .audit-panel {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(167, 111, 66, 0.08), transparent 28%),
+    rgba(255, 252, 247, 0.94);
+  box-shadow: 0 18px 48px rgba(91, 67, 48, 0.14), 0 2px 8px rgba(91, 67, 48, 0.08);
+}
+
+html[data-theme='light'] .bezel-outer {
+  background: rgba(91, 67, 48, 0.035);
+  border-color: rgba(91, 67, 48, 0.12);
+}
+
+html[data-theme='light'] .bezel-inner {
+  background: rgba(255, 252, 247, 0.78);
+  border-color: rgba(91, 67, 48, 0.10);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 12px rgba(91, 67, 48, 0.08);
+}
+
+html[data-theme='light'] [class*='border-white/'] {
+  border-color: rgba(91, 67, 48, 0.14) !important;
+}
+
+html[data-theme='light'] [class*='divide-white/'] {
+  --tw-divide-opacity: 0.14;
+  border-color: rgba(91, 67, 48, 0.14) !important;
+}
+
+html[data-theme='light'] [class*='bg-white/'] {
+  background-color: rgba(91, 67, 48, 0.045) !important;
+}
+
+html[data-theme='light'] [class*='text-white'] {
+  color: hsl(var(--safe-text-primary)) !important;
+}
+
+html[data-theme='light'] .leaflet-control-attribution {
+  background: rgba(255, 252, 247, 0.88) !important;
+  color: hsl(var(--safe-text-muted)) !important;
+  border-color: rgba(91, 67, 48, 0.14) !important;
+}
+
+html[data-theme='light'] .leaflet-control-attribution a {
+  color: hsl(var(--safe-accent)) !important;
+}
+
+html[data-theme='light'] .safe-map-edge {
+  background:
+    linear-gradient(to bottom, rgba(255, 252, 247, 0.18), transparent 9rem),
+    linear-gradient(to right, rgba(91, 67, 48, 0.08), transparent 11rem, transparent calc(100% - 11rem), rgba(91, 67, 48, 0.06));
+  mix-blend-mode: multiply;
+}
+
+html[data-theme='light'] .prose-safe {
+  color: hsl(var(--safe-text-secondary));
+}
+
+html[data-theme='light'] .prose-safe h1,
+html[data-theme='light'] .prose-safe h2,
+html[data-theme='light'] .prose-safe h3,
+html[data-theme='light'] .prose-safe h4,
+html[data-theme='light'] .prose-safe strong,
+html[data-theme='light'] .prose-safe th {
+  color: hsl(var(--safe-text-primary));
+}
+
+html[data-theme='light'] .prose-safe h2,
+html[data-theme='light'] .prose-safe h3,
+html[data-theme='light'] .prose-safe a,
+html[data-theme='light'] .prose-safe code {
+  color: hsl(var(--safe-accent));
+}
+
+html[data-theme='light'] .prose-safe pre,
+html[data-theme='light'] .prose-safe table,
+html[data-theme='light'] .prose-safe th,
+html[data-theme='light'] .prose-safe td {
+  border-color: rgba(91, 67, 48, 0.14);
+}
+
+html[data-theme='light'] .prose-safe pre {
+  background: rgba(91, 67, 48, 0.035);
+}
+
+html[data-theme='light'] .risk-tooltip {
+  background: rgba(255, 252, 247, 0.96) !important;
+  border-color: rgba(91, 67, 48, 0.18) !important;
+  color: hsl(var(--safe-text-primary)) !important;
+  box-shadow: 0 8px 24px rgba(91, 67, 48, 0.16) !important;
+}
+
+html[data-theme='light'] .risk-tooltip::before {
+  border-top-color: rgba(255, 252, 247, 0.96) !important;
 }
 
 /* ── Landing Page — SaaS Hero Redesign ─────── */

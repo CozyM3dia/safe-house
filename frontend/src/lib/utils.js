@@ -43,7 +43,12 @@ export function riskHex(score) {
  * Risk level → label.
  */
 // Band skor titik (Indonesia, baku SNI): makin tinggi makin aman.
-export function riskLabel(score) {
+export function riskLabel(score, lang = 'id') {
+  if (lang === 'en') {
+    if (score >= 70) return 'SAFE';
+    if (score >= 40) return 'MODERATE';
+    return 'CAUTION';
+  }
   if (score >= 70) return 'AMAN';
   if (score >= 40) return 'SEDANG';
   return 'WASPADA';

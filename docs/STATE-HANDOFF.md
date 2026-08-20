@@ -85,10 +85,10 @@ kumpulkan bukti bisnis nyata.
   Inggris pilihan A (hook "The ground you build on hides risks you can't see")
   — karena juri kemungkinan tim Emergent global (BELUM terkonfirmasi siapa
   jurinya; asumsi).
-- **Stadia Maps** (basemap Alidade Smooth) — APPROVED WITH CONDITIONS: additive,
-  CARTO tetap default+fallback, key via `VITE_STADIA_MAPS_API_KEY`, Free plan
-  no-commercial (restrict domain), kerjakan SETELAH hierarki skor. Branch
-  rencana `agent/stadia-map-redesign`. BELUM implement.
+- **Stadia Maps** (basemap Alidade Smooth + Alidade Smooth Dark) — implemented
+  as an optional Leaflet basemap. `VITE_STADIA_MAPS_API_KEY` is required and
+  must be domain-restricted for Preview/production. SAFE House defaults to the
+  dark variant when configured and falls back to Street when the key is absent.
 - **JANGAN full-rebuild UI.** Remake = poles terarah, pertahankan brand + logo
   + palet Mocha. Prioritas UI = hierarki hero-score.
 - **Riset kompetitor** → `docs/ui-research/`. Pelajaran: satu hero-score

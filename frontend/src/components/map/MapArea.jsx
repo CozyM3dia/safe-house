@@ -7,6 +7,7 @@ import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
   INDONESIA_MAP_BOUNDS,
+  STADIA_MAPS_ENABLED,
 } from '../../lib/constants';
 import { MapMarker } from './MapMarker';
 import { MapControls } from './MapControls';
@@ -61,12 +62,15 @@ function MapFlyToProperty() {
 
 export function MapArea() {
   const baseMapStyle = useAppStore((s) => s.baseMapStyle);
-  const activeTile = MAP_TILES[baseMapStyle] || MAP_TILES.street;
+  const requestedTile = MAP_TILES[baseMapStyle] || MAP_TILES.street;
+  const stadiaUnavailable = requestedTile.requiresApiKey && !STADIA_MAPS_ENABLED;
+  const activeTile = stadiaUnavailable ? MAP_TILES.street : requestedTile;
+  const activeStyle = stadiaUnavailable ? 'street' : baseMapStyle;
 
   return (
     <div
       className="safe-map absolute inset-0 z-0"
-      data-basemap-style={baseMapStyle}
+      data-basemap-style={activeStyle}
       data-tour="map-area"
     >
       <MapContainer

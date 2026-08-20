@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Badge } from '../ui/badge';
 import { LanguageSelector } from '../ui/language-selector';
+import { ThemeToggle } from '../ui/theme-toggle';
 import { cn, getModifierShortcut } from '../../lib/utils';
 
 export function TopBar() {
@@ -51,7 +52,7 @@ export function TopBar() {
           <img
             src="/safe_house_logo.png"
             alt="S.A.F.E House"
-            className="h-8 w-20 object-cover object-center sm:h-9 sm:w-36"
+            className="h-8 w-12 object-cover object-center sm:h-9 sm:w-36"
           />
           <div className="hidden lg:flex flex-col justify-center border-l border-white/10 pl-2.5 leading-none">
             <span className="text-[11px] font-medium tracking-tight text-text-secondary">
@@ -86,6 +87,7 @@ export function TopBar() {
       {/* Right: Lang + Mode toggle + Status */}
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <LanguageSelector />
+        <ThemeToggle className="shrink-0" />
 
         {/* Segmented mode control */}
         <div data-tour="topbar-mode" className="flex items-center rounded-lg border border-white/8 bg-white/[0.03] p-0.5">
@@ -121,7 +123,7 @@ export function TopBar() {
           </button>
         </div>
 
-        <Badge data-tour="topbar-status" variant={status.variant} aria-label={status.label} className="min-h-8 px-2 sm:px-2.5" aria-live="polite">
+        <Badge data-tour="topbar-status" variant={status.variant} aria-label={status.label} className="hidden min-h-8 px-2 sm:flex sm:px-2.5" aria-live="polite">
           <span className={cn(
             'pulse-dot mr-0 sm:mr-1',
             status.variant === 'safe' ? 'text-risk-safe'

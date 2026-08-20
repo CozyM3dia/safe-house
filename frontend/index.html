@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/safe-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      try {
+        const persisted = JSON.parse(localStorage.getItem('safe-house-store') || 'null');
+        const theme = persisted?.state?.theme;
+        const lang = persisted?.state?.lang;
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        if (lang === 'en' || lang === 'id') document.documentElement.lang = lang;
+      } catch (_) {
+        // React will apply the safe defaults after hydration.
+      }
+    </script>
 
     <!-- Primary meta — B2B: konsultan perizinan / PBG -->
     <title>S.A.F.E House — AI Geotechnical & Disaster Risk Platform</title>
