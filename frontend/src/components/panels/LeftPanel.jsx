@@ -210,7 +210,7 @@ function EmptyState() {
               <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent/70" />
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-text-primary">{label}</p>
-                <p className="mt-0.5 text-[10px] leading-snug text-text-muted">{desc}</p>
+                <p className="mt-0.5 text-[10px] leading-snug text-text-secondary">{desc}</p>
               </div>
             </li>
           ))}
@@ -409,7 +409,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
 
       {/* Location section */}
       <motion.div variants={item}>
-        <SectionLabel>Location</SectionLabel>
+        <SectionLabel>{t('panel.location')}</SectionLabel>
         <AddressCard property={propertyA} />
       </motion.div>
 

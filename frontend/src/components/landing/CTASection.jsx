@@ -65,7 +65,7 @@ export default function CTASection({ t }) {
       </motion.div>
 
       {/* SaaS Footer Navigation & Details */}
-      <div className="border-t border-border/60 bg-black/40 relative z-10">
+      <div className="border-t border-border/60 bg-bg/40 relative z-10">
         <div className="max-w-7xl mx-auto pt-16 pb-12 px-6 md:px-12 lg:px-20 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 relative z-10">
           
           {/* Brand Col */}

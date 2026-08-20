@@ -119,6 +119,10 @@ const translations = {
   // ─── Left Panel — Populated State ──────────────────────────────
   'panel.siteAnalysis': { id: 'Analisis Situs', en: 'Site Analysis' },
   'panel.riskDashboard': { id: 'Dashboard Risiko', en: 'Risk Dashboard' },
+  'panel.technicalMetrics': { id: 'Metrik Teknis', en: 'Technical Metrics' },
+  'panel.riskAnalysis': { id: 'Analisis Risiko', en: 'Risk Analysis' },
+  'panel.location': { id: 'Lokasi', en: 'Location' },
+  'panel.comparison': { id: 'Perbandingan', en: 'Comparison' },
   'panel.viewReport': {
     id: 'Lihat Laporan Audit AI',
     en: 'View Full AI Audit Report',
@@ -152,6 +156,9 @@ const translations = {
 
   // ─── Cards ──────────────────────────────────────────────────────
   'card.safeScore': { id: 'Skor S.A.F.E', en: 'S.A.F.E Score' },
+  'card.vs30': { id: 'Vs30', en: 'Vs30' },
+  'card.pga': { id: 'PGA', en: 'PGA' },
+  'card.liquefactionFs': { id: 'FS Likuefaksi', en: 'Liquefaction FS' },
   'card.riskRadar': { id: 'Radar Risiko (5-axis)', en: 'Risk Radar (5-axis)' },
   'card.seismic': { id: 'Tanda Tangan Seismik', en: 'Seismic Signature' },
   'card.probability': {
@@ -169,13 +176,25 @@ const translations = {
   'card.highShaking': { id: 'Guncangan tinggi', en: 'High shaking' },
   'card.elevation2': { id: 'Elevasi', en: 'Elevation' },
   'card.liqFs': { id: 'FS Likuefaksi', en: 'Liq. FS' },
-  'panel.technicalMetrics': { id: 'Metrik Teknis', en: 'Technical Metrics' },
-  'panel.riskAnalysis': { id: 'Analisis Risiko', en: 'Risk Analysis' },
+  'card.insufficientData': { id: 'Data tidak cukup', en: 'Insufficient data' },
+  'card.provisional': { id: 'Sementara', en: 'Provisional' },
   'axis.seismic': { id: 'Seismik', en: 'Seismic' },
   'axis.flood': { id: 'Banjir', en: 'Flood' },
   'axis.soil': { id: 'Tanah', en: 'Soil' },
   'axis.landslide': { id: 'Longsor', en: 'Landslide' },
   'axis.subsidence': { id: 'Penurunan', en: 'Subsidence' },
+  'card.siteLocation': { id: 'Lokasi Situs', en: 'Site Location' },
+  'card.coordinatesCopied': { id: 'Koordinat disalin', en: 'Coordinates copied' },
+  'card.copyCoordinates': { id: 'Salin koordinat', en: 'Copy coordinates' },
+  'card.copied': { id: 'Tersalin', en: 'Copied' },
+  'card.copy': { id: 'Salin', en: 'Copy' },
+  'card.addressUnavailable': { id: 'Alamat tidak tersedia', en: 'Address unavailable' },
+  'card.latitude': { id: 'Lintang', en: 'Latitude' },
+  'card.longitude': { id: 'Bujur', en: 'Longitude' },
+  'card.fromLocation': { id: 'dari lokasi', en: 'from location' },
+  'card.near': { id: 'DEKAT', en: 'NEAR' },
+  'card.moderate': { id: 'SEDANG', en: 'MOD' },
+  'card.far': { id: 'JAUH', en: 'FAR' },
 
   // ─── Kartu Bandingkan ───────────────────────────────────────────
   'battle.setup': { id: 'Siapkan Perbandingan', en: 'Set Up Comparison' },

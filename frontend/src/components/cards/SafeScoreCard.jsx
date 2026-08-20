@@ -112,7 +112,7 @@ export function SafeScoreCard({ property }) {
   const score = hasScore ? rawScore : 0;
   const animatedScore = useCountUp(score, 1500);
   const hex = riskHex(score);
-  const label = hasScore ? riskLabel(score) : 'DATA TIDAK CUKUP';
+  const label = hasScore ? riskLabel(score) : t('card.insufficientData');
   const isProvisional = property?.audit_status === 'provisional';
   const firedConfetti = useRef(false);
 
@@ -164,7 +164,7 @@ export function SafeScoreCard({ property }) {
           <div className="flex items-center gap-1.5 mb-1">
             <ShieldCheck className="h-3.5 w-3.5" style={{ color: hex }} />
             <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: hex }}>
-              S.A.F.E Score
+              {t('card.safeScore')}
             </span>
           </div>
 
@@ -182,7 +182,7 @@ export function SafeScoreCard({ property }) {
             </span>
             {isProvisional && (
               <span className="rounded-md border border-amber-400/25 bg-amber-400/8 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300">
-                Provisional
+                {t('card.provisional')}
               </span>
             )}
           </div>
