@@ -13,13 +13,13 @@ const ATTRIBUTION = 'Sumber bahaya: InaRISK BNPB';
 
 // Beberapa katalog raster BNPB yang paling baru kadang menerima permintaan
 // metadata tetapi tidak pernah menyelesaikan exportImage. Tetap pertahankan
-// URL kanonis untuk provenance, lalu dahulukan raster resmi alternatif yang
-// responsif agar kontrol layer tidak terlihat aktif tanpa gambar.
+// URL kanonis untuk provenance, lalu gunakan katalog ImageServer BNPB yang
+// responsif sebagai jalur render online utama.
 const SERVICE = (name) => `${INARISK_BASE}/${name}/ImageServer`;
 
-// Sumber = ImageServer publik tanpa token. Beberapa raster kanonis BNPB
-// lambat pada exportImage, sehingga kandidat resmi alternatif dicoba lebih
-// dulu dan URL kanonis tetap disimpan sebagai provenance/fallback terakhir.
+// Sumber = ImageServer publik tanpa token. Kandidat pertama dipilih dari
+// katalog resmi BNPB yang teruji responsif; serviceUrl tetap menjadi URL
+// kanonis untuk provenance dan kandidat cadangan bila service utama pulih.
 export const INARISK_HAZARDS = [
   {
     key: 'flood',
@@ -29,7 +29,7 @@ export const INARISK_HAZARDS = [
     icon: '🌊',
     serviceUrl: SERVICE('INDEKS_BAHAYA_BANJIR'),
     serviceCandidates: [
-      { url: SERVICE('INDEKS_BAHAYA_BANJIR'), source: 'official' },
+      { url: SERVICE('layer_bahaya_banjir'), source: 'official' },
     ],
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
@@ -42,11 +42,8 @@ export const INARISK_HAZARDS = [
     icon: '🏔️',
     serviceUrl: SERVICE('INDEKS_BAHAYA_TANAHLONGSOR'),
     serviceCandidates: [
-      { url: SERVICE('INDEKS_RISIKO_TANAH_LONGSOR'), source: 'fallback' },
-      { url: SERVICE('INDEKS_BAHAYA_TANAHLONGSOR'), source: 'official' },
+      { url: SERVICE('layer_bahaya_tanah_longsor'), source: 'official' },
     ],
-    fallbackDescriptionKey: 'panel.hazard.landslideFallbackDescription',
-    fallbackLegendKey: 'panel.hazard.landslideFallbackLegend',
     attribution: ATTRIBUTION,
     legend: HAZARD_LEGEND,
   },
@@ -58,8 +55,8 @@ export const INARISK_HAZARDS = [
     icon: '🌋',
     serviceUrl: SERVICE('INDEKS_BAHAYA_GEMPABUMI'),
     serviceCandidates: [
-      { url: SERVICE('layer_bahaya_gempabumi_2015'), source: 'fallback' },
-      { url: SERVICE('INDEKS_BAHAYA_GEMPABUMI'), source: 'official' },
+      { url: SERVICE('layer_bahaya_gempabumi'), source: 'official' },
+      { url: SERVICE('IDX_H_EQ_GLOBAL'), source: 'fallback' },
     ],
     fallbackDescriptionKey: 'panel.hazard.earthquakeFallbackDescription',
     fallbackLegendKey: 'panel.hazard.earthquakeFallbackLegend',
@@ -74,8 +71,10 @@ export const INARISK_HAZARDS = [
 export const INARISK_OVERLAY_KEYS = INARISK_HAZARDS.map(({ key }) => key);
 export const MAP_OVERLAY_KEYS = [...INARISK_OVERLAY_KEYS, 'faults'];
 
-const R = 6378137; // radius bola web-mercator (EPSG:3857)
+const R = 6378137; // semi-major axis (EPSG:3857/EPSG:3395)
 const HALF = Math.PI * R; // 20037508.342789244
+const POLAR_RADIUS = 6356752.314245179;
+const ECCENTRICITY = Math.sqrt(1 - (POLAR_RADIUS ** 2) / (R ** 2));
 
 // Sudut tile XYZ → lon/lat (deg) sudut barat-laut tile.
 function tileNW(x, y, z) {
@@ -93,6 +92,17 @@ function project(lon, lat) {
   return { x, y };
 }
 
+// lon/lat (deg) → meter EPSG:3395 (World Mercator), which is the native
+// spatial reference of the public BNPB InaRISK ImageServer rasters.
+function project3395(lon, lat) {
+  const lonRad = (lon * Math.PI) / 180;
+  const latRad = (lat * Math.PI) / 180;
+  const sinLat = Math.sin(latRad);
+  const conformal = Math.tan(Math.PI / 4 + latRad / 2)
+    * ((1 - ECCENTRICITY * sinLat) / (1 + ECCENTRICITY * sinLat)) ** (ECCENTRICITY / 2);
+  return { x: R * lonRad, y: R * Math.log(conformal) };
+}
+
 // {x,y,z} → "xmin,ymin,xmax,ymax" dalam meter 3857 (dibulatkan ke ±HALF di tepi).
 export function tileToBbox3857({ x, y, z }) {
   const nw = tileNW(x, y, z);
@@ -107,11 +117,26 @@ export function tileToBbox3857({ x, y, z }) {
   return `${xmin},${ymin},${xmax},${ymax}`;
 }
 
-// ArcGIS ImageServer exportImage: PNG32 memberi transparansi via nodata.
+// {x,y,z} → "xmin,ymin,xmax,ymax" in the BNPB raster CRS (EPSG:3395).
+export function tileToBbox3395({ x, y, z }) {
+  const nw = tileNW(x, y, z);
+  const se = tileNW(x + 1, y + 1, z);
+  const pnw = project3395(nw.lon, nw.lat);
+  const pse = project3395(se.lon, se.lat);
+  const clampX = (value) => Math.max(-HALF, Math.min(HALF, value));
+  const xmin = clampX(pnw.x);
+  const xmax = clampX(pse.x);
+  const ymin = pse.y;
+  const ymax = pnw.y;
+  return `${xmin},${ymin},${xmax},${ymax}`;
+}
+
+// ArcGIS ImageServer exportImage: BNPB rasters use EPSG:3395; PNG32 keeps
+// nodata transparent so the display-only overlay does not cover the basemap.
 export function buildExportUrl(serviceUrl, bbox) {
   const params = new URLSearchParams({
-    bboxSR: '3857',
-    imageSR: '3857',
+    bboxSR: '3395',
+    imageSR: '3395',
     size: '256,256',
     format: 'png32',
     f: 'image',

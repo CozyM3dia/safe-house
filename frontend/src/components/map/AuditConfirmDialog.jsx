@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Zap, X, Crosshair } from 'lucide-react';
@@ -12,6 +12,20 @@ export function AuditConfirmDialog() {
   const lang = useAppStore((s) => s.lang);
   const mode = useAppStore((s) => s.mode);
   const theme = useAppStore((s) => s.theme);
+  const closeButtonRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const hasPendingAudit = Boolean(pendingAudit);
+
+  useEffect(() => {
+    if (!hasPendingAudit) return undefined;
+    previousFocusRef.current = document.activeElement;
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    return () => {
+      window.cancelAnimationFrame(frame);
+      previousFocusRef.current?.focus?.();
+      previousFocusRef.current = null;
+    };
+  }, [hasPendingAudit]);
 
   // Keyboard accessibility: Enter to confirm, Escape to cancel
   useEffect(() => {
@@ -37,7 +51,7 @@ export function AuditConfirmDialog() {
   return createPortal(
     <AnimatePresence>
       {pendingAudit && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="safe-inset-x fixed inset-y-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -57,7 +71,7 @@ export function AuditConfirmDialog() {
             role="dialog"
             aria-modal="true"
             className={cn(
-              'relative w-full max-w-md overflow-hidden rounded-2xl p-6 backdrop-blur-2xl',
+              'relative max-h-[calc(100dvh-1.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl p-4 backdrop-blur-2xl sm:p-6',
               theme === 'light'
                 ? 'border border-[rgba(91,67,48,0.18)] bg-[rgba(248,241,231,0.98)] shadow-[0_24px_64px_rgba(91,67,48,0.24)]'
                 : 'border border-accent/40 bg-[#16100c] shadow-2xl shadow-black/90',
@@ -66,9 +80,10 @@ export function AuditConfirmDialog() {
             {/* Close button */}
             <button
               type="button"
+              ref={closeButtonRef}
               onClick={cancelPendingAudit}
               className={cn(
-                'absolute right-3.5 top-3.5 flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:text-text-primary',
+                'absolute right-2 top-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:text-text-primary sm:right-3.5 sm:top-3.5',
                 theme === 'light' ? 'hover:bg-[rgba(91,67,48,0.08)]' : 'hover:bg-white/10',
               )}
               aria-label={isEn ? 'Cancel' : 'Batal'}
@@ -107,7 +122,7 @@ export function AuditConfirmDialog() {
 
               {/* Coordinates Card */}
               <div className={cn(
-                'flex items-center justify-between rounded-xl px-4 py-3 font-mono text-xs',
+                'flex items-center justify-between gap-3 rounded-xl px-4 py-3 font-mono text-xs max-[359px]:flex-col max-[359px]:items-start',
                 theme === 'light'
                   ? 'border border-[rgba(91,67,48,0.14)] bg-[rgba(91,67,48,0.045)]'
                   : 'border border-white/10 bg-white/[0.04]',
@@ -118,7 +133,7 @@ export function AuditConfirmDialog() {
                   </span>
                   <span className="font-bold text-accent">{pendingAudit.lat.toFixed(5)}°</span>
                 </div>
-                <div className={cn('h-6 w-px', theme === 'light' ? 'bg-[rgba(91,67,48,0.14)]' : 'bg-white/10')} />
+                <div className={cn('h-6 w-px max-[359px]:hidden', theme === 'light' ? 'bg-[rgba(91,67,48,0.14)]' : 'bg-white/10')} />
                 <div className="text-right">
                   <span className="block text-[9px] font-sans font-medium uppercase tracking-wider text-text-muted">
                     Longitude
@@ -136,14 +151,14 @@ export function AuditConfirmDialog() {
 
             {/* Action Buttons */}
             <div className={cn(
-              'flex items-center justify-end gap-3 border-t pt-3',
+              'flex items-center justify-end gap-3 border-t pt-3 max-[639px]:flex-col max-[639px]:items-stretch',
               theme === 'light' ? 'border-[rgba(91,67,48,0.14)]' : 'border-white/10',
             )}>
               <button
                 type="button"
                 onClick={cancelPendingAudit}
                 className={cn(
-                  'flex items-center justify-center rounded-xl px-4 py-2 text-xs font-semibold text-text-secondary transition-all hover:text-text-primary active:scale-95 cursor-pointer',
+                  'flex min-h-[44px] items-center justify-center rounded-xl px-4 py-2 text-xs font-semibold text-text-secondary transition-all hover:text-text-primary active:scale-95 cursor-pointer max-[639px]:w-full',
                   theme === 'light'
                     ? 'border border-[rgba(91,67,48,0.14)] bg-[rgba(91,67,48,0.045)] hover:border-[rgba(91,67,48,0.25)] hover:bg-[rgba(91,67,48,0.08)]'
                     : 'border border-white/12 bg-white/[0.04] hover:border-white/25 hover:bg-white/10',
@@ -155,7 +170,7 @@ export function AuditConfirmDialog() {
                 type="button"
                 onClick={confirmPendingAudit}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-xl border border-[#d4956a] bg-[#d4956a] px-5 py-2 text-xs font-bold shadow-[0_0_20px_rgba(212,149,106,0.35)] transition-all hover:bg-[#e4a87e] hover:shadow-[0_0_25px_rgba(212,149,106,0.55)] active:scale-95 cursor-pointer',
+                  'flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[#d4956a] bg-[#d4956a] px-5 py-2 text-xs font-bold shadow-[0_0_20px_rgba(212,149,106,0.35)] transition-all hover:bg-[#e4a87e] hover:shadow-[0_0_25px_rgba(212,149,106,0.55)] active:scale-95 cursor-pointer max-[639px]:w-full',
                   theme === 'light' ? 'text-[#30241d] hover:text-[#30241d]' : 'text-bg hover:text-bg',
                 )}
               >

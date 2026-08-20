@@ -46,6 +46,48 @@
     overflow: hidden;
   }
 
+  html {
+    min-width: 320px;
+    background: hsl(var(--safe-bg));
+    overscroll-behavior: none;
+  }
+
+  body {
+    min-width: 320px;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+  }
+
+  html.document-scroll,
+  html.document-scroll body,
+  html.document-scroll #root {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+  }
+
+  html.app-scroll-lock,
+  html.app-scroll-lock body,
+  html.app-scroll-lock #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  button,
+  [role='button'],
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  textarea,
+  select {
+    max-width: 100%;
+  }
+
   body {
     @apply bg-bg text-text-primary font-body antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
@@ -78,8 +120,20 @@
     width: 100%;
   }
 
+  :focus-visible {
+    outline: 2px solid hsl(var(--safe-accent));
+    outline-offset: 2px;
+  }
+
   .safe-map .leaflet-basemap-pane {
     transition: filter 240ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Local canvas tiles paint synchronously; Leaflet's image-tile visibility
+     gate otherwise leaves the offline atlas hidden after it has rendered. */
+  .safe-map .offline-basemap .leaflet-tile,
+  .safe-map .offline-overlay .leaflet-tile {
+    visibility: visible !important;
   }
 
   /* Keep the reference map readable and slightly editorial, while leaving
@@ -275,6 +329,32 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-inset-x {
+    left: max(0.5rem, env(safe-area-inset-left));
+    right: max(0.5rem, env(safe-area-inset-right));
+  }
+
+  .safe-fixed-bottom {
+    bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-map-control-bottom {
+    bottom: max(6rem, calc(5.5rem + env(safe-area-inset-bottom)));
+  }
+
+  .overscroll-contain {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* ── Markdown AI Report — warm dark theme ──────────────── */
@@ -384,11 +464,14 @@
 
 .prose-safe table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   margin: 1.2em 0;
   font-size: 13px;
   border-radius: 8px;
   overflow: hidden;
+  overflow-x: auto;
+  display: block;
   border: 1px solid rgba(255, 210, 170, 0.10);
 }
 
@@ -423,6 +506,30 @@
 
 .risk-tooltip::before {
   border-top-color: rgba(15, 11, 8, 0.92) !important;
+}
+
+.prose-safe,
+.chat-assistant-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.table-scroll,
+.chat-assistant-message table {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll {
+  display: block;
+}
+
+.chat-assistant-message table {
+  display: block;
+  width: max-content;
+  min-width: 100%;
 }
 
 /* Light mode keeps the same instrument-panel hierarchy, but swaps the
@@ -541,6 +648,29 @@ html.landing-scroll #root {
   height: auto;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+html.document-scroll .landing,
+html.document-scroll .report-page {
+  min-height: 100dvh;
+}
+
+@media (max-width: 639px) {
+  html,
+  body,
+  #root {
+    min-width: 320px;
+  }
+
+  .leaflet-control-attribution {
+    max-width: min(70vw, 260px);
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .prose-safe table {
+    min-width: 520px;
+  }
 }
 
 .landing {

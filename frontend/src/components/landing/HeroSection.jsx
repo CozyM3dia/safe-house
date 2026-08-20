@@ -7,18 +7,18 @@ export default function HeroSection({ t }) {
 
   // titleComponent definition to be passed to the scroll container
   const titleComponent = (
-    <div className="flex flex-col items-center w-full max-w-4xl text-center mx-auto mb-10 px-4">
+    <div className="mx-auto mb-10 flex w-full max-w-4xl flex-col items-center px-4 text-center max-[639px]:mb-6">
       {/* Logo */}
       <motion.div
         initial={{ opacity: 0, y: -24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-8"
+        className="mb-5 sm:mb-8"
       >
         <img 
           src="/safe_house_logo.png" 
           alt="S.A.F.E House Logo" 
-          className="h-32 md:h-40 lg:h-48 object-contain drop-shadow-[0_0_20px_rgba(212,149,106,0.25)]" 
+          className="h-20 object-contain drop-shadow-[0_0_20px_rgba(212,149,106,0.25)] sm:h-32 md:h-40 lg:h-48"
         />
       </motion.div>
 
@@ -27,7 +27,7 @@ export default function HeroSection({ t }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 backdrop-blur-md px-4 py-1.5 text-xs text-muted-foreground font-body mb-6 cursor-default hover:border-accent/30 transition-colors"
+        className="mb-4 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-background/60 px-3 py-1.5 text-[10px] text-muted-foreground backdrop-blur-md transition-colors hover:border-accent/30 sm:mb-6 sm:px-4 sm:text-xs"
       >
         <span>{t('heroBadge', 'Desk study geoteknik — InaRISK BNPB · USGS · PuSGeN')}</span>
       </motion.div>
@@ -37,7 +37,7 @@ export default function HeroSection({ t }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="font-display text-[3.2rem] md:text-6xl lg:text-[5.2rem] leading-[0.95] tracking-tight text-foreground max-w-4xl text-balance"
+        className="max-w-4xl font-display text-[clamp(2.35rem,11.5vw,3.2rem)] leading-[1.02] tracking-tight text-foreground text-balance sm:text-6xl lg:text-[5.2rem]"
       >
         {t('heroTitlePrefix', 'Parameter Teknis PBG, ')}
         <span className="font-display italic text-accent pr-1">
@@ -50,7 +50,7 @@ export default function HeroSection({ t }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-5 text-sm md:text-base text-muted-foreground max-w-[660px] leading-relaxed font-body text-balance"
+        className="mt-4 max-w-[660px] text-xs leading-relaxed text-muted-foreground text-balance font-body sm:mt-5 sm:text-base"
       >
         {t('heroSub', 'Kelas situs SNI 1726:2019, PGA desain, FS likuefaksi, dan bahaya banjir — dari satu titik koordinat, dalam dua menit. Untuk konsultan perizinan, developer, dan konsultan geoteknik.')}
       </motion.p>
@@ -60,12 +60,12 @@ export default function HeroSection({ t }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-6 flex items-center gap-4 justify-center"
+        className="mt-6 flex items-center justify-center gap-3 sm:gap-4"
       >
         <button
           type="button"
           onClick={() => navigate('/app')}
-          className="min-h-[44px] rounded-full px-6 py-2.5 text-sm font-semibold font-body bg-primary text-primary-foreground hover:bg-primary/90 transition-all btn-press shadow-glow/10 active:scale-[0.97]"
+          className="min-h-[44px] rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow/10 transition-all btn-press hover:bg-primary/90 active:scale-[0.97] sm:px-6"
         >
           {t('heroCTA', 'Coba Gratis')}
         </button>
@@ -84,7 +84,7 @@ export default function HeroSection({ t }) {
   );
 
   return (
-    <div className="relative min-h-screen pt-20 w-full overflow-hidden select-none">
+    <div className="relative min-h-[100dvh] w-full overflow-hidden pt-20 select-none sm:pt-24">
       {/* Background Video */}
       <video
         autoPlay
@@ -121,7 +121,7 @@ export default function HeroSection({ t }) {
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/30" />
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500/30" />
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded bg-secondary/50 border border-border w-72 justify-center text-muted-foreground text-[10px] tracking-wide font-mono">
+            <div className="flex w-36 items-center justify-center gap-1.5 rounded border border-border bg-secondary/50 px-3 py-1 text-[9px] tracking-wide text-muted-foreground font-mono sm:w-72 sm:text-[10px]">
                 <span className="text-accent/60">✦</span>
                 <span className="opacity-60">safehouse.web.id/app</span>
               </div>

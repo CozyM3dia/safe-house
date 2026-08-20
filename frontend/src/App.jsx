@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Toaster } from 'sonner';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import { MapArea } from './components/map/MapArea';
 import { TopBar } from './components/panels/TopBar';
@@ -17,6 +17,7 @@ import { DisasterLayersPanel } from './components/map/DisasterLayersPanel';
 import { useAppStore } from './store/useAppStore';
 import { OnboardingTour } from './components/onboarding/OnboardingTour';
 import { Skeleton, SkeletonText } from './components/ui/skeleton';
+import { isNarrowViewport } from './lib/responsive';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const SharedReport = lazy(() => import('./pages/SharedReport'));
@@ -55,6 +56,15 @@ function AppShell() {
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
   const setChatExpanded = useAppStore((s) => s.setChatExpanded);
   const theme = useAppStore((s) => s.theme);
+  const setLeftPanelOpen = useAppStore((s) => s.setLeftPanelOpen);
+
+  useEffect(() => {
+    // The map is the primary mobile surface. Start the sheet collapsed on a
+    // narrow viewport, while leaving an existing audit untouched.
+    if (isNarrowViewport() && !useAppStore.getState().propertyA) {
+      setLeftPanelOpen(false);
+    }
+  }, [setLeftPanelOpen]);
 
   useHotkeys('mod+k', (e) => {
     e.preventDefault();
@@ -69,7 +79,7 @@ function AppShell() {
   });
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-bg">
+    <div className="app-shell relative h-[100svh] min-h-[100dvh] w-full max-w-full overflow-hidden bg-bg">
       {/* z-0: Map */}
       <MapArea />
 
@@ -117,6 +127,7 @@ function AppShell() {
 }
 
 function AppPreferences() {
+  const location = useLocation();
   const theme = useAppStore((s) => s.theme);
   const lang = useAppStore((s) => s.lang);
 
@@ -125,6 +136,15 @@ function AppPreferences() {
     document.documentElement.style.colorScheme = theme === 'light' ? 'light' : 'dark';
     document.documentElement.lang = lang === 'en' ? 'en' : 'id';
   }, [theme, lang]);
+
+  useEffect(() => {
+    const scrollable = location.pathname === '/' || location.pathname.startsWith('/laporan/');
+    document.documentElement.classList.toggle('document-scroll', scrollable);
+    document.documentElement.classList.toggle('app-scroll-lock', !scrollable);
+    return () => {
+      document.documentElement.classList.remove('document-scroll', 'app-scroll-lock');
+    };
+  }, [location.pathname]);
 
   return null;
 }

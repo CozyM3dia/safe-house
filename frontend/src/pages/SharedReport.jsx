@@ -45,23 +45,23 @@ export default function SharedReport() {
   }, [slug, t]);
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary">
+    <div className="report-page min-h-[100dvh] bg-bg text-text-primary">
       <header className="border-b border-[rgba(255,210,170,0.07)]">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
+        <div className="safe-top mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 pb-3 sm:px-5 sm:pb-4">
           <Link to="/" className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-accent" />
             <span className="font-display text-sm font-bold tracking-tight">S.A.F.E House</span>
           </Link>
           <Link
             to="/app"
-            className="btn-press inline-flex min-h-[44px] items-center rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-bg"
+            className="btn-press inline-flex min-h-[44px] shrink-0 items-center rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-bg"
           >
             {t('report.createAudit')}
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-5 py-8">
+      <main className="mx-auto w-full max-w-3xl min-w-0 px-4 py-7 sm:px-5 sm:py-8">
         {state.status === 'loading' && <SharedReportSkeleton label={t('report.loading')} />}
 
         {state.status === 'error' && (
@@ -133,11 +133,11 @@ function ReportBody({ property }) {
       {/* Location header */}
       <div className="flex items-start gap-2">
         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-        <div>
+        <div className="min-w-0">
           <h1 className="font-display text-lg font-semibold leading-tight">
             {t('report.locationAudit')}
           </h1>
-          <p className="text-sm text-text-secondary">{property.address}</p>
+          <p className="break-words text-sm text-text-secondary">{property.address}</p>
           <p className="mt-0.5 font-data text-xs text-text-muted">
             {property.lat.toFixed(5)}, {property.lon.toFixed(5)}
           </p>
@@ -231,10 +231,10 @@ function SectionLabel({ children }) {
 
 function Stat({ label, value, sub }) {
   return (
-    <div className="rounded-lg border border-[rgba(255,210,170,0.08)] bg-[rgba(22,14,8,0.6)] p-3">
+    <div className="min-w-0 rounded-lg border border-[rgba(255,210,170,0.08)] bg-[rgba(22,14,8,0.6)] p-3">
       <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-text-muted">{label}</p>
       <p className="mt-1 font-data text-lg font-semibold text-text-primary">{value ?? '—'}</p>
-      {sub && <p className="truncate font-data text-[10px] text-text-muted">{sub}</p>}
+      {sub && <p className="break-words font-data text-[10px] text-text-muted">{sub}</p>}
     </div>
   );
 }

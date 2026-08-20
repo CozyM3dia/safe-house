@@ -57,7 +57,7 @@ export default function FAQSection({ t }) {
   };
 
   return (
-    <section className="relative w-full py-24 px-6 md:px-12 lg:px-20 bg-background border-t border-border overflow-hidden select-none landing-grid-decor">
+    <section className="relative w-full py-16 px-4 md:px-12 lg:px-20 bg-background border-t border-border overflow-hidden select-none landing-grid-decor sm:py-20 md:py-24">
       {/* Background rotating lines for tectonic compass */}
       <div className="absolute right-[-80px] bottom-[-80px] w-80 h-80 opacity-[0.02] pointer-events-none animate-slow-rotate z-0">
         <svg className="w-full h-full text-accent" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="0.5">
@@ -74,7 +74,7 @@ export default function FAQSection({ t }) {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
-          className="text-center mb-16"
+          className="mb-10 text-center sm:mb-16"
         >
           <span className="text-[10px] md:text-xs font-bold tracking-[0.2em] text-accent uppercase font-body mb-4 block">
             FAQ
@@ -103,10 +103,10 @@ export default function FAQSection({ t }) {
               <AccordionItem
                 value={item.id}
                 key={item.id}
-                className="px-6 py-1 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-accent/15 transition-all duration-300 shadow-[0_4px_16px_rgba(0,0,0,0.2)] backdrop-blur-md"
+                className="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-1 shadow-[0_4px_16px_rgba(0,0,0,0.2)] backdrop-blur-md transition-all duration-300 hover:border-accent/15 hover:bg-white/[0.04] sm:px-6"
               >
                 <AccordionPrimitive.Header className="flex">
-                  <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between py-4 text-left text-[14px] md:text-[15px] font-semibold leading-6 text-text-primary hover:text-accent transition-all duration-200 [&>svg>path:last-child]:origin-center [&>svg>path:last-child]:transition-all [&>svg>path:last-child]:duration-200 [&[data-state=open]>svg>path:last-child]:rotate-90 [&[data-state=open]>svg>path:last-child]:opacity-0 [&[data-state=open]>svg]:rotate-180">
+                  <AccordionPrimitive.Trigger className="flex min-h-[52px] flex-1 items-center justify-between gap-3 py-4 text-left text-[14px] font-semibold leading-6 text-text-primary transition-all duration-200 hover:text-accent sm:text-[15px] [&>svg>path:last-child]:origin-center [&>svg>path:last-child]:transition-all [&>svg>path:last-child]:duration-200 [&[data-state=open]>svg>path:last-child]:rotate-90 [&[data-state=open]>svg>path:last-child]:opacity-0 [&[data-state=open]>svg]:rotate-180">
                     {item.question}
                     <Plus
                       size={16}

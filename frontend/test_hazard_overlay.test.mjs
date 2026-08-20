@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   INARISK_HAZARDS,
   tileToBbox3857,
+  tileToBbox3395,
   buildExportUrl,
   indexToRainbow,
   buildRainbowLut,
@@ -48,12 +49,20 @@ test('tileToBbox3857 keeps ordering xmin<xmax and ymin<ymax for an inner tile', 
   assert.ok(ymin < ymax);
 });
 
-test('buildExportUrl requests a png32 image export in 3857 via exportImage', () => {
+test('tileToBbox3395 targets the native BNPB raster CRS with ordered coordinates', () => {
+  const [xmin, ymin, xmax, ymax] = tileToBbox3395({ x: 27, y: 33, z: 6 }).split(',').map(Number);
+  assert.ok(xmin < xmax);
+  assert.ok(ymin < ymax);
+  assert.ok(Math.abs(xmin) <= 20037508.35);
+  assert.ok(Math.abs(xmax) <= 20037508.35);
+});
+
+test('buildExportUrl requests a png32 image export in native BNPB 3395 via exportImage', () => {
   const url = buildExportUrl('https://svc/ImageServer', '1,2,3,4');
   assert.match(url, /\/exportImage\?/);
   assert.match(url, /bbox=1,2,3,4/);
-  assert.match(url, /bboxSR=3857/);
-  assert.match(url, /imageSR=3857/);
+  assert.match(url, /bboxSR=3395/);
+  assert.match(url, /imageSR=3395/);
   assert.match(url, /format=png32/);
   assert.match(url, /f=image/);
 });

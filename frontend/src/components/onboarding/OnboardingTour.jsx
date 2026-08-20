@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { subscribeToViewport } from '../../lib/responsive';
 
 export function OnboardingTour() {
   const t = useT();
@@ -86,11 +87,13 @@ export function OnboardingTour() {
     };
 
     updatePosition();
-    window.addEventListener('resize', updatePosition);
-    const interval = setInterval(updatePosition, 100);
+    const unsubscribe = subscribeToViewport(updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    const interval = setInterval(updatePosition, 250);
 
     return () => {
-      window.removeEventListener('resize', updatePosition);
+      unsubscribe();
+      window.removeEventListener('scroll', updatePosition, true);
       clearInterval(interval);
     };
   }, [onboardingActive, onboardingStep, currentStepData?.selector]);
@@ -111,10 +114,15 @@ export function OnboardingTour() {
       zIndex: 55, // higher than topbar and panels
     };
 
+    const viewportHeight = Math.round(window.visualViewport?.height || window.innerHeight);
+    const tooltipWidth = Math.min(380, window.innerWidth - 24);
+    const tooltipHeight = Math.min(420, viewportHeight - 24);
+
     if (!targetRect || currentStepData.position === 'center') {
-      style.top = '50%';
-      style.left = '50%';
-      style.transform = 'translate(-50%, -50%)';
+      style.top = `${Math.max(12, (viewportHeight - tooltipHeight) / 2)}px`;
+      style.left = `${Math.max(12, (window.innerWidth - tooltipWidth) / 2)}px`;
+      style.width = `${tooltipWidth}px`;
+      style.maxHeight = `${tooltipHeight}px`;
       return style;
     }
 
@@ -122,8 +130,6 @@ export function OnboardingTour() {
     const pos = currentStepData.position;
     
     // Set a safe maximum width for the tooltip box
-    const tooltipWidth = Math.min(380, window.innerWidth - 32);
-    
     let top;
     let left;
 
@@ -142,18 +148,18 @@ export function OnboardingTour() {
     } else {
       style.top = '50%';
       style.left = '50%';
-      style.transform = 'translate(-50%, -50%)';
       return style;
     }
 
     // Clamp coordinates to keep the tooltip fully visible on screen
-    const padding = 16;
+    const padding = 12;
     left = Math.max(padding, Math.min(window.innerWidth - tooltipWidth - padding, left));
-    top = Math.max(padding, Math.min(window.innerHeight - 320 - padding, top));
+    top = Math.max(padding, Math.min(viewportHeight - tooltipHeight - padding, top));
 
     style.top = `${top}px`;
     style.left = `${left}px`;
     style.width = `${tooltipWidth}px`;
+    style.maxHeight = `${tooltipHeight}px`;
 
     return style;
   };
@@ -161,7 +167,7 @@ export function OnboardingTour() {
   return (
     <div className="fixed inset-0 z-40 overflow-hidden select-none">
       {/* 1. Backdrop overlay with mask */}
-      <svg className="absolute inset-0 pointer-events-none w-screen h-screen">
+      <svg className="pointer-events-none absolute inset-0 h-full w-full">
         <defs>
           <mask id="spotlight-mask">
             <rect width="100%" height="100%" fill="white" />
@@ -203,12 +209,13 @@ export function OnboardingTour() {
       <AnimatePresence mode="wait">
         <motion.div
           key={`tour-step-${onboardingStep}`}
+          data-testid="onboarding-tooltip"
           initial={{ opacity: 0, scale: 0.94, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 10 }}
           transition={{ type: 'spring', damping: 24, stiffness: 260 }}
           style={getTooltipStyle()}
-          className="glass-strong w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-white/12"
+          className="glass-strong w-full max-w-sm overflow-y-auto rounded-2xl border border-white/12 p-4 shadow-2xl sm:p-5"
         >
           {/* Close button */}
           <button
@@ -247,7 +254,7 @@ export function OnboardingTour() {
                   onClick={prevStep}
                   variant="outline"
                   size="sm"
-                  className="h-8 text-[11px] font-semibold py-1 px-2.5 flex items-center gap-1 border border-white/8 hover:bg-white/6"
+                  className="min-h-[44px] text-[11px] font-semibold py-1 px-2.5 flex items-center gap-1 border border-white/8 hover:bg-white/6 sm:min-h-8"
                 >
                   <ChevronLeft className="h-3 w-3" />
                   {t('tour.back')}
@@ -257,7 +264,7 @@ export function OnboardingTour() {
                   onClick={stopOnboarding}
                   variant="ghost"
                   size="sm"
-                  className="h-8 text-[11px] font-semibold py-1 px-2.5 text-text-muted hover:text-text-primary"
+                  className="min-h-[44px] text-[11px] font-semibold py-1 px-2.5 text-text-muted hover:text-text-primary sm:min-h-8"
                 >
                   {t('tour.skip')}
                 </Button>
@@ -267,7 +274,7 @@ export function OnboardingTour() {
                 onClick={handleNext}
                 variant="accent"
                 size="sm"
-                className="h-8 text-[11px] font-semibold py-1 px-3 flex items-center gap-1 shadow-[0_0_12px_rgba(212,149,106,0.15)]"
+                className="min-h-[44px] text-[11px] font-semibold py-1 px-3 flex items-center gap-1 shadow-[0_0_12px_rgba(212,149,106,0.15)] sm:min-h-8"
               >
                 <span>
                   {onboardingStep === steps.length - 1

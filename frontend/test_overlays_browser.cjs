@@ -75,11 +75,21 @@ async function waitForOverlaySettled(page, key) {
       layerStatuses[key] = status;
       layerSources[key] = await page.evaluate((overlayKey) => window.useAppStore.getState().overlaySources[overlayKey], key);
       assert.equal(status, 'ready', `${key} did not render a tile; status=${status}`);
-      assert.ok(layerRequests.length > requestCountBefore, `${key} did not request a raster tile`);
-      const serviceName = key === 'landslide' ? 'TANAHLONGSOR' : key === 'earthquake' ? 'GEMPABUMI' : 'BANJIR';
+      const hazardPane = await page.$eval('.inarisk-overlay', (layer) => ({
+        className: layer.parentElement?.className,
+        zIndex: getComputedStyle(layer.parentElement).zIndex,
+      }));
+      assert.match(String(hazardPane.className), /leaflet-hazardOverlay-pane/);
+      assert.equal(hazardPane.zIndex, '350');
+      assert.equal(layerSources[key], 'official', `${key} should use the responsive official BNPB raster`);
+      assert.ok(layerRequests.length > requestCountBefore, `${key} did not request a remote raster tile`);
       const requestedUrls = layerRequests.slice(requestCountBefore).join('\n');
       assert.match(requestedUrls, /ImageServer/);
-      const servicePattern = serviceName === 'TANAHLONGSOR' ? /TANAH[_]?LONGSOR/i : new RegExp(serviceName, 'i');
+      const servicePattern = {
+        flood: /layer_bahaya_banjir/i,
+        landslide: /layer_bahaya_tanah_longsor/i,
+        earthquake: /layer_bahaya_gempabumi/i,
+      }[key];
       assert.match(requestedUrls, servicePattern);
 
       await page.click(`[data-testid="overlay-toggle-${key}"]`);
@@ -115,7 +125,7 @@ async function waitForOverlaySettled(page, key) {
     await page.waitForFunction(() => window.useAppStore.getState().faultLayerSource !== 'loading', { timeout: 15000 });
     await wait(250);
     const fallbackSource = await page.evaluate(() => window.useAppStore.getState().overlaySources.landslide);
-    assert.equal(fallbackSource, 'fallback');
+    assert.equal(fallbackSource, 'official');
     const faultLegendCount = await page.$$eval('[data-testid="fault-layer-legend"]', (legends) => legends.length);
     assert.equal(faultLegendCount, 1, 'fault legend should render exactly once inside the layer panel');
     const panelText = await page.$eval('[data-testid="overlay-toggle-flood"]', (button) => {
@@ -125,12 +135,13 @@ async function waitForOverlaySettled(page, key) {
     });
     assert.doesNotMatch(panelText, /Layer bahaya|Layer referensi|Banjir|Longsor|Gempa|Sesar aktif|Sumber|Geometri resmi|Legenda aktif/);
     assert.match(panelText, /Hazard layers|Reference layers|Flood|Active faults|Map Legend/);
-    assert.match(panelText, /Official landslide-risk raster used as a responsive fallback/);
+    assert.match(panelText, /National landslide hazard map/);
 
+    assert.deepEqual(layerRequestFailures, [], `map layer request failures: ${JSON.stringify(layerRequestFailures)}`);
     assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join('; ')}`);
     console.log(JSON.stringify({
       baseUrl,
-      layers: 'flood, landslide, earthquake, faults passed',
+      layers: 'flood, landslide, earthquake, faults passed (remote)',
       basemaps: 'street and satellite passed',
       englishPanel: 'passed',
       layerStatuses,

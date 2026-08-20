@@ -210,11 +210,11 @@ export function parseBuildingCodes(content) {
     if (lineTrim.startsWith('#')) continue;
 
     // Remove leading list markers (- , * , 1. , 1) , etc.)
-    lineTrim = lineTrim.replace(/^(?:[-*•]|\d+[\.\)])\s*/, '').trim();
+    lineTrim = lineTrim.replace(/^(?:[-*•]|\d+[.)])\s*/, '').trim();
     if (!lineTrim) continue;
 
-    let code = '';
-    let description = '';
+    let code;
+    let description;
 
     // Case 1: **Title**: Description or **Title** - Description or **Title** Description
     const boldMatch = lineTrim.match(/^\*\*(.*?)\*\*\s*(.*)/);

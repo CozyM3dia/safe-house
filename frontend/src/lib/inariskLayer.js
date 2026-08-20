@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import { tileToBbox3857, buildExportUrl, buildRainbowLut } from './hazardOverlay';
+import { tileToBbox3395, buildExportUrl, buildRainbowLut } from './hazardOverlay';
 
 // LUT rainbow dibangun sekali, dipakai semua tile.
 const LUT = buildRainbowLut();
@@ -21,7 +21,7 @@ const InariskColorLayer = L.GridLayer.extend({
     tile.height = size.y;
     const ctx = tile.getContext('2d');
 
-    const bbox = tileToBbox3857({ x: coords.x, y: coords.y, z: coords.z });
+    const bbox = tileToBbox3395({ x: coords.x, y: coords.y, z: coords.z });
     const candidates = this._cfg.serviceCandidates?.length
       ? this._cfg.serviceCandidates
       : [{ url: this._cfg.serviceUrl, source: 'official' }];
@@ -110,9 +110,10 @@ const InariskColorLayer = L.GridLayer.extend({
 
 export function createInariskLayer(cfg, opacity, onStatus) {
   return new InariskColorLayer(cfg, {
+    pane: 'hazardOverlay',
     opacity,
     attribution: cfg.attribution,
-    zIndex: 350, // di tilePane, di atas basemap; faults pane z430 (di atas)
+    zIndex: 350, // hazardOverlay pane; faults pane z430 tetap di atas
     className: `inarisk-overlay inarisk-${cfg.key}`,
   }, onStatus);
 }

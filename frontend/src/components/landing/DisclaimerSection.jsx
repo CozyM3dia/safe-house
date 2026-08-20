@@ -19,7 +19,7 @@ export default function DisclaimerSection({ t }) {
   };
 
   return (
-    <section className="relative w-full py-24 px-6 md:px-12 lg:px-20 bg-background border-t border-border overflow-hidden select-none landing-grid-decor">
+    <section className="relative w-full py-16 px-4 md:px-12 lg:px-20 bg-background border-t border-border overflow-hidden select-none landing-grid-decor sm:py-20 md:py-24">
       
       {/* Background rotating lines for tectonic compass */}
       <div className="absolute left-[-80px] top-[-80px] w-80 h-80 opacity-[0.02] pointer-events-none animate-slow-rotate z-0">

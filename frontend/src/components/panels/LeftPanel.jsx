@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Share2, Download, Crosshair, Mountain, Waves, Activity, ArrowUpRight } from 'lucide-react';
+import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Share2, Download, Crosshair, Mountain, Waves, Activity, ArrowUpRight, X } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
 import { createShare } from '../../services/api';
@@ -37,6 +37,7 @@ const item = {
 };
 
 export function LeftPanel() {
+  const t = useT();
   const open = useAppStore((s) => s.leftPanelOpen);
   const propertyA = useAppStore((s) => s.propertyA);
   const propertyB = useAppStore((s) => s.propertyB);
@@ -46,6 +47,7 @@ export function LeftPanel() {
   const runBattleReportAction = useAppStore((s) => s.runBattleReportAction);
   const battleReportContent = useAppStore((s) => s.battleReportContent);
   const battleReportLoading = useAppStore((s) => s.battleReportLoading);
+  const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
 
   return (
     <AnimatePresence>
@@ -56,8 +58,19 @@ export function LeftPanel() {
           exit={{ x: -440, opacity: 0 }}
           transition={{ type: 'spring', damping: 26, stiffness: 220 }}
           data-tour="left-panel"
-          className="glass audit-panel fixed left-2 top-[72px] bottom-4 z-20 flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl sm:left-4 sm:w-[380px] sm:max-w-none"
+          className="glass audit-panel fixed left-2 top-[72px] bottom-4 z-20 flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl sm:left-4 sm:w-[380px] sm:max-w-none max-[639px]:left-0 max-[639px]:right-0 max-[639px]:top-auto max-[639px]:bottom-0 max-[639px]:h-[min(66dvh,560px)] max-[639px]:max-h-[calc(100dvh-5rem)] max-[639px]:w-full max-[639px]:max-w-none max-[639px]:rounded-b-none max-[639px]:rounded-t-3xl max-[639px]:border-x-0"
         >
+          <div className="relative flex shrink-0 items-center justify-center pb-1 pt-2 sm:hidden">
+            <span className="h-1.5 w-12 rounded-full bg-white/20" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={toggleLeftPanel}
+              aria-label={t('accessibility.togglePanel')}
+              className="absolute right-2 top-1 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
           <div className="flex-1 overflow-y-auto scrollbar-none">
             <AnimatePresence mode="wait">
               {!propertyA && !loading && mode === 'audit' && (
@@ -410,7 +423,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
       variants={container}
       initial="hidden"
       animate="show"
-      className="flex flex-col gap-3 p-4 pb-6"
+      className="flex min-w-0 flex-col gap-3 p-4 pb-6 max-[639px]:px-4 max-[639px]:pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
     >
       {/* Panel header */}
       <motion.div variants={item} className="flex items-center justify-between">
@@ -498,7 +511,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
       </motion.div>
 
       {/* Full PDF + share actions */}
-      <motion.div variants={item} className="grid grid-cols-2 gap-2">
+      <motion.div variants={item} className="grid grid-cols-2 gap-2 max-[359px]:grid-cols-1">
         <Button
           onClick={handleDownloadPdf}
           disabled={pdfLoading}

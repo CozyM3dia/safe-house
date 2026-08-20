@@ -70,7 +70,7 @@ export default function ProcessSection({ t }) {
   };
 
   return (
-    <section className="relative w-full py-28 px-6 md:px-12 lg:px-20 bg-muted/10 border-t border-border overflow-hidden select-none landing-grid-decor">
+    <section className="relative w-full py-16 px-4 md:px-12 lg:px-20 bg-muted/10 border-t border-border overflow-hidden select-none landing-grid-decor sm:py-24 md:py-28">
       
       {/* Subtle floating coordinate markers in background */}
       <div className="absolute left-[5%] top-[10%] text-[9px] font-mono text-accent/15 select-none pointer-events-none">

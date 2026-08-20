@@ -36,7 +36,7 @@ export default function CTASection({ t }) {
         whileInView="visible"
         viewport={{ once: true, margin: "-80px" }}
         variants={fadeUp}
-        className="max-w-7xl mx-auto py-24 px-6 md:px-12 lg:px-20 text-center relative z-10 flex flex-col items-center"
+        className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center sm:py-20 md:px-12 md:py-24 lg:px-20"
       >
         {/* Decorative Badge */}
         <span className="text-[10px] md:text-xs font-mono font-bold tracking-[0.25em] text-accent uppercase mb-6 block">
@@ -44,7 +44,7 @@ export default function CTASection({ t }) {
         </span>
 
         {/* Headline */}
-        <h2 className="font-display text-5xl md:text-7xl lg:text-8xl text-foreground font-light leading-[0.95] tracking-tighter max-w-4xl text-balance whitespace-pre-line">
+        <h2 className="max-w-4xl font-display text-4xl font-light leading-[1] tracking-tighter text-foreground text-balance whitespace-pre-line sm:text-5xl md:text-7xl lg:text-8xl">
           {t('ctaHeading', "Don't buy property\nwith your eyes closed.")}
         </h2>
 
@@ -66,10 +66,10 @@ export default function CTASection({ t }) {
 
       {/* SaaS Footer Navigation & Details */}
       <div className="border-t border-border/60 bg-bg/40 relative z-10">
-        <div className="max-w-7xl mx-auto pt-16 pb-12 px-6 md:px-12 lg:px-20 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 relative z-10">
+        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 pb-10 pt-12 sm:grid-cols-2 sm:px-6 md:grid-cols-4 md:gap-12 md:px-12 md:pb-12 md:pt-16 lg:px-20">
           
           {/* Brand Col */}
-          <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
+          <div className="col-span-1 flex flex-col gap-4 sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-1.5 mb-2">
               <img 
                 src="/safe_house_logo.png" 
@@ -113,11 +113,11 @@ export default function CTASection({ t }) {
         </div>
 
         {/* Legal & Copyright Row */}
-        <div className="max-w-7xl mx-auto py-8 px-6 md:px-12 lg:px-20 border-t border-border/20 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-muted-foreground/60 font-body relative z-10">
+        <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 border-t border-border/20 px-4 py-7 text-[10px] text-muted-foreground/60 font-body sm:px-6 md:flex-row md:items-center md:px-12 lg:px-20">
           <div>
             © 2026 S.A.F.E House. Dikembangkan untuk Vibe Coding 2026.
           </div>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 sm:gap-6">
             <span>Syarat Ketentuan</span>
             <span>Kebijakan Privasi</span>
             <span className="text-accent/80 font-mono">Sibgha Alfirdausi Rambe</span>

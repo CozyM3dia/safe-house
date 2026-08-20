@@ -24,7 +24,7 @@ export default function AboutSection({ t }) {
   });
 
   return (
-    <section className="relative w-full py-28 px-6 md:px-12 lg:px-20 bg-background border-t border-border overflow-hidden select-none landing-grid-decor">
+    <section className="relative w-full py-16 px-4 md:px-12 lg:px-20 bg-background border-t border-border overflow-hidden select-none landing-grid-decor sm:py-24 md:py-28">
       
       {/* Rotating Geological Compass Dial in the background */}
       <div className="absolute right-[-100px] bottom-[-100px] md:right-[-50px] md:bottom-[-50px] w-96 h-96 opacity-[0.03] pointer-events-none animate-slow-rotate z-0">
@@ -56,7 +56,7 @@ export default function AboutSection({ t }) {
           </span>
           
           {/* Main Heading */}
-          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground font-light leading-[1.05] tracking-tight">
+          <h2 className="font-display text-3xl leading-[1.08] tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
             {t('aboutHeading', 'Membangun dengan Kepastian, Bukan Spekulasi')}
           </h2>
 
@@ -92,7 +92,7 @@ export default function AboutSection({ t }) {
             whileHover={{ y: -4 }}
             transition={{ duration: 0.3 }}
             onClick={() => setSeismicTrigger(!seismicTrigger)}
-            className="group relative rounded-2xl border border-accent/20 bg-muted/30 p-6 md:p-8 cursor-pointer overflow-hidden transition-colors hover:border-accent/40 z-10"
+            className="group relative z-10 cursor-pointer overflow-hidden rounded-2xl border border-accent/20 bg-muted/30 p-5 transition-colors hover:border-accent/40 sm:p-6 md:p-8"
           >
             {/* Ambient Background Glow */}
             <div className="absolute inset-0 bg-radial-gradient from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
