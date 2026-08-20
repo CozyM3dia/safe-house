@@ -97,3 +97,21 @@ export function comparisonLabels(propertyA, propertyB) {
 
   return [`${shortA} · ${coordA}`, `${shortB} · ${coordB}`];
 }
+
+/**
+ * Apakah animasi hitung-naik harus dilewati dan nilai akhirnya langsung dipakai.
+ *
+ * requestAnimationFrame tidak berjalan pada tab latar belakang, crawler, atau
+ * layanan screenshot. Tanpa penjagaan ini angka membeku di 0 — dan pada
+ * laporan risiko yang bisa dibagikan publik, "0/100" adalah pembacaan yang
+ * menyesatkan, bukan sekadar animasi yang belum selesai. Preferensi
+ * prefers-reduced-motion juga dihormati di sini.
+ */
+export function shouldSkipCountUp() {
+  if (typeof document === 'undefined') return true;
+  if (document.hidden) return true;
+  return Boolean(
+    typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
+}

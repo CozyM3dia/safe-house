@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { riskHex, riskLabel } from '../../lib/utils';
+import { riskHex, riskLabel, shouldSkipCountUp } from '../../lib/utils';
 import { useT } from '../../hooks/useTranslation';
 
 function computeScore(p) {
@@ -14,9 +14,11 @@ function computeScore(p) {
 }
 
 function useCountUp(end, duration = 1500) {
-  const [current, setCurrent] = useState(0);
+  const skip = shouldSkipCountUp();
+  const [current, setCurrent] = useState(() => (skip ? end : 0));
   const rafRef = useRef();
   useEffect(() => {
+    if (skip) return undefined;
     let startTime = null;
     const animate = (ts) => {
       if (!startTime) startTime = ts;
@@ -27,8 +29,10 @@ function useCountUp(end, duration = 1500) {
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [end, duration]);
-  return current;
+  }, [end, duration, skip]);
+  // `end` bisa berubah setelah mount; kembalikan nilai akhir langsung supaya
+  // tidak perlu setState di dalam effect.
+  return skip ? end : current;
 }
 
 // SVG arc gauge
