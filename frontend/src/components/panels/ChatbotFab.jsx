@@ -217,50 +217,66 @@ export function ChatbotFab() {
         animate={{ y: 0, opacity: 1, scale: 1 }}
         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          'fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[356px]',
+          'fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[440px]',
           leftPanelOpen && 'max-[639px]:left-auto max-[639px]:right-4 max-[639px]:w-14'
         )}
       >
         <div className="bezel-outer">
           <div className="bezel-inner overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-glass-lg backdrop-blur-xl">
             <div className={cn(
-              'flex items-center gap-3 px-3 py-2.5',
-              leftPanelOpen && 'max-[639px]:justify-center max-[639px]:gap-0 max-[639px]:px-1.5'
+              'flex flex-col gap-3 p-3 sm:p-4',
+              leftPanelOpen && 'max-[639px]:items-center max-[639px]:gap-0 max-[639px]:p-1.5'
             )}>
-              <button
-                type="button"
-                onClick={() => setExpanded(true)}
-                aria-label={t('chat.open')}
-                title={t('chat.open')}
-                className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/12 text-accent transition-colors hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
-              >
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden text-[10px] font-semibold sm:inline">Chat</span>
-              </button>
-
               <div className={cn(
-                'min-w-0 flex-1',
-                leftPanelOpen && 'max-[639px]:hidden'
+                'flex w-full min-w-0 items-center gap-3',
+                leftPanelOpen && 'max-[639px]:justify-center'
               )}>
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-xs font-bold tracking-tight text-text-primary">S.A.F.E AI</span>
-                  <span className={cn(
-                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[8px] font-semibold tracking-[0.14em]',
-                    dockState === 'working'
-                      ? 'border-accent/25 bg-accent/8 text-accent'
-                      : dockState === 'composing'
-                        ? 'border-risk-moderate/25 bg-risk-moderate/8 text-risk-moderate'
-                        : 'border-risk-safe/20 bg-risk-safe/8 text-risk-safe'
-                  )}>
-                    <StatusDot className={dockState === 'working' ? 'bg-accent' : dockState === 'composing' ? 'bg-risk-moderate' : undefined} />
-                    {dockStatus}
-                  </span>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(true)}
+                  aria-label={t('chat.open')}
+                  title={t('chat.open')}
+                  data-chat-dock-mark="safehouse"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 transition-colors hover:bg-accent/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+                >
+                  <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
+                </button>
+
+                <div className={cn(
+                  'min-w-0 flex-1',
+                  leftPanelOpen && 'max-[639px]:hidden'
+                )}>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="font-display text-sm font-bold tracking-tight text-text-primary">S.A.F.E AI</span>
+                    <span className={cn(
+                      'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[8px] font-semibold tracking-[0.14em]',
+                      dockState === 'working'
+                        ? 'border-accent/25 bg-accent/8 text-accent'
+                        : dockState === 'composing'
+                          ? 'border-risk-moderate/25 bg-risk-moderate/8 text-risk-moderate'
+                          : 'border-risk-safe/20 bg-risk-safe/8 text-risk-safe'
+                    )}>
+                      <StatusDot className={dockState === 'working' ? 'bg-accent' : dockState === 'composing' ? 'bg-risk-moderate' : undefined} />
+                      {dockStatus}
+                    </span>
+                  </div>
+                  <ContextLabel propertyA={propertyA} lang={lang} />
                 </div>
-                <ContextLabel propertyA={propertyA} lang={lang} />
+
+                <button
+                  type="button"
+                  onClick={() => setExpanded(true)}
+                  aria-label={t('chat.open')}
+                  title={t('chat.open')}
+                  className="hidden min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-[10px] font-semibold text-text-secondary transition-colors hover:border-accent/30 hover:bg-accent/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:inline-flex"
+                >
+                  <span>{lang === 'en' ? 'Open' : 'Buka'}</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
               </div>
 
               <div className={cn(
-                'flex min-w-0 flex-1 items-center gap-2',
+                'flex w-full min-w-0 items-center gap-3 rounded-xl border border-accent/18 bg-bg/35 px-3 py-2 shadow-inner',
                 leftPanelOpen && 'max-[639px]:hidden'
               )}>
                 <input
@@ -269,9 +285,8 @@ export function ChatbotFab() {
                   onChange={(event) => setInput(event.target.value)}
                   onKeyDown={handleKeyDown}
                   aria-label={t('chat.placeholder')}
-                  onFocus={() => setExpanded(true)}
-                  placeholder={lang === 'en' ? 'Ask about this audit…' : 'Tanya tentang audit ini…'}
-                  className="min-w-0 flex-1 border-none bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0"
+                  placeholder={lang === 'en' ? 'Ask what this location signal means…' : 'Tanyakan arti sinyal lokasi ini…'}
+                  className="min-w-0 flex-1 border-none bg-transparent py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0"
                 />
                 <button
                   type="button"
@@ -279,7 +294,7 @@ export function ChatbotFab() {
                   aria-label={t('chat.send')}
                   disabled={!input.trim() || loading}
                   className={cn(
-                    'flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+                    'flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
                     input.trim()
                       ? 'bg-accent text-bg hover:bg-accent-hover'
                       : 'bg-white/[0.04] text-text-muted'

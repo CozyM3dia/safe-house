@@ -26,6 +26,22 @@ test('chatbot follows the Agent Dock and Chat Panel interaction contract', async
   assert.match(chatbot, /dockState === 'idle' \? modeLabel : dockStatus/);
 });
 
+test('Agent Dock uses the SafeHouse mark with spacious contextual composition', async () => {
+  const chatbot = await source('components/panels/ChatbotFab.jsx');
+
+  assert.match(chatbot, /src="\/safe-icon\.png"/);
+  assert.match(chatbot, /sm:w-\[440px\]/);
+  assert.match(chatbot, /Tanyakan arti sinyal lokasi ini…/);
+  assert.doesNotMatch(chatbot, /Ask about this audit|Tanya tentang audit ini/);
+});
+
+test('mobile Agent Dock keeps the SafeHouse mark visible beside the audit panel', async () => {
+  const chatbot = await source('components/panels/ChatbotFab.jsx');
+
+  assert.match(chatbot, /data-chat-dock-mark="safehouse"/);
+  assert.match(chatbot, /max-\[639px\]:justify-center/);
+});
+
 test('async content surfaces use reusable layout-shaped shimmer skeletons', async () => {
   const skeleton = await source('components/ui/skeleton.jsx');
   const files = await Promise.all([

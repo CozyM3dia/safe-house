@@ -691,7 +691,9 @@ export function AuditDrawer() {
   const propertyB = useAppStore((s) => s.propertyB);
   const mode = useAppStore((s) => s.mode);
   const battleReport = useAppStore((s) => s.battleReportContent);
+  const battleReportMeta = useAppStore((s) => s.battleReportMeta);
   const battleReportLoading = useAppStore((s) => s.battleReportLoading);
+  const setAuditDrawer = useAppStore((s) => s.setAuditDrawer);
   const reportRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
@@ -750,12 +752,12 @@ export function AuditDrawer() {
   // clicks and focus. The custom backdrop preserves the dimmed presentation
   // and dismiss behavior without locking the rest of the app.
   return (
-    <Drawer.Root modal={false} open={open} onOpenChange={setOpen}>
+    <Drawer.Root modal={false} open={open} onOpenChange={setAuditDrawer}>
       <Drawer.Portal>
         <div
           aria-hidden="true"
           data-testid="audit-drawer-backdrop"
-          onClick={() => setOpen(false)}
+          onClick={() => setAuditDrawer(false)}
           className="pointer-events-auto fixed inset-0 z-30 bg-bg/60 backdrop-blur-sm"
         />
         {/* Keep this control outside the drawer stacking context: the chatbot stays interactive above the report, while close remains above both. */}
@@ -764,7 +766,7 @@ export function AuditDrawer() {
           data-testid="audit-drawer-close"
           aria-label={t('drawer.close')}
           title={t('drawer.close')}
-          onClick={() => setOpen(false)}
+          onClick={() => setAuditDrawer(false)}
           className="fixed right-4 top-[calc(22vh+0.75rem)] z-[45] flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-bg-surface/95 text-text-muted shadow-glass-lg transition-colors hover:bg-white/8 hover:text-text-primary sm:right-6"
         >
           <X className="h-4 w-4" />

@@ -11,7 +11,9 @@ export const MAP_TILES = {
     maxZoom: 19,
   },
   street: {
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    // Voyager adds restrained land-use color and street hierarchy without
+    // the relief-heavy look of a topographic basemap.
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     maxZoom: 20,
     subdomains: 'abcd',

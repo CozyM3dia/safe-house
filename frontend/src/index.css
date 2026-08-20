@@ -48,7 +48,7 @@
     background: rgba(212, 149, 106, 0.32);
   }
 
-  /* Leaflet — the atlas basemap stays vivid under the warm dark UI. */
+  /* Leaflet — a soft street atlas stays legible beneath the product chrome. */
   .leaflet-container {
     background: #c9d7d0 !important;
     font-family: 'Red Hat Display', sans-serif;
@@ -63,11 +63,11 @@
   /* Keep the reference map readable and slightly editorial, while leaving
      the separate hazard panes untouched so risk colors remain truthful. */
   .safe-map[data-basemap-style='terrain'] .leaflet-basemap-pane {
-    filter: saturate(0.9) contrast(1.04) brightness(0.98);
+    filter: saturate(0.74) contrast(0.98) brightness(0.99);
   }
 
   .safe-map[data-basemap-style='street'] .leaflet-basemap-pane {
-    filter: saturate(0.82) contrast(0.98) brightness(1.01);
+    filter: saturate(0.88) contrast(0.99) brightness(1.01);
   }
 
   .safe-map[data-basemap-style='satellite'] .leaflet-basemap-pane {

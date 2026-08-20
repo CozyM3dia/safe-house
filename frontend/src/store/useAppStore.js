@@ -51,7 +51,7 @@ export const useAppStore = create(
       battleReportLoading: false,
 
       // ─── Map Overlays & RAG Documents ──────────────────────────
-      baseMapStyle: 'terrain', // 'terrain' | 'street' | 'satellite'
+      baseMapStyle: 'street', // 'terrain' | 'street' | 'satellite'
       overlays: INITIAL_OVERLAYS,
       overlayOpacities: INITIAL_OVERLAY_OPACITIES,
       overlayStatuses: INITIAL_OVERLAY_STATUSES,
