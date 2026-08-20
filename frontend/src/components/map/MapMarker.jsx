@@ -23,7 +23,7 @@ function buildIcon(color = '#d4956a', label = '') {
         box-shadow:0 0 12px ${color}90, 0 2px 6px rgba(0,0,0,0.25);
         border:2.5px solid rgba(255,255,255,0.95);
         display:flex;align-items:center;justify-content:center;
-        font-size:10px;font-weight:700;color:#fff;
+        font-size:10px;font-weight:700;color:#f0e4cc;
         font-family:'Geist Mono',monospace;letter-spacing:0;
       ">${label}</span>
     </div>

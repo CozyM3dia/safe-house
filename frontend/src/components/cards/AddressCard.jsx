@@ -3,8 +3,10 @@ import { MapPin, Compass, Navigation, Mountain, Copy, Check } from 'lucide-react
 import { useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { formatCoord, formatElevation } from '../../lib/formatters';
+import { useT } from '../../hooks/useTranslation';
 
 export function AddressCard({ property }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   // Membaca AuditResult langsung: lat/lon di akar, sesar di geotech.
@@ -34,40 +36,40 @@ export function AddressCard({ property }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <MapPin className="h-3 w-3 text-accent" />
-          Site Location
+          {t('card.siteLocation')}
         </CardTitle>
         <button
           type="button"
           onClick={handleCopy}
-          aria-label={copied ? 'Coordinates copied' : 'Copy coordinates'}
+          aria-label={copied ? t('card.coordinatesCopied') : t('card.copyCoordinates')}
           className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-mono text-text-muted transition-colors hover:bg-white/8 hover:text-accent btn-press"
-          title="Salin koordinat"
+          title={t('card.copyCoordinates')}
         >
           {copied ? <Check className="h-2.5 w-2.5 text-risk-safe" /> : <Copy className="h-2.5 w-2.5" />}
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? t('card.copied') : t('card.copy')}
         </button>
       </CardHeader>
 
       {/* Address */}
       <p className="text-[11px] leading-relaxed text-text-secondary line-clamp-2 mb-3">
-        {property.address || 'Address unavailable'}
+        {property.address || t('card.addressUnavailable')}
       </p>
 
       {/* Coordinates grid */}
       <div className="grid grid-cols-3 gap-1.5">
         <CoordCell
           icon={<Navigation className="h-2.5 w-2.5 text-accent/60" />}
-          label="Lat"
+          label={t('card.latitude')}
           value={formatCoord(lat)}
         />
         <CoordCell
           icon={<Navigation className="h-2.5 w-2.5 text-accent/60 rotate-90" />}
-          label="Lon"
+          label={t('card.longitude')}
           value={formatCoord(lon)}
         />
         <CoordCell
           icon={<Mountain className="h-2.5 w-2.5 text-accent/60" />}
-          label="Elev"
+          label={t('card.elevation')}
           value={formatElevation(elevation)}
         />
       </div>
@@ -94,14 +96,16 @@ export function AddressCard({ property }) {
               {faultName}
             </p>
             <p className="text-[9px] font-mono" style={{ color: faultColor }}>
-              {faultDist < 1 ? `${(faultDist * 1000).toFixed(0)}m away` : `${faultDist.toFixed(1)}km away`}
+              {faultDist < 1
+                ? `${(faultDist * 1000).toFixed(0)} m ${t('card.fromLocation')}`
+                : `${faultDist.toFixed(1)} km ${t('card.fromLocation')}`}
             </p>
           </div>
           <div
             className="shrink-0 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider"
             style={{ color: faultColor, background: `${faultColor}15` }}
           >
-            {faultDist < 10 ? 'NEAR' : faultDist < 30 ? 'MOD' : 'FAR'}
+            {faultDist < 10 ? t('card.near') : faultDist < 30 ? t('card.moderate') : t('card.far')}
           </div>
         </motion.div>
       )}

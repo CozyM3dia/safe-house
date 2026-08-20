@@ -104,7 +104,7 @@ const Gallery4 = ({ title, description, items }) => {
                     <div className="absolute inset-0 h-full bg-[linear-gradient(rgba(15,11,8,0),rgba(15,11,8,0.7),rgba(15,11,8,0.95)_100%)] mix-blend-multiply" />
                     
                     <div className="absolute top-4 left-4 z-10">
-                      <span className="inline-block px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 rounded-full text-xs font-bold text-accent tracking-wider uppercase">
+                      <span className="inline-block px-3 py-1 bg-bg/50 backdrop-blur-md border border-white/10 rounded-full text-xs font-bold text-accent tracking-wider uppercase">
                         {item.location}
                       </span>
                     </div>
@@ -146,11 +146,11 @@ const Gallery4 = ({ title, description, items }) => {
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
         <DialogContent className="sm:max-w-[600px] bg-[#1a1208] border-white/10 text-white overflow-hidden p-0 gap-0">
           {selectedItem?.image && (
-            <div className="relative w-full bg-black/30 flex justify-center">
+            <div className="relative w-full bg-bg/30 flex justify-center">
               <img src={selectedItem.image} alt={selectedItem.title} className="w-full h-auto max-h-[60vh] object-contain" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1a1208] via-transparent to-transparent pointer-events-none" />
               <div className="absolute bottom-4 left-6">
-                <span className="inline-block px-3 py-1 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-xs font-bold text-accent tracking-wider uppercase">
+                <span className="inline-block px-3 py-1 bg-bg/50 backdrop-blur-md border border-white/20 rounded-full text-xs font-bold text-accent tracking-wider uppercase">
                   {selectedItem.location}
                 </span>
               </div>
