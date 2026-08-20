@@ -29,24 +29,45 @@ export function MapCursor() {
     // Apply precision crosshair cursor to Leaflet map container
     container.classList.add('safe-map-crosshair');
 
-    let isDragging = false;
+    let isMouseDown = false;
+
+    const onMouseDown = (e) => {
+      if (e.button === 0) {
+        isMouseDown = true;
+        container.classList.add('safe-map-dragging');
+        document.body.classList.add('safe-map-dragging');
+        setVisible(false);
+      }
+    };
+
+    const onMouseUp = () => {
+      isMouseDown = false;
+      container.classList.remove('safe-map-dragging');
+      document.body.classList.remove('safe-map-dragging');
+    };
 
     const onDragStart = () => {
-      isDragging = true;
+      container.classList.add('safe-map-dragging');
+      document.body.classList.add('safe-map-dragging');
       setVisible(false);
     };
 
     const onDragEnd = () => {
-      isDragging = false;
+      if (!isMouseDown) {
+        container.classList.remove('safe-map-dragging');
+        document.body.classList.remove('safe-map-dragging');
+      }
     };
 
+    container.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
     map.on('dragstart', onDragStart);
     map.on('dragend', onDragEnd);
     map.on('movestart', onDragStart);
     map.on('moveend', onDragEnd);
 
     const handleMouseMove = (e) => {
-      if (isDragging) {
+      if (isMouseDown) {
         setVisible(false);
         return;
       }
@@ -99,6 +120,8 @@ export function MapCursor() {
 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
+      container.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
       map.off('dragstart', onDragStart);
       map.off('dragend', onDragEnd);
       map.off('movestart', onDragStart);
@@ -106,6 +129,8 @@ export function MapCursor() {
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('mouseleave', handleMouseLeave);
       container.classList.remove('safe-map-crosshair');
+      container.classList.remove('safe-map-dragging');
+      document.body.classList.remove('safe-map-dragging');
     };
   }, [map]);
 

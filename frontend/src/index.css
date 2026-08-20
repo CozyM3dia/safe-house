@@ -169,33 +169,41 @@
     mix-blend-mode: multiply;
   }
 
-  html[data-theme='light'] .safe-map-crosshair,
-  html[data-theme='light'] .safe-map-crosshair .leaflet-container,
-  html[data-theme='light'] .safe-map-crosshair .leaflet-grab,
-  html[data-theme='light'] .safe-map-crosshair .leaflet-interactive,
-  html[data-theme='light'] .safe-map-crosshair .leaflet-tile-pane,
-  html[data-theme='light'] .safe-map-crosshair canvas {
+  html[data-theme='light'] .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active),
+  html[data-theme='light'] .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-container,
+  html[data-theme='light'] .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-grab,
+  html[data-theme='light'] .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-interactive,
+  html[data-theme='light'] .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-tile-pane,
+  html[data-theme='light'] .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) canvas {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='2' fill='%230f0b08' stroke='%23f0e4cc' stroke-width='1'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5' stroke='%230f0b08' stroke-width='1.5' stroke-linecap='round' filter='drop-shadow(0 0 0.8px %23f0e4cc)'/%3E%3C/svg%3E") 12 12, crosshair !important;
   }
 
-  html:not([data-theme='light']) .safe-map-crosshair,
-  html:not([data-theme='light']) .safe-map-crosshair .leaflet-container,
-  html:not([data-theme='light']) .safe-map-crosshair .leaflet-grab,
-  html:not([data-theme='light']) .safe-map-crosshair .leaflet-interactive,
-  html:not([data-theme='light']) .safe-map-crosshair .leaflet-tile-pane,
-  html:not([data-theme='light']) .safe-map-crosshair canvas {
+  html:not([data-theme='light']) .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active),
+  html:not([data-theme='light']) .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-container,
+  html:not([data-theme='light']) .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-grab,
+  html:not([data-theme='light']) .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-interactive,
+  html:not([data-theme='light']) .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) .leaflet-tile-pane,
+  html:not([data-theme='light']) .safe-map-crosshair:not(.safe-map-dragging):not(.leaflet-dragging):not(:active) canvas {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='2' fill='%23f0e4cc' stroke='%230f0b08' stroke-width='1'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5' stroke='%23f0e4cc' stroke-width='1.5' stroke-linecap='round' filter='drop-shadow(0 0 0.8px %230f0b08)'/%3E%3C/svg%3E") 12 12, crosshair !important;
   }
 
-  /* When dragging/panning the map, always show grabbing hand cursor */
-  html .leaflet-container.leaflet-dragging,
-  html .leaflet-container.leaflet-dragging *,
+  /* When dragging or holding click to pan, ALWAYS show grabbing hand cursor */
+  html .safe-map-crosshair:active,
+  html .safe-map-crosshair:active *,
+  html .safe-map-crosshair.safe-map-dragging,
+  html .safe-map-crosshair.safe-map-dragging *,
   html .safe-map-crosshair.leaflet-dragging,
   html .safe-map-crosshair.leaflet-dragging *,
+  html .safe-map-crosshair.safe-map-dragging canvas,
+  html .safe-map-crosshair.safe-map-dragging .leaflet-tile-pane,
+  html .safe-map-crosshair.safe-map-dragging .leaflet-grab,
+  html .safe-map-crosshair.safe-map-dragging .leaflet-interactive,
   html .safe-map-crosshair.leaflet-dragging canvas,
   html .safe-map-crosshair.leaflet-dragging .leaflet-tile-pane,
   html .safe-map-crosshair.leaflet-dragging .leaflet-grab,
-  html .safe-map-crosshair.leaflet-dragging .leaflet-interactive {
+  html .safe-map-crosshair.leaflet-dragging .leaflet-interactive,
+  html body.safe-map-dragging,
+  html body.safe-map-dragging * {
     cursor: grabbing !important;
     cursor: -webkit-grabbing !important;
   }
