@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Mountain, Activity, Droplets, Waves } from 'lucide-react';
 import { siteClass } from '../../lib/formatters';
 import { useT } from '../../hooks/useTranslation';
-import { shouldSkipCountUp } from '../../lib/utils';
+import { useCountUp } from '../../hooks/useCountUp';
 
 // Membaca AuditResult langsung: geotech + hazard.radar + elevation.
 const metrics = (p, t) => {
@@ -59,27 +58,6 @@ const metrics = (p, t) => {
     },
   ];
 };
-
-function useCountUp(end, duration = 1200, decimals = 0) {
-  const skip = shouldSkipCountUp();
-  const [current, setCurrent] = useState(() => (skip ? end : 0));
-  const rafRef = useRef();
-  useEffect(() => {
-    if (skip) return undefined;
-    let startTime = null;
-    const animate = (ts) => {
-      if (!startTime) startTime = ts;
-      const progress = Math.min((ts - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const factor = Math.pow(10, decimals);
-      setCurrent(Math.round(eased * end * factor) / factor);
-      if (progress < 1) rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [end, duration, decimals, skip]);
-  return skip ? end : current;
-}
 
 function MetricTile({ m, delay = 0 }) {
   const animated = useCountUp(m.value, 1200, m.decimals);
