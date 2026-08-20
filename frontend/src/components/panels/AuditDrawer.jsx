@@ -766,7 +766,9 @@ export function AuditDrawer() {
           <X className="h-4 w-4" />
         </button>
 
-        <Drawer.Content data-testid="audit-drawer" className="glass-strong fixed bottom-0 left-0 right-0 z-30 mt-24 flex h-[78vh] flex-col rounded-t-2xl border-t border-white/10 outline-none">
+        {/* z-40: panel chatbot memakai z-[35]. Dengan z-30, panel chat menutupi
+            laporan dan membuatnya tak terbaca saat keduanya terbuka. */}
+        <Drawer.Content data-testid="audit-drawer" className="glass-strong fixed bottom-0 left-0 right-0 z-40 mt-24 flex h-[78vh] flex-col rounded-t-2xl border-t border-white/10 outline-none">
           <Drawer.Title className="sr-only">{drawerTitle}</Drawer.Title>
           <Drawer.Description className="sr-only">{drawerSubtitle}</Drawer.Description>
 
@@ -828,19 +830,6 @@ export function AuditDrawer() {
                 {t('drawer.disclaimer')}
               </div>
 
-              {!isBattle && propertyA?.data_quality?.fields && (
-                <DataCoverageSummary property={propertyA} />
-              )}
-
-              {!isBattle && propertyA?.audit_status && propertyA.audit_status !== 'valid' && (
-                <div className="mb-6 rounded-lg border border-risk-moderate/25 bg-risk-moderate/5 px-3 py-2 text-[11px] text-risk-moderate relative z-10">
-                  Audit {propertyA.audit_status}.
-                  {propertyA.data_quality?.optional_missing?.length > 0 && (
-                    <> Layer belum tersedia: {propertyA.data_quality.optional_missing.map((name) => COVERAGE_LABELS[name] || name).join(', ')}.</>
-                  )}
-                </div>
-              )}
-
               {/* Dynamic Header Card */}
               {!isBattle && propertyA && (
                 <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.2)]">
@@ -881,6 +870,25 @@ export function AuditDrawer() {
                       </span>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Provenance & kelengkapan data — bahan rujukan, bukan headline.
+                  Sebelumnya blok ini berada di atas kartu skor sehingga skor
+                  dan analisis AI baru terlihat setelah menggulir melewati 16
+                  chip status field. */}
+              {!isBattle && propertyA?.data_quality?.fields && (
+                <div className="mt-8 pt-6 border-t border-white/8">
+                  <DataCoverageSummary property={propertyA} />
+
+                  {propertyA?.audit_status && propertyA.audit_status !== 'valid' && (
+                    <div className="rounded-lg border border-risk-moderate/25 bg-risk-moderate/5 px-3 py-2 text-[11px] text-risk-moderate relative z-10">
+                      Audit {propertyA.audit_status}.
+                      {propertyA.data_quality?.optional_missing?.length > 0 && (
+                        <> Layer belum tersedia: {propertyA.data_quality.optional_missing.map((name) => COVERAGE_LABELS[name] || name).join(', ')}.</>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1066,6 +1074,11 @@ const COVERAGE_LABELS = {
 };
 
 function DataCoverageSummary({ property }) {
+  // Blok ini berisi 16 chip status field. Berguna sebagai bukti provenance,
+  // tapi kalau selalu terbuka ia mendominasi layar dan mendorong skor serta
+  // analisis AI keluar dari pandangan pertama. Ringkasan satu baris tetap
+  // terlihat; detailnya dibuka saat dibutuhkan.
+  const [open, setOpen] = useState(false);
   const quality = property?.data_quality || {};
   const fields = quality.fields || {};
   const entries = Object.entries(COVERAGE_LABELS)
@@ -1099,10 +1112,17 @@ function DataCoverageSummary({ property }) {
               : 'Field yang belum tersedia ditandai terbuka, bukan dianggap aman.'}
           </p>
         </div>
-        <span className="rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent/15"
+        >
           {quality.mode === 'best_available' ? 'BEST AVAILABLE' : 'STRICT'}
-        </span>
+          <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
       </div>
+      {open && (
       <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
         {entries.map(([key, label, item]) => (
           <div key={key} className="flex items-center justify-between gap-2 rounded-lg border border-white/6 bg-black/15 px-2 py-1.5">
@@ -1113,6 +1133,7 @@ function DataCoverageSummary({ property }) {
           </div>
         ))}
       </div>
+      )}
       {/* Hanya daftar field proxy. Kalimat "bukan pengganti survei lapangan"
           sudah ada di banner disclaimer paling atas drawer; mengulanginya di
           sini membuat satu layar memuat peringatan yang sama dua kali. */}
