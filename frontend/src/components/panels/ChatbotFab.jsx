@@ -616,10 +616,79 @@ function SourcesPanel({ citations, lang }) {
   );
 }
 
+function sentenceParts(text) {
+  return (text.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g) || [text])
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+}
+
+function normalizeAssistantMarkdown(content, lang) {
+  const text = String(content || '').replace(/\r\n/g, '\n').trim();
+  if (!text) return text;
+
+  // The backend appends a deterministic evidence appendix after the model's
+  // prose. Keep that appendix intact while restructuring only the prose.
+  const evidenceMatch = text.match(/\n+### (?:Dasar data|Verified )[^\n]*/);
+  const evidenceIndex = evidenceMatch?.index ?? -1;
+  const bodyText = evidenceIndex >= 0 ? text.slice(0, evidenceIndex).trim() : text;
+  const evidenceBlock = evidenceIndex >= 0 ? text.slice(evidenceIndex).trim() : '';
+
+  if (bodyText.length < 280) return text;
+
+  // Preserve answers that already have intentional Markdown structure.
+  const firstMeaningfulLine = bodyText.split('\n').find((line) => line.trim())?.trim() || '';
+  if (/^(#{1,6}\s|[-*]\s|\d+[.)]\s)/.test(firstMeaningfulLine)) return text;
+
+  const followUpLabel = lang === 'en' ? '[FOLLOW-UP QUESTIONS]' : '[PERTANYAAN LANJUTAN]';
+  const followUpIndex = bodyText.indexOf(followUpLabel);
+  const body = followUpIndex >= 0 ? bodyText.slice(0, followUpIndex).trim() : bodyText;
+  const followUpBlock = followUpIndex >= 0 ? bodyText.slice(followUpIndex).trim() : '';
+  const sentences = sentenceParts(body);
+
+  if (sentences.length < 4) {
+    const formattedBody = sentences.length > 1 ? sentences.join('\n\n') : body;
+    return [formattedBody, followUpBlock, evidenceBlock].filter(Boolean).join('\n\n');
+  }
+
+  const actionPattern = lang === 'en'
+    ? /recommend|should|must|ensure|design|install|test|verify|follow|use|maintain|provide/i
+    : /mitigasi|disarankan|wajib|pastikan|rancang|gunakan|uji|verifikasi|ikuti|sediakan|pertahankan/i;
+  const signalPattern = lang === 'en'
+    ? /risk|hazard|flood|earthquake|seismic|fault|soil|liquefaction|pga|vs30|exposure|moderate|high/i
+    : /risiko|bahaya|banjir|gempa|seismik|sesar|tanah|likuefaksi|pga|vs30|terpapar|sedang|tinggi|rawan/i;
+
+  const summary = sentences[0];
+  const signals = [];
+  const actions = [];
+  sentences.slice(1).forEach((sentence) => {
+    if (actionPattern.test(sentence)) actions.push(sentence);
+    else if (signalPattern.test(sentence)) signals.push(sentence);
+    else signals.length <= actions.length ? signals.push(sentence) : actions.push(sentence);
+  });
+
+  if (actions.length === 0 && signals.length > 1) actions.push(signals.pop());
+
+  const sections = [
+    `## ${lang === 'en' ? 'Summary' : 'Ringkasan'}`,
+    summary,
+    '',
+    `## ${lang === 'en' ? 'Key signals' : 'Sinyal utama'}`,
+    signals.map((sentence) => `- ${sentence}`).join('\n'),
+    '',
+    `## ${lang === 'en' ? 'Next steps' : 'Langkah berikutnya'}`,
+    actions.map((sentence) => `- ${sentence}`).join('\n'),
+  ];
+
+  if (followUpBlock) sections.push('', followUpBlock);
+  if (evidenceBlock) sections.push('', evidenceBlock);
+  return sections.join('\n');
+}
+
 // ─── Message Bubble ─────────────────────────────────────────────────
 function MessageBubble({ role, content, citations, followUps, onFollowUpClick, loading }) {
   const t = useT();
   const isUser = role === 'user';
+  const lang = useAppStore((s) => s.lang);
 
   return (
     <motion.article
@@ -642,23 +711,24 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
               <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-accent/90">S.A.F.E AI</span>
               <span className="text-[9px] text-text-muted">{t('chat.sources').toLowerCase()}</span>
             </div>
-            <div className="text-xs leading-relaxed text-text-secondary">
+            <div className="chat-assistant-message text-xs leading-[1.65] text-text-secondary">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                  h1: ({ children }) => <h3 className="mb-2 text-sm font-semibold text-text-primary">{children}</h3>,
-                  h2: ({ children }) => <h3 className="mb-2 text-sm font-semibold text-text-primary">{children}</h3>,
-                  h3: ({ children }) => <h4 className="mb-1.5 text-xs font-semibold text-text-primary">{children}</h4>,
+                  p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                  h1: ({ children }) => <h3 className="mt-5 mb-2.5 border-b border-accent/20 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-accent first:mt-0">{children}</h3>,
+                  h2: ({ children }) => <h3 className="mt-5 mb-2.5 border-b border-accent/20 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-accent first:mt-0">{children}</h3>,
+                  h3: ({ children }) => <h4 className="mt-4 mb-1.5 text-xs font-semibold text-text-primary first:mt-0">{children}</h4>,
                   strong: ({ children }) => <strong className="font-bold text-text-primary">{children}</strong>,
                   code: ({ children }) => <code className="rounded bg-bg/45 px-1.5 py-0.5 font-mono text-[10px] text-accent">{children}</code>,
-                  ul: ({ children }) => <ul className="my-2 ml-3 list-disc space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="my-2 ml-4 list-decimal space-y-1">{children}</ol>,
-                  li: ({ children }) => <li>{children}</li>,
+                  ul: ({ children }) => <ul className="my-2.5 ml-4 list-disc space-y-2 marker:text-accent">{children}</ul>,
+                  ol: ({ children }) => <ol className="my-2.5 ml-5 list-decimal space-y-2 marker:font-mono marker:text-accent">{children}</ol>,
+                  li: ({ children }) => <li className="pl-1">{children}</li>,
+                  hr: () => <hr className="my-4 border-0 border-t border-accent/15" />,
                   a: ({ children, href }) => <a className="text-accent underline decoration-accent/40 underline-offset-2 hover:text-text-primary" href={href}>{children}</a>,
                 }}
               >
-                {content}
+                {normalizeAssistantMarkdown(content, lang)}
               </ReactMarkdown>
 
               {citations && citations.length > 0 && (

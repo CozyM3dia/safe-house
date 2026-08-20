@@ -1502,6 +1502,7 @@ async def answer_chat(
             "For why/how questions, explain the physical geotechnical or seismic mechanism from verified data.",
             "If no audit exists, explain politely that the user can select a map location first.",
             "In compare mode, give a sharp comparative analysis of both locations.",
+            "Format a substantive answer as a scannable Markdown brief, never as one long paragraph. When an audit exists, use exactly these sections: '## Summary', followed by one short paragraph; '## Key signals', followed by 2-4 concise bullets; and '## Next steps', followed by 2-3 actionable bullets. Keep each bullet to one or two sentences.",
             "Select only source titles that support the answer.",
             "Provide exactly three relevant follow-up questions in English.",
         ]
@@ -1514,6 +1515,7 @@ async def answer_chat(
             "Untuk pertanyaan mengapa/kenapa, jelaskan mekanisme fisis geoteknik/seismiknya berdasarkan data audit terverifikasi.",
             "Jika belum ada audit, jelaskan dengan ramah bahwa pengguna dapat memilih lokasi di peta terlebih dahulu.",
             "Jika mode bandingkan, berikan analisis komparatif yang tajam antara kedua lokasi.",
+            "Format jawaban substantif sebagai brief Markdown yang mudah dipindai, jangan sebagai satu paragraf panjang. Jika ada audit, gunakan tepat bagian berikut: '## Ringkasan' lalu satu paragraf pendek; '## Sinyal utama' lalu 2-4 bullet ringkas; dan '## Langkah berikutnya' lalu 2-3 bullet yang bisa ditindaklanjuti. Setiap bullet maksimal satu atau dua kalimat.",
             "Pilih judul sumber yang benar-benar menopang jawaban.",
             "Berikan tepat tiga pertanyaan lanjutan yang cerdas, tajam, dan relevan dengan diskusi.",
         ]
