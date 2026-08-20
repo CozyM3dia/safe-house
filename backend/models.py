@@ -129,13 +129,13 @@ class BattleReportResult(BaseModel):
 class NarrativeResult(BaseModel):
     """Laporan AI terstruktur; seluruh angka tetap berasal dari AuditResult."""
 
-    geo_stability_explanation: str = Field(..., min_length=1, max_length=1200)
-    seismic_explanation: str = Field(..., min_length=1, max_length=1200)
-    flood_env_explanation: str = Field(..., min_length=1, max_length=1200)
-    micro_analysis: str = Field(..., min_length=1, max_length=1600)
-    detailed_report: str = Field(..., min_length=1, max_length=9000)
-    sources: list[str] = Field(default_factory=list, max_length=8)
-    data_limitations: list[str] = Field(default_factory=list, max_length=8)
+    geo_stability_explanation: str = Field(..., min_length=1, max_length=3000)
+    seismic_explanation: str = Field(..., min_length=1, max_length=3000)
+    flood_env_explanation: str = Field(..., min_length=1, max_length=3000)
+    micro_analysis: str = Field(..., min_length=1, max_length=3000)
+    detailed_report: str = Field(..., min_length=1, max_length=25000)
+    sources: list[str] = Field(default_factory=list, max_length=16)
+    data_limitations: list[str] = Field(default_factory=list, max_length=16)
     generated_by: str = Field(..., min_length=1, max_length=100)
     metadata: Optional[AIMetadata] = None
 

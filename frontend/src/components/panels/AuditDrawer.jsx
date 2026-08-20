@@ -598,12 +598,12 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const { icon: Icon } = getSectionMeta(title);
   
-  const isMitigationSection = title.toLowerCase().includes('mitigasi') || title.toLowerCase().includes('mitigation');
-  const isCodeSection = title.toLowerCase().includes('persyaratan bangunan') || title.toLowerCase().includes('building code') || title.toLowerCase().includes('regulasi');
+  const isMitigationSection = title.toLowerCase().includes('mitigasi') || title.toLowerCase().includes('mitigation') || title.toLowerCase().includes('rekomendasi');
+  const isCodeSection = title.toLowerCase().includes('persyaratan bangunan') || title.toLowerCase().includes('building code') || title.toLowerCase().includes('regulasi') || title.toLowerCase().includes('sni') || title.toLowerCase().includes('standar');
   
-  const isGeotechnical = title.toLowerCase().includes('geoteknik') || title.toLowerCase().includes('geotechnical') || title.toLowerCase().includes('tanah') || title.toLowerCase().includes('soil');
-  const isSeismic = title.toLowerCase().includes('gempa') || title.toLowerCase().includes('seismic') || title.toLowerCase().includes('tektonik');
-  const isEnvironment = title.toLowerCase().includes('banjir') || title.toLowerCase().includes('flood') || title.toLowerCase().includes('lingkungan') || title.toLowerCase().includes('environmental');
+  const isGeotechnical = title.toLowerCase().includes('geoteknik') || title.toLowerCase().includes('geotechnical') || title.toLowerCase().includes('tanah') || title.toLowerCase().includes('soil') || title.toLowerCase().includes('stabilitas');
+  const isSeismic = title.toLowerCase().includes('gempa') || title.toLowerCase().includes('seismic') || title.toLowerCase().includes('sesar') || title.toLowerCase().includes('tektonik');
+  const isEnvironment = title.toLowerCase().includes('banjir') || title.toLowerCase().includes('flood') || title.toLowerCase().includes('lingkungan') || title.toLowerCase().includes('environmental') || title.toLowerCase().includes('hidrometeorologi');
 
   return (
     <motion.div layout className="border-b border-white/[0.07] last:border-b-0">
@@ -687,12 +687,10 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
 export function AuditDrawer() {
   const t = useT();
   const open = useAppStore((s) => s.auditDrawerOpen);
-  const setOpen = useAppStore((s) => s.setAuditDrawer);
   const propertyA = useAppStore((s) => s.propertyA);
   const propertyB = useAppStore((s) => s.propertyB);
   const mode = useAppStore((s) => s.mode);
   const battleReport = useAppStore((s) => s.battleReportContent);
-  const battleReportMeta = useAppStore((s) => s.battleReportMeta);
   const battleReportLoading = useAppStore((s) => s.battleReportLoading);
   const reportRef = useRef(null);
   const [copied, setCopied] = useState(false);
@@ -897,6 +895,11 @@ export function AuditDrawer() {
                 /* Dua kolom di layar lebar: bukti terukur di kiri, narasi di
                    kanan. Sebelumnya semuanya satu kolom max-w-3xl, sehingga di
                    monitor lebar laporan jadi pita sempit dengan ruang kosong
+                </div>
+              ) : (
+                /* Dua kolom di layar lebar: bukti terukur di kiri, narasi di
+                   kanan. Sebelumnya semuanya satu kolom max-w-3xl, sehingga di
+                   monitor lebar laporan jadi pita sempit dengan ruang kosong
                    besar di kedua sisi. */
                 <div className="grid gap-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-12">
                   <aside className="space-y-7 lg:sticky lg:top-0 lg:self-start">
@@ -941,7 +944,7 @@ export function AuditDrawer() {
                                   key={idx}
                                   title={sec.title}
                                   content={sec.content}
-                                  defaultExpanded={idx === 0}
+                                  defaultExpanded={idx < 3 || sec.title.toLowerCase().includes('mitigasi') || sec.title.toLowerCase().includes('rekomendasi')}
                                   property={propertyA}
                                 />
                               ))}
