@@ -12,6 +12,7 @@ import {
 import { useAppStore } from '../../store/useAppStore';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 import { riskHex, comparisonLabels } from '../../lib/utils';
 
 /**
@@ -185,9 +186,13 @@ function Step({
         </span>
 
         {loading ? (
-          <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-accent">
-            <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-            Menganalisis {label}…
+          <p
+            className="mt-2 flex items-center gap-2 text-[10px] text-accent"
+            role="status"
+            aria-live="polite"
+          >
+            <Skeleton as="span" className="h-2.5 w-24 rounded" />
+            <span className="sr-only">Menganalisis {label}…</span>
           </p>
         ) : filled ? (
           <div className="mt-1 flex items-center gap-2">

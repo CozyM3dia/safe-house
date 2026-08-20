@@ -15,6 +15,39 @@ test('chatbot header and loading indicator use restrained product motion and col
   assert.doesNotMatch(chatbot, /animate-bounce/);
 });
 
+test('chatbot follows the Agent Dock and Chat Panel interaction contract', async () => {
+  const chatbot = await source('components/panels/ChatbotFab.jsx');
+
+  assert.match(chatbot, /data-chat-dock-state=/);
+  assert.match(chatbot, /role="tablist"/);
+  assert.match(chatbot, /data-chat-tab="audit"/);
+  assert.match(chatbot, /data-chat-tab="sources"/);
+  assert.match(chatbot, /clearConversation/);
+  assert.match(chatbot, /dockState === 'idle' \? modeLabel : dockStatus/);
+});
+
+test('async content surfaces use reusable layout-shaped shimmer skeletons', async () => {
+  const skeleton = await source('components/ui/skeleton.jsx');
+  const files = await Promise.all([
+    source('App.jsx'),
+    source('components/panels/LeftPanel.jsx'),
+    source('components/panels/AuditDrawer.jsx'),
+    source('components/panels/ChatbotFab.jsx'),
+    source('components/command/CommandPalette.jsx'),
+    source('components/map/DisasterLayersPanel.jsx'),
+    source('components/cards/CompareSetup.jsx'),
+    source('pages/SharedReport.jsx'),
+  ]);
+
+  assert.match(skeleton, /cn\(['"]shimmer/);
+  assert.match(skeleton, /function SkeletonText/);
+  assert.match(skeleton, /function SkeletonRows/);
+  assert.ok(files.every((content) => /Skeleton/.test(content)));
+  assert.match(files[2], /battleReportLoading/);
+  assert.match(files[4], /SkeletonRows/);
+  assert.match(files[7], /SharedReportSkeleton/);
+});
+
 test('report priority cards avoid thick side-stripe accents', async () => {
   const drawer = await source('components/panels/AuditDrawer.jsx');
   const styles = await source('index.css');

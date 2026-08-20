@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Command } from 'cmdk';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Clock, Star, MapPin, Loader2, X, Sparkles } from 'lucide-react';
+import { Search, Clock, Star, MapPin, X, Sparkles } from 'lucide-react';
 import axios from 'axios';
 
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
+import { Skeleton, SkeletonRows } from '../ui/skeleton';
 
 const PHOTON = 'https://photon.komoot.io/api/';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
@@ -171,7 +172,7 @@ export function CommandPalette() {
                   placeholder={t('cmd.searchPlaceholder')}
                   className="h-12 flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted focus:outline-none"
                 />
-                {searching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-text-muted" />}
+                {searching && <Skeleton className="h-4 w-4 shrink-0 rounded-full" />}
                 {query && !searching && (
                   <button
                     type="button"
@@ -188,6 +189,13 @@ export function CommandPalette() {
               </div>
 
               <Command.List className="max-h-[380px] overflow-y-auto p-2">
+                {searching && query && (
+                  <div role="status" aria-live="polite" className="py-1">
+                    <span className="sr-only">{t('cmd.searching')}</span>
+                    <SkeletonRows count={4} />
+                  </div>
+                )}
+
                 {/* Empty state */}
                 {!searching && query && results.length === 0 && (
                   <Command.Empty className="py-10 text-center text-xs text-text-muted">

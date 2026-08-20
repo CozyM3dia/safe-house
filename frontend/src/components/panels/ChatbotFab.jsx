@@ -1,6 +1,16 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Sparkles, ChevronDown, FileText, BookOpen } from 'lucide-react';
+import {
+  Activity,
+  ArrowUpRight,
+  Bot,
+  ChevronDown,
+  FileText,
+  MapPin,
+  RotateCcw,
+  Send,
+  ShieldCheck,
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -8,7 +18,8 @@ import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { chatWithAudit } from '../../services/api';
 import { SUGGESTED_PROMPTS_ID, SUGGESTED_PROMPTS_EN } from '../../lib/constants';
-import { cn } from '../../lib/utils';
+import { cn, shortAddress } from '../../lib/utils';
+import { SkeletonText } from '../ui/skeleton';
 
 // ─── Auto-resize textarea hook ──────────────────────────────────────
 const MIN_HEIGHT = 44;
@@ -35,47 +46,64 @@ function useAutoResizeTextarea() {
   return { textareaRef, adjustHeight };
 }
 
-// ─── Animated placeholder ───────────────────────────────────────────
-function AnimatedPlaceholder() {
-  const lang = useAppStore((s) => s.lang);
-  const [index, setIndex] = useState(0);
+function getLocationLabel(property, fallback) {
+  if (!property) return fallback;
 
-  const placeholders = lang === 'en' ? [
-    "Ask S.A.F.E AI anything...",
-    "Check liquefaction risk here...",
-    "What is the S.A.F.E score?",
-    "Is this location flood-prone?",
-    "Analyze soil stability..."
-  ] : [
-    "Tanya S.A.F.E AI...",
-    "Cek risiko likuefaksi area ini...",
-    "Berapa skor S.A.F.E properti ini?",
-    "Apakah lokasi ini rawan banjir?",
-    "Analisis stabilitas tanahnya..."
-  ];
+  const address = shortAddress(property.address || property.location?.address, 2);
+  if (address) return address;
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % placeholders.length);
-    }, 3500);
-    return () => clearInterval(timer);
-  }, [placeholders.length]);
+  const longitude = property.lon ?? property.lng;
+  if (Number.isFinite(property.lat) && Number.isFinite(longitude)) {
+    return `${property.lat.toFixed(3)}, ${longitude.toFixed(3)}`;
+  }
+
+  return fallback;
+}
+
+function StatusDot({ className }) {
+  return <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full bg-risk-safe', className)} />;
+}
+
+function ModeLabel({ mode, lang }) {
+  return mode === 'battle'
+    ? (lang === 'en' ? 'COMPARISON MODE' : 'MODE BANDINGKAN')
+    : (lang === 'en' ? 'AUDIT MODE' : 'MODE AUDIT');
+}
+
+function ContextLabel({ propertyA, lang }) {
+  const fallback = lang === 'en' ? 'No audited location' : 'Belum ada lokasi diaudit';
+  const label = getLocationLabel(propertyA, fallback);
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.p
-        key={index}
-        initial={{ opacity: 0, y: 5, filter: 'blur(2px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        exit={{ opacity: 0, y: -5, filter: 'blur(2px)' }}
-        transition={{ duration: 0.35, ease: 'easeInOut' }}
-        className="pointer-events-none whitespace-nowrap overflow-hidden text-ellipsis text-xs text-text-muted"
-        style={{ display: 'block', maxWidth: '100%' }}
-      >
-        {placeholders[index]}
-      </motion.p>
-    </AnimatePresence>
+    <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-[10px] text-text-muted">
+      <MapPin className="h-3 w-3 shrink-0 text-accent/80" aria-hidden="true" />
+      <span className="truncate">{label}</span>
+    </span>
   );
+}
+
+function collectCitations(messages) {
+  const seen = new Set();
+  const sources = [];
+
+  messages.forEach((message) => {
+    if (!Array.isArray(message.citations)) return;
+
+    message.citations.forEach((citation) => {
+      const key = citation.id || `${citation.title || 'source'}-${citation.category || 'unknown'}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      sources.push(citation);
+    });
+  });
+
+  return sources;
+}
+
+function getDockState({ input, loading }) {
+  if (loading) return 'working';
+  if (input.trim()) return 'composing';
+  return 'idle';
 }
 
 // ─── Main Component ─────────────────────────────────────────────────
@@ -96,10 +124,25 @@ export function ChatbotFab() {
 
   const lang = useAppStore((s) => s.lang);
   const hasMessages = messages.length > 0;
+  const [panelTab, setPanelTab] = useState('audit');
+  const dockState = getDockState({ input, loading });
+  const citations = collectCitations(messages);
+  const modeLabel = <ModeLabel mode={mode} lang={lang} />;
 
   const scrollToBottom = () => {
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   };
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setExpanded(false);
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [expanded, setExpanded]);
 
   const send = async (text) => {
     const userMsg = text || input.trim();
@@ -107,9 +150,8 @@ export function ChatbotFab() {
 
     setInput('');
     adjustHeight(true);
-    
-    // Add user message to UI
-    setMessages((m) => [...m, { role: 'user', content: userMsg }]);
+
+    setMessages((current) => [...current, { role: 'user', content: userMsg }]);
     setExpanded(true);
     setLoading(true);
     scrollToBottom();
@@ -123,8 +165,8 @@ export function ChatbotFab() {
         mode,
         lang,
       });
-      setMessages((m) => [
-        ...m,
+      setMessages((current) => [
+        ...current,
         {
           role: 'assistant',
           content: result.answer,
@@ -133,98 +175,123 @@ export function ChatbotFab() {
         },
       ]);
     } catch (error) {
-      setMessages((m) => [...m, {
+      setMessages((current) => [...current, {
         role: 'assistant',
         content: error.message || (lang === 'en'
-          ? '❌ AI unavailable — please retry.'
-          : '❌ Layanan AI tidak tersedia — silakan coba kembali.'),
+          ? 'The AI service is unavailable. Please try again.'
+          : 'Layanan AI tidak tersedia. Silakan coba kembali.'),
       }]);
     }
     setLoading(false);
     scrollToBottom();
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       send();
     }
   };
 
-  // ─── Collapsed: just the floating input ─────────────────────────
+  const clearConversation = () => {
+    if (loading) return;
+    setMessages([]);
+    setInput('');
+    setPanelTab('audit');
+    adjustHeight(true);
+  };
+
+  const dockStatus = dockState === 'working'
+    ? (lang === 'en' ? 'CHECKING AUDIT DATA' : 'MEMERIKSA DATA AUDIT')
+    : dockState === 'composing'
+      ? (lang === 'en' ? 'COMPOSING' : 'MENYUSUN PESAN')
+      : 'READY';
+
+  // ─── Collapsed: compact Agent Dock over the map ──────────────────
   if (!expanded) {
     return (
       <motion.div
         data-tour="chatbot-fab"
-        initial={{ y: 30, opacity: 0, scale: 0.96 }}
+        data-chat-dock-state={dockState}
+        initial={{ y: 24, opacity: 0, scale: 0.98 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3, type: 'spring', damping: 22, stiffness: 200 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          'fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[340px]',
+          'fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[356px]',
           leftPanelOpen && 'max-[639px]:left-auto max-[639px]:right-4 max-[639px]:w-14'
         )}
       >
         <div className="bezel-outer">
-          <div className="bezel-inner relative overflow-hidden bg-bg-surface/90 backdrop-blur-xl border border-white/8 shadow-glass-lg rounded-2xl">
-            {/* Glow */}
-            <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-accent/8 blur-xl pointer-events-none" />
-            <div className="absolute -left-8 -bottom-8 h-16 w-16 rounded-full bg-accent/4 blur-xl pointer-events-none" />
-            
-            {/* Single-row layout: icon + input + send */}
+          <div className="bezel-inner overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-glass-lg backdrop-blur-xl">
             <div className={cn(
-              'relative z-10 flex items-center gap-2.5 px-3.5 py-3',
+              'flex items-center gap-3 px-3 py-2.5',
               leftPanelOpen && 'max-[639px]:justify-center max-[639px]:gap-0 max-[639px]:px-1.5'
             )}>
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
                 aria-label={t('chat.open')}
-                className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/15 shadow-[0_0_8px_rgba(212,149,106,0.1)] transition-all hover:scale-[1.03] hover:bg-accent/25"
                 title={t('chat.open')}
+                className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/12 text-accent transition-colors hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
               >
-                <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden text-[10px] font-semibold sm:inline">Chat</span>
               </button>
 
               <div className={cn(
-                'relative min-w-0 flex-1',
+                'min-w-0 flex-1',
+                leftPanelOpen && 'max-[639px]:hidden'
+              )}>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-xs font-bold tracking-tight text-text-primary">S.A.F.E AI</span>
+                  <span className={cn(
+                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[8px] font-semibold tracking-[0.14em]',
+                    dockState === 'working'
+                      ? 'border-accent/25 bg-accent/8 text-accent'
+                      : dockState === 'composing'
+                        ? 'border-risk-moderate/25 bg-risk-moderate/8 text-risk-moderate'
+                        : 'border-risk-safe/20 bg-risk-safe/8 text-risk-safe'
+                  )}>
+                    <StatusDot className={dockState === 'working' ? 'bg-accent' : dockState === 'composing' ? 'bg-risk-moderate' : undefined} />
+                    {dockStatus}
+                  </span>
+                </div>
+                <ContextLabel propertyA={propertyA} lang={lang} />
+              </div>
+
+              <div className={cn(
+                'flex min-w-0 flex-1 items-center gap-2',
                 leftPanelOpen && 'max-[639px]:hidden'
               )}>
                 <input
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(event) => setInput(event.target.value)}
                   onKeyDown={handleKeyDown}
                   aria-label={t('chat.placeholder')}
                   onFocus={() => setExpanded(true)}
-                  className="w-full border-none bg-transparent text-xs text-text-primary focus:outline-none relative z-10"
+                  placeholder={lang === 'en' ? 'Ask about this audit…' : 'Tanya tentang audit ini…'}
+                  className="min-w-0 flex-1 border-none bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0"
                 />
-                {!input && (
-                  <div className="pointer-events-none absolute inset-0 z-0 flex items-center overflow-hidden">
-                    <AnimatedPlaceholder />
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => send()}
+                  aria-label={t('chat.send')}
+                  disabled={!input.trim() || loading}
+                  className={cn(
+                    'flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+                    input.trim()
+                      ? 'bg-accent text-bg hover:bg-accent-hover'
+                      : 'bg-white/[0.04] text-text-muted'
+                  )}
+                >
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => send()}
-                aria-label={t('chat.send')}
-                disabled={!input.trim() || loading}
-                className={cn(
-                  'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full transition-all duration-300',
-                  leftPanelOpen && 'max-[639px]:hidden',
-                  input.trim()
-                    ? 'bg-accent text-[#0f0b08] hover:scale-105 shadow-[0_0_8px_rgba(212,149,106,0.4)]'
-                    : 'bg-white/[0.04] text-text-muted cursor-not-allowed'
-                )}
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Show badge if there are prior messages */}
         {hasMessages && (
           <motion.button
             initial={{ scale: 0.9, opacity: 0 }}
@@ -232,172 +299,305 @@ export function ChatbotFab() {
             type="button"
             onClick={() => setExpanded(true)}
             aria-label={t('chat.open')}
-            className="absolute -left-2 -top-2 flex min-h-7 min-w-7 items-center justify-center rounded-full border border-[#0f0b08] bg-accent text-[9px] font-bold text-bg shadow-[0_0_8px_rgba(212,149,106,0.6)]"
+            className="absolute -left-2 -top-2 flex min-h-7 min-w-7 items-center justify-center rounded-full border border-bg bg-accent px-1 text-[9px] font-bold text-bg shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
           >
-            {messages.filter((m) => m.role === 'assistant').length}
+            {messages.filter((message) => message.role === 'assistant').length}
           </motion.button>
         )}
       </motion.div>
     );
   }
 
-  // ─── Expanded: sidebar panel ────────────────────────────────────
+  // ─── Expanded: premium Chat Panel ───────────────────────────────
   return (
-    <motion.div
-      initial={{ x: 420, opacity: 0, scale: 0.98 }}
-      animate={{ x: 0, opacity: 1, scale: 1 }}
-      exit={{ x: 420, opacity: 0, scale: 0.98 }}
-      transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-      className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-3xl border border-white/8 bg-bg-surface/95 backdrop-blur-xl shadow-glass-xl sm:left-auto sm:right-4 sm:w-[380px]"
+    <motion.aside
+      initial={{ x: 24, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      aria-labelledby="safe-ai-chat-title"
+      className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-glass-lg backdrop-blur-xl sm:left-auto sm:right-4 sm:w-[392px]"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/8 px-5 py-4 bg-white/[0.015]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/15 border border-accent/35 shadow-[0_0_10px_rgba(212,149,106,0.1)]">
-            <Sparkles className="h-4 w-4 text-accent" />
-          </div>
-          <div className="leading-none">
-            <p className="flex items-center gap-1.5 text-sm font-bold text-text-primary font-display tracking-tight">
-              <span>S.A.F.E AI</span>
-              <span className="bg-accent/10 border border-accent/25 rounded-md px-1.5 py-0.5 text-[8px] font-mono font-bold text-accent tracking-wider">AUDIT-GROUNDED</span>
-            </p>
-            <p className="mt-1 text-[10px] font-mono tracking-widest text-text-muted">
-              ASISTEN AUDIT GEOTEKNIK
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setExpanded(false)}
-          aria-label={t('chat.minimize')}
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary"
-          title={t('chat.minimize')}
-        >
-          <ChevronDown className="h-4.5 w-4.5" />
-        </button>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-none">
-        {/* Help prompt if empty */}
-        {messages.length === 0 && (
-          <div className="text-center py-10 px-4 space-y-3.5 relative">
-            {/* Decorative planetary background glow */}
-            <div className="absolute left-1/2 top-12 -translate-x-1/2 h-24 w-24 rounded-full bg-accent/8 blur-2xl pointer-events-none animate-pulse" />
-            <div className="relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 text-accent mb-1 border border-accent/30 shadow-[0_0_15px_rgba(212,149,106,0.15)]">
-              <BookOpen className="h-5.5 w-5.5" />
+      <header className="border-b border-white/8 bg-white/[0.02] px-4 py-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent">
+              <ShieldCheck className="h-4.5 w-4.5" aria-hidden="true" />
             </div>
-            <h4 className="text-xs font-bold text-text-primary tracking-wider uppercase relative z-10">
-              {lang === 'en' ? 'Audit-Grounded Risk Assistant' : 'Asisten Berbasis Data Audit'}
-            </h4>
-            <p className="text-[11px] text-text-secondary leading-relaxed max-w-[280px] mx-auto relative z-10">
-              {lang === 'en' 
-                ? 'Ask what the score, FS, Vs30, PGA, or flood hazard mean for the location being audited.'
-                : 'Tanyakan arti skor, FS, Vs30, PGA, banjir, atau keterbatasan data pada lokasi yang sedang diaudit.'}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 id="safe-ai-chat-title" className="font-display text-sm font-bold tracking-tight text-text-primary">
+                  S.A.F.E AI
+                </h2>
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/25 bg-accent/8 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-[0.14em] text-accent">
+                  <StatusDot className="bg-accent" /> AUDIT-GROUNDED
+                </span>
+              </div>
+              <p className="mt-1 flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.12em] text-text-muted">
+                <Activity className="h-3 w-3 text-accent/80" aria-hidden="true" />
+                {lang === 'en' ? 'Risk intelligence layer' : 'Lapisan intelijen risiko'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            aria-label={t('chat.minimize')}
+            title={t('chat.minimize')}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+          >
+            <ChevronDown className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="mt-3 flex min-w-0 items-center justify-between gap-3 border-t border-white/6 pt-3">
+          <ContextLabel propertyA={propertyA} lang={lang} />
+          <span className="shrink-0 font-mono text-[9px] font-semibold tracking-[0.12em] text-accent/80">
+            {modeLabel}
+          </span>
+        </div>
+
+        <div
+          className="mt-3 flex items-center gap-1 rounded-lg border border-white/8 bg-bg/25 p-1"
+          role="tablist"
+          aria-label={lang === 'en' ? 'Chat views' : 'Tampilan chatbot'}
+        >
+          <button
+            type="button"
+            role="tab"
+            data-chat-tab="audit"
+            aria-selected={panelTab === 'audit'}
+            onClick={() => setPanelTab('audit')}
+            className={cn(
+              'min-h-9 flex-1 rounded-md px-3 font-mono text-[9px] font-bold tracking-[0.14em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+              panelTab === 'audit'
+                ? 'bg-accent/12 text-accent'
+                : 'text-text-muted hover:bg-white/[0.04] hover:text-text-primary'
+            )}
+          >
+            {lang === 'en' ? 'AUDIT' : 'AUDIT'}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-chat-tab="sources"
+            aria-selected={panelTab === 'sources'}
+            onClick={() => setPanelTab('sources')}
+            className={cn(
+              'min-h-9 flex-1 rounded-md px-3 font-mono text-[9px] font-bold tracking-[0.14em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+              panelTab === 'sources'
+                ? 'bg-accent/12 text-accent'
+                : 'text-text-muted hover:bg-white/[0.04] hover:text-text-primary'
+            )}
+          >
+            {lang === 'en' ? 'SOURCES' : 'SUMBER'}
+          </button>
+          <button
+            type="button"
+            onClick={clearConversation}
+            disabled={!hasMessages || loading}
+            aria-label={lang === 'en' ? 'Clear conversation' : 'Hapus percakapan'}
+            title={lang === 'en' ? 'Clear conversation' : 'Hapus percakapan'}
+            className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-white/[0.04] hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      </header>
+
+      <div
+        className="flex-1 min-h-0 space-y-5 overflow-y-auto px-4 py-4 scrollbar-none"
+        role="log"
+        aria-live="polite"
+        aria-busy={loading}
+        aria-label={lang === 'en' ? 'S.A.F.E AI conversation' : 'Percakapan S.A.F.E AI'}
+      >
+        {panelTab === 'audit' ? (
+          <>
+        {messages.length === 0 && (
+          <div className="relative px-2 py-6 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-accent/25 bg-accent/8 text-accent shadow-[0_0_0_8px_rgba(212,149,106,0.035)]">
+              <Activity className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
+            </div>
+            <p className="mt-5 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-accent/80">
+              {lang === 'en' ? 'AUDIT INTELLIGENCE' : 'INTELIJEN AUDIT'}
             </p>
+            <h3 className="mt-2 font-display text-base font-semibold tracking-tight text-text-primary">
+              {lang === 'en' ? 'Understand the signal.' : 'Pahami sinyal risikonya.'}
+            </h3>
+            <p className="mx-auto mt-2 max-w-[31ch] text-[11px] leading-relaxed text-text-secondary">
+              {lang === 'en'
+                ? 'Ask what the evidence means for the location being audited.'
+                : 'Tanyakan arti bukti dan angka untuk lokasi yang sedang diaudit.'}
+            </p>
+            <div className="mt-4 flex justify-center">
+              <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.025] px-2.5 py-1.5 text-left text-[10px] text-text-muted">
+                <MapPin className="h-3 w-3 shrink-0 text-accent/80" aria-hidden="true" />
+                <span className="truncate">{getLocationLabel(propertyA, lang === 'en' ? 'Select a point on the map' : 'Pilih titik di peta')}</span>
+              </span>
+            </div>
           </div>
         )}
 
-        {messages.map((m, i) => {
-          const isLatest = i === messages.length - 1 && m.role === 'assistant';
+        {messages.map((message, index) => {
+          const isLatest = index === messages.length - 1 && message.role === 'assistant';
           return (
             <MessageBubble
-              key={i}
-              role={m.role}
-              content={m.content}
-              citations={m.citations}
-              followUps={isLatest ? m.followUps : null}
-              onFollowUpClick={(q) => send(q)}
+              key={`${message.role}-${index}`}
+              role={message.role}
+              content={message.content}
+              citations={message.citations}
+              followUps={isLatest ? message.followUps : null}
+              onFollowUpClick={(question) => send(question)}
               loading={loading}
             />
           );
         })}
 
         {loading && (
-          <div className="flex items-center gap-2.5 text-xs text-text-muted py-1 pl-1">
-            <span className="flex gap-1">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '0ms' }} />
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '120ms' }} />
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '240ms' }} />
-            </span>
-            <span className="font-mono text-[10px] tracking-wider uppercase text-accent/80">
-              {lang === 'en' ? 'CHECKING AUDIT DATA...' : 'MEMERIKSA DATA AUDIT...'}
-            </span>
+          <div
+            className="flex max-w-[92%] gap-2.5"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/8 text-accent">
+              <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1 pt-1">
+              <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-accent/80">
+                {lang === 'en' ? 'CHECKING AUDIT DATA' : 'MEMERIKSA DATA AUDIT'}
+              </span>
+              <SkeletonText lines={2} className="mt-3" lineClassName="rounded" />
+            </div>
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+          </>
+        ) : (
+          <SourcesPanel citations={citations} lang={lang} />
+        )}
+
+        {panelTab === 'audit' && <div ref={messagesEndRef} />}
       </div>
 
-      {/* Suggested prompts — show only if no messages yet */}
-      {!hasMessages && (
-        <div className="border-t border-white/8 px-5 py-3.5 bg-white/[0.01] space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+      {panelTab === 'audit' && !hasMessages && (
+        <section className="border-t border-white/8 px-4 py-3" aria-label={t('chat.suggestions')}>
+          <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-text-muted">
             {t('chat.suggestions')}
           </p>
-          <div className="flex flex-wrap gap-2">
-            {(lang === 'en' ? SUGGESTED_PROMPTS_EN : SUGGESTED_PROMPTS_ID).slice(0, 4).map((s) => (
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {(lang === 'en' ? SUGGESTED_PROMPTS_EN : SUGGESTED_PROMPTS_ID).slice(0, 4).map((suggestion) => (
               <button
                 type="button"
-                key={s}
-                onClick={() => send(s)}
-                className="min-h-[44px] rounded-xl border border-white/6 bg-white/[0.02] px-3 py-2 text-left text-[10px] leading-normal text-text-secondary shadow-sm transition-all duration-300 hover:scale-[1.01] hover:border-accent/40 hover:bg-accent/[0.03] hover:text-accent"
+                key={suggestion}
+                onClick={() => send(suggestion)}
+                className="group flex min-h-[44px] items-center justify-between gap-2 rounded-lg border border-white/8 bg-white/[0.018] px-3 py-2 text-left text-[10px] leading-snug text-text-secondary transition-colors hover:border-accent/35 hover:bg-accent/[0.05] hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
               >
-                <span className="text-accent/60 select-none text-[8px]">✦</span>
-                <span>{s}</span>
+                <span>{suggestion}</span>
+                <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-accent/60 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
               </button>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Input area */}
-      <div className="border-t border-white/8 p-4 bg-white/[0.015]">
-        <div className="rounded-[16px] border border-white/8 p-0.5 bg-bg/40 shadow-inner">
-          <div className="relative flex flex-col rounded-[13px] border border-white/6 bg-white/[0.02]">
-            <div className="overflow-y-auto" style={{ maxHeight: `${MAX_HEIGHT}px` }}>
-              <div className="relative">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => { setInput(e.target.value); adjustHeight(); }}
-                  onKeyDown={handleKeyDown}
-                  aria-label={t('chat.placeholder')}
-                  className="w-full resize-none rounded-[13px] rounded-b-none border-none bg-transparent px-4 py-3.5 text-xs leading-[1.4] text-text-primary placeholder:text-transparent focus:outline-none"
-                  rows={1}
-                />
-                {!input && (
-                  <div className="pointer-events-none absolute inset-x-4 top-3.5 overflow-hidden">
-                    <AnimatedPlaceholder />
-                  </div>
+      <div className="shrink-0 border-t border-white/8 bg-white/[0.018] p-3.5">
+        <div className="overflow-hidden rounded-xl border border-accent/18 bg-bg/35 shadow-inner">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(event) => { setInput(event.target.value); adjustHeight(); }}
+            onKeyDown={handleKeyDown}
+            aria-label={t('chat.placeholder')}
+            placeholder={lang === 'en' ? 'Ask about the audited evidence…' : 'Tanyakan tentang bukti audit…'}
+            className="block w-full resize-none border-none bg-transparent px-3.5 py-3 text-xs leading-[1.5] text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0"
+            rows={1}
+          />
+          <div className="flex min-h-[48px] items-center justify-between gap-3 border-t border-white/7 px-3">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/18 bg-accent/6 px-2 py-1 font-mono text-[8px] font-semibold tracking-[0.13em] text-accent">
+              <StatusDot className={dockState === 'working' ? 'bg-accent' : dockState === 'composing' ? 'bg-risk-moderate' : 'bg-accent'} />
+              {dockState === 'idle' ? modeLabel : dockStatus}
+            </span>
+            <button
+              type="button"
+              onClick={() => send()}
+              aria-label={t('chat.send')}
+              disabled={!input.trim() || loading}
+              className={cn(
+                'flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+                input.trim()
+                  ? 'bg-accent text-bg hover:bg-accent-hover'
+                  : 'bg-white/[0.04] text-text-muted'
+              )}
+            >
+              <Send className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <p className="mt-2 text-center font-mono text-[8px] tracking-[0.08em] text-text-muted">
+          {lang === 'en' ? 'ENTER TO SEND · SHIFT+ENTER FOR NEW LINE' : 'ENTER UNTUK KIRIM · SHIFT+ENTER UNTUK BARIS BARU'}
+        </p>
+      </div>
+    </motion.aside>
+  );
+}
+
+function SourcesPanel({ citations, lang }) {
+  if (citations.length === 0) {
+    return (
+      <div className="flex min-h-[220px] flex-col items-center justify-center px-6 py-10 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/8 bg-white/[0.025] text-text-muted">
+          <FileText className="h-5 w-5" aria-hidden="true" />
+        </div>
+        <p className="mt-4 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-text-muted">
+          {lang === 'en' ? 'SOURCE LEDGER' : 'DAFTAR SUMBER'}
+        </p>
+        <p className="mt-2 max-w-[28ch] text-[11px] leading-relaxed text-text-secondary">
+          {lang === 'en'
+            ? 'Sources will appear here after S.A.F.E AI answers from the audit knowledge base.'
+            : 'Sumber akan muncul di sini setelah S.A.F.E AI menjawab dari basis pengetahuan audit.'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <section data-chat-sources="true" className="space-y-3" aria-label={lang === 'en' ? 'Data sources' : 'Sumber data'}>
+      <div className="flex items-end justify-between gap-3 border-b border-white/8 pb-3">
+        <div>
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-accent/80">
+            {lang === 'en' ? 'SOURCE LEDGER' : 'DAFTAR SUMBER'}
+          </p>
+          <p className="mt-1 text-[11px] text-text-secondary">
+            {lang === 'en' ? 'Evidence attached to this conversation.' : 'Bukti yang terhubung ke percakapan ini.'}
+          </p>
+        </div>
+        <span className="font-mono text-[10px] font-bold text-accent">{citations.length}</span>
+      </div>
+
+      <div className="space-y-2">
+        {citations.map((citation, index) => (
+          <article
+            key={`${citation.id || citation.title || 'source'}-${index}`}
+            className="rounded-xl border border-white/8 bg-white/[0.018] px-3 py-3"
+          >
+            <div className="flex items-start gap-2.5">
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent/18 bg-accent/8 text-accent">
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[11px] font-semibold leading-snug text-text-primary">{citation.title}</h3>
+                <p className="mt-1 text-[10px] leading-relaxed text-text-muted">{citation.category}</p>
+                {citation.isUserUploaded && (
+                  <span className="mt-2 inline-flex rounded-md border border-accent/18 bg-accent/6 px-1.5 py-1 font-mono text-[8px] font-semibold uppercase tracking-[0.12em] text-accent">
+                    {lang === 'en' ? 'USER UPLOAD' : 'UNGGAHAN USER'}
+                  </span>
                 )}
               </div>
             </div>
-
-            <div className="flex h-9.5 items-center justify-between rounded-b-[13px] bg-white/[0.02] border-t border-white/4 px-3.5">
-              <span className="inline-flex items-center gap-1 rounded bg-accent/8 border border-accent/15 px-2 py-0.5 text-[9px] font-mono text-accent tracking-widest select-none">
-                ● {mode === 'battle' ? (lang === 'en' ? 'BATTLE MODE' : 'MODE BANDINGKAN') : (lang === 'en' ? 'AUDIT MODE' : 'MODE AUDIT')}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => send()}
-                aria-label={t('chat.send')}
-                disabled={!input.trim() || loading}
-                className={cn(
-                  'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition-all duration-300',
-                  input.trim()
-                    ? 'bg-accent text-[#0f0b08] hover:scale-105 shadow-[0_0_10px_rgba(212,149,106,0.5)]'
-                    : 'bg-white/[0.04] text-text-muted cursor-not-allowed'
-                )}
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
+          </article>
+        ))}
       </div>
-    </motion.div>
+    </section>
   );
 }
 
@@ -405,99 +605,95 @@ export function ChatbotFab() {
 function MessageBubble({ role, content, citations, followUps, onFollowUpClick, loading }) {
   const t = useT();
   const isUser = role === 'user';
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+    <motion.article
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       className={cn('flex flex-col gap-2', isUser ? 'items-end' : 'items-start')}
     >
-      <div
-        className={cn(
-          'max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed relative overflow-hidden shadow-sm',
-          isUser
-            ? 'bg-gradient-to-br from-accent/15 to-accent/[0.03] text-text-primary font-medium border border-accent/25 rounded-tr-sm'
-            : 'border border-white/8 bg-white/[0.015] text-text-secondary rounded-tl-sm'
-        )}
-      >
-        {!isUser && (
-          /* Decorative micro-grid for geophysics theme */
-          <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{
-            backgroundImage: 'radial-gradient(rgba(212,149,106,0.15) 1px, transparent 1px)',
-            backgroundSize: '12px 12px'
-          }} />
-        )}
-        
-        <div className="relative z-10">
-          {isUser ? (
-            content
-          ) : (
-            <>
+      {isUser ? (
+        <div className="max-w-[88%] rounded-2xl rounded-tr-sm border border-accent/25 bg-accent/10 px-3.5 py-3 text-xs font-medium leading-relaxed text-text-primary">
+          {content}
+        </div>
+      ) : (
+        <div className="flex max-w-[94%] gap-2.5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/8 text-accent">
+            <Bot className="h-3.5 w-3.5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-accent/90">S.A.F.E AI</span>
+              <span className="text-[9px] text-text-muted">{t('chat.sources').toLowerCase()}</span>
+            </div>
+            <div className="text-xs leading-relaxed text-text-secondary">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                  strong: ({ children }) => (
-                    <strong className="text-text-primary font-bold">{children}</strong>
-                  ),
-                  code: ({ children }) => (
-                    <code className="rounded bg-bg/35 px-1.5 py-0.5 font-mono text-[10px] text-accent">
-                      {children}
-                    </code>
-                  ),
-                  ul: ({ children }) => <ul className="ml-3 list-disc my-1.5 space-y-1">{children}</ul>,
-                  li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                  h1: ({ children }) => <h3 className="mb-2 text-sm font-semibold text-text-primary">{children}</h3>,
+                  h2: ({ children }) => <h3 className="mb-2 text-sm font-semibold text-text-primary">{children}</h3>,
+                  h3: ({ children }) => <h4 className="mb-1.5 text-xs font-semibold text-text-primary">{children}</h4>,
+                  strong: ({ children }) => <strong className="font-bold text-text-primary">{children}</strong>,
+                  code: ({ children }) => <code className="rounded bg-bg/45 px-1.5 py-0.5 font-mono text-[10px] text-accent">{children}</code>,
+                  ul: ({ children }) => <ul className="my-2 ml-3 list-disc space-y-1">{children}</ul>,
+                  ol: ({ children }) => <ol className="my-2 ml-4 list-decimal space-y-1">{children}</ol>,
+                  li: ({ children }) => <li>{children}</li>,
+                  a: ({ children, href }) => <a className="text-accent underline decoration-accent/40 underline-offset-2 hover:text-text-primary" href={href}>{children}</a>,
                 }}
               >
                 {content}
               </ReactMarkdown>
 
-              {/* Sources actually available in the current audit */}
               {citations && citations.length > 0 && (
-                <div className="mt-3 border-t border-white/8 pt-2.5 flex flex-col gap-1.5">
-                  <span className="text-[9px] font-bold text-accent tracking-[0.15em] uppercase select-none">
-                    {t('chat.sources')} ({citations.length}):
-                  </span>
+                <div className="mt-3 border-t border-white/8 pt-2.5">
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <FileText className="h-3 w-3 text-accent/80" aria-hidden="true" />
+                    <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-accent/90">
+                      {t('chat.sources')} ({citations.length})
+                    </span>
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {citations.map((c, idx) => (
+                    {citations.map((citation, index) => (
                       <span
-                        key={idx}
-                        title={`${c.title} (${c.category})`}
-                        className="inline-flex items-center gap-1.5 bg-accent/8 border border-accent/20 rounded-lg px-2 py-0.5 text-[8.5px] text-accent font-mono hover:bg-accent/15 transition-all shadow-sm"
+                        key={`${citation.id || citation.title || 'source'}-${index}`}
+                        title={`${citation.title} (${citation.category})`}
+                        className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-white/8 bg-white/[0.025] px-2 py-1 font-mono text-[8.5px] text-text-muted"
                       >
-                        <FileText className="h-2.5 w-2.5 shrink-0 text-accent/80" />
-                        <span className="max-w-[140px] truncate">{c.title}</span>
+                        <span className="max-w-[150px] truncate">{citation.title}</span>
                       </span>
                     ))}
                   </div>
                 </div>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Dynamic Follow-up Questions */}
       {!isUser && followUps && followUps.length > 0 && (
-        <div className="max-w-[85%] flex flex-col gap-1.5 mt-1.5 pl-1">
-          <p className="text-[9px] font-bold tracking-[0.15em] text-accent uppercase select-none">
-            {t('chat.followUps')}:
+        <div className="ml-9 flex max-w-[88%] flex-col gap-1.5">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-text-muted">
+            {t('chat.followUps')}
           </p>
-          <div className="flex flex-col gap-1.5">
-            {followUps.map((q, idx) => (
+          <div className="flex flex-col gap-1">
+            {followUps.map((question, index) => (
               <button
-                key={idx}
-                onClick={() => !loading && onFollowUpClick(q)}
+                type="button"
+                key={`${question}-${index}`}
+                onClick={() => !loading && onFollowUpClick(question)}
                 disabled={loading}
-                aria-label={q}
-                className="flex min-h-[44px] w-full items-center justify-between rounded-xl border border-white/6 bg-white/[0.01] px-3.5 py-2 text-left text-[10px] text-text-secondary shadow-sm transition-all duration-300 hover:translate-x-0.5 hover:border-accent/40 hover:bg-accent/[0.03] hover:text-accent cursor-pointer"
+                aria-label={question}
+                className="group flex min-h-[40px] items-center justify-between gap-2 rounded-lg border border-white/8 bg-white/[0.018] px-3 py-2 text-left text-[10px] text-text-secondary transition-colors hover:border-accent/35 hover:bg-accent/[0.05] hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
               >
-                <span className="flex-1 pr-2">{q}</span>
-                <span className="text-accent text-xs font-bold leading-none select-none">→</span>
+                <span className="min-w-0 flex-1">{question}</span>
+                <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-accent/60 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
               </button>
             ))}
           </div>
         </div>
       )}
-    </motion.div>
+    </motion.article>
   );
 }

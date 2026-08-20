@@ -6,6 +6,7 @@ import { useT } from '../../hooks/useTranslation';
 import { cn } from '../../lib/utils';
 import { MapLegend } from './MapLegend';
 import { INARISK_HAZARDS } from '../../lib/hazardOverlay';
+import { Skeleton } from '../ui/skeleton';
 
 export function DisasterLayersPanel() {
   const t = useT();
@@ -157,7 +158,12 @@ export function DisasterLayersPanel() {
                               : active ? 'border-accent/35 text-accent' : 'border-white/8 text-text-muted'
                         )}
                       >
-                        {statusLabel}
+                        {status === 'loading' ? (
+                          <>
+                            <Skeleton as="span" className="h-2 w-10 rounded" />
+                            <span className="sr-only">{statusLabel}</span>
+                          </>
+                        ) : statusLabel}
                       </span>
                     </button>
                   );
@@ -218,11 +224,12 @@ export function DisasterLayersPanel() {
                       : 'border-white/8 text-text-muted'
                   )}
                 >
-                  {overlays.faults
-                    ? faultLayerSource === 'loading'
-                      ? t('panel.layerLoading')
-                      : t('panel.layerOn')
-                    : t('panel.layerOff')}
+                  {overlays.faults && faultLayerSource === 'loading' ? (
+                    <>
+                      <Skeleton as="span" className="h-2 w-10 rounded" />
+                      <span className="sr-only">{t('panel.layerLoading')}</span>
+                    </>
+                  ) : overlays.faults ? t('panel.layerOn') : t('panel.layerOff')}
                 </span>
               </button>
             </div>

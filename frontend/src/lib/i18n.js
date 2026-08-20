@@ -280,6 +280,7 @@ const translations = {
     id: 'Cari lokasi, alamat, atau koordinat…',
     en: 'Search location, address, or coordinates…',
   },
+  'cmd.searching': { id: 'Mencari lokasi…', en: 'Searching locations…' },
   'cmd.favorites': { id: 'Favorit', en: 'Favorites' },
   'cmd.recent': { id: 'Terakhir dikunjungi', en: 'Recent' },
   'cmd.results': { id: 'Hasil pencarian', en: 'Search results' },

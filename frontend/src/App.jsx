@@ -16,6 +16,7 @@ import { LoadingBeam } from './components/feedback/LoadingBeam';
 import { DisasterLayersPanel } from './components/map/DisasterLayersPanel';
 import { useAppStore } from './store/useAppStore';
 import { OnboardingTour } from './components/onboarding/OnboardingTour';
+import { Skeleton, SkeletonText } from './components/ui/skeleton';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const SharedReport = lazy(() => import('./pages/SharedReport'));
@@ -29,6 +30,25 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function RouteSkeleton({ label = 'Memuat S.A.F.E House' }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-bg px-5 text-text-muted" role="status" aria-live="polite">
+      <div className="w-full max-w-sm space-y-4">
+        <span className="sr-only">{label}</span>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-xl" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-3 w-32 rounded" />
+            <Skeleton className="h-2.5 w-48 rounded" />
+          </div>
+        </div>
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <SkeletonText lines={3} />
+      </div>
+    </div>
+  );
+}
 
 function AppShell() {
   const setCmdPalette = useAppStore((s) => s.setCmdPalette);
@@ -112,11 +132,7 @@ export default function App() {
         <Route
           path="/"
           element={
-            <Suspense fallback={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0f0b08' }}>
-                <div style={{ fontFamily: '"Syne", sans-serif', fontSize: 14, color: '#d4956a', letterSpacing: '0.2em', fontWeight: 700 }}>LOADING…</div>
-              </div>
-            }>
+            <Suspense fallback={<RouteSkeleton label="Memuat halaman utama S.A.F.E House" />}>
               <LandingPage />
             </Suspense>
           }
@@ -125,11 +141,7 @@ export default function App() {
         <Route
           path="/laporan/:slug"
           element={
-            <Suspense fallback={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0f0b08' }}>
-                <div style={{ fontFamily: '"Syne", sans-serif', fontSize: 14, color: '#d4956a', letterSpacing: '0.2em', fontWeight: 700 }}>LOADING…</div>
-              </div>
-            }>
+            <Suspense fallback={<RouteSkeleton label="Memuat laporan S.A.F.E House" />}>
               <SharedReport />
             </Suspense>
           }

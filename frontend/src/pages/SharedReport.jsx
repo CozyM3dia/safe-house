@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, ShieldCheck, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
+import { MapPin, ShieldCheck, ArrowRight, AlertTriangle } from 'lucide-react';
 
 import { getSharedReport } from '../services/api';
 import { SafeScoreCard } from '../components/cards/SafeScoreCard';
 import { RadarCard } from '../components/cards/RadarCard';
 import { AddressCard } from '../components/cards/AddressCard';
+import { Skeleton, SkeletonText } from '../components/ui/skeleton';
 import { useT } from '../hooks/useTranslation';
 
 /**
@@ -61,12 +62,7 @@ export default function SharedReport() {
       </header>
 
       <main className="mx-auto max-w-3xl px-5 py-8">
-        {state.status === 'loading' && (
-          <div className="flex flex-col items-center justify-center py-24 text-text-muted">
-            <Loader2 className="mb-3 h-6 w-6 animate-spin text-accent" />
-            <p className="text-sm">{t('report.loading')}</p>
-          </div>
-        )}
+        {state.status === 'loading' && <SharedReportSkeleton label={t('report.loading')} />}
 
         {state.status === 'error' && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -86,6 +82,42 @@ export default function SharedReport() {
           <ReportBody property={state.data} />
         )}
       </main>
+    </div>
+  );
+}
+
+function SharedReportSkeleton({ label }) {
+  return (
+    <div className="flex flex-col gap-5 py-8" role="status" aria-live="polite">
+      <span className="sr-only">{label}</span>
+      <div className="flex items-start gap-2">
+        <Skeleton className="mt-1 h-4 w-4 shrink-0 rounded-full" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-40 rounded" />
+          <Skeleton className="h-3 w-4/5 rounded" />
+          <Skeleton className="h-2.5 w-2/5 rounded" />
+        </div>
+      </div>
+      <Skeleton className="h-52 w-full rounded-2xl" />
+      <div>
+        <Skeleton className="mb-2 h-2.5 w-28 rounded" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+      <div>
+        <Skeleton className="mb-2 h-2.5 w-32 rounded" />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+      </div>
+      <div>
+        <Skeleton className="mb-2 h-2.5 w-24 rounded" />
+        <SkeletonText lines={3} className="rounded-xl border border-white/6 p-4" />
+      </div>
     </div>
   );
 }

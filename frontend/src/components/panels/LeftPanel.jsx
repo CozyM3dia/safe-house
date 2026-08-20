@@ -10,6 +10,7 @@ import { exportProfessionalReport } from '../../lib/professionalReport';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { Skeleton } from '../ui/skeleton';
 import { SafeScoreCard } from '../cards/SafeScoreCard';
 import { MetricsGrid } from '../cards/MetricsGrid';
 import { RadarCard } from '../cards/RadarCard';
@@ -108,13 +109,6 @@ function SectionLabel({ children, icon: Icon }) {
       </span>
       <div className="h-px flex-1 bg-gradient-to-r from-accent/25 to-transparent" />
     </div>
-  );
-}
-
-// ── Shimmer skeleton ────────────────────────────────────────────
-function Shimmer({ className }) {
-  return (
-    <div className={`shimmer rounded-xl ${className}`} />
   );
 }
 
@@ -273,32 +267,34 @@ function SkeletonState() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="flex flex-col gap-3 p-4"
+      role="status"
+      aria-busy="true"
     >
       {/* Header skeleton */}
       <div className="flex items-center justify-between mb-1">
-        <Shimmer className="h-3 w-24" />
-        <Shimmer className="h-5 w-16 rounded-full" />
+        <Skeleton className="h-3 w-24 rounded" />
+        <Skeleton className="h-5 w-16 rounded-full" />
       </div>
 
       {/* Score card skeleton */}
-      <Shimmer className="h-36 w-full" />
+      <Skeleton className="h-36 w-full rounded-2xl" />
 
       {/* Metrics grid skeleton */}
       <div className="grid grid-cols-2 gap-2">
-        <Shimmer className="h-[72px]" />
-        <Shimmer className="h-[72px]" />
-        <Shimmer className="h-[72px]" />
-        <Shimmer className="h-[72px]" />
+        <Skeleton className="h-[72px] rounded-xl" />
+        <Skeleton className="h-[72px] rounded-xl" />
+        <Skeleton className="h-[72px] rounded-xl" />
+        <Skeleton className="h-[72px] rounded-xl" />
       </div>
 
       {/* Radar skeleton */}
-      <Shimmer className="h-56 w-full" />
+      <Skeleton className="h-56 w-full rounded-2xl" />
 
       {/* Waveform skeleton */}
-      <Shimmer className="h-32 w-full" />
+      <Skeleton className="h-32 w-full rounded-2xl" />
 
       {/* Address skeleton */}
-      <Shimmer className="h-24 w-full" />
+      <Skeleton className="h-24 w-full rounded-2xl" />
 
       {/* Loading indicator */}
       <div className="mt-1 flex items-center justify-center gap-2">

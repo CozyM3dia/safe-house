@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
+import { Skeleton, SkeletonText } from '../ui/skeleton';
 import { locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
 import { siteClass } from '../../lib/formatters';
 
@@ -17,6 +18,27 @@ import { siteClass } from '../../lib/formatters';
 function computeScore(p) {
   if (typeof p?.safe_score === 'number') return p.safe_score;
   return null;
+}
+
+function ReportSkeleton({ label = 'Loading report' }) {
+  return (
+    <div className="space-y-5" role="status" aria-live="polite">
+      <span className="sr-only">{label}</span>
+      <div className="space-y-2">
+        <Skeleton className="h-3.5 w-2/5 rounded" />
+        <SkeletonText lines={4} />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-3.5 w-1/3 rounded" />
+        <SkeletonText lines={5} />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <Skeleton className="h-16 rounded-xl" />
+        <Skeleton className="h-16 rounded-xl" />
+        <Skeleton className="h-16 rounded-xl" />
+      </div>
+    </div>
+  );
 }
 
 // ─── Visualizations for Report Sections ──────────────────────────────
@@ -671,6 +693,7 @@ export function AuditDrawer() {
   const mode = useAppStore((s) => s.mode);
   const battleReport = useAppStore((s) => s.battleReportContent);
   const battleReportMeta = useAppStore((s) => s.battleReportMeta);
+  const battleReportLoading = useAppStore((s) => s.battleReportLoading);
   const reportRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
@@ -862,6 +885,10 @@ export function AuditDrawer() {
                         </article>
                       );
                     })()
+                  ) : battleReportLoading ? (
+                    <ReportSkeleton
+                      label={lang === 'en' ? 'Generating comparison report' : 'Menyusun laporan perbandingan'}
+                    />
                   ) : (
                     <p className="text-sm text-text-muted">{t('drawer.reportLoading')}</p>
                   )}
@@ -930,18 +957,9 @@ export function AuditDrawer() {
                         );
                       })()
                     ) : aiReport?.reportLoading ? (
-                      <div className="space-y-3">
-                        <div className="shimmer h-3.5 w-2/5 rounded" />
-                        <div className="shimmer h-2.5 w-full rounded" />
-                        <div className="shimmer h-2.5 w-11/12 rounded" />
-                        <div className="shimmer h-2.5 w-4/5 rounded" />
-                        <div className="shimmer mt-6 h-3.5 w-1/3 rounded" />
-                        <div className="shimmer h-2.5 w-full rounded" />
-                        <div className="shimmer h-2.5 w-10/12 rounded" />
-                        <p className="pt-2 font-mono text-[10px] text-text-muted">
-                          {lang === 'en' ? 'Generating report…' : 'Menyusun laporan…'}
-                        </p>
-                      </div>
+                      <ReportSkeleton
+                        label={lang === 'en' ? 'Generating report' : 'Menyusun laporan'}
+                      />
                     ) : !aiReport?.aiError ? (
                       <p className="text-sm text-text-muted">{t('drawer.reportLoading')}</p>
                     ) : null}
