@@ -247,11 +247,11 @@ export function ChatbotFab() {
           </div>
           <div className="leading-none">
             <p className="text-sm font-bold bg-gradient-to-r from-accent via-[#f0e4cc] to-accent bg-clip-text text-transparent flex items-center gap-1.5 font-display tracking-tight">
-              <span>Geo-AI Consult</span>
+              <span>S.A.F.E AI</span>
               <span className="bg-accent/10 border border-accent/25 rounded-md px-1.5 py-0.5 text-[8px] font-mono font-bold text-accent tracking-wider">AUDIT-GROUNDED</span>
             </p>
             <p className="mt-1 text-[8px] font-mono tracking-widest text-text-muted">
-              S.A.F.E HOUSE
+              ASISTEN AUDIT GEOTEKNIK
             </p>
           </div>
         </div>
@@ -281,7 +281,7 @@ export function ChatbotFab() {
             </h4>
             <p className="text-[11px] text-text-secondary leading-relaxed max-w-[280px] mx-auto relative z-10">
               {lang === 'en' 
-                ? 'Ask about the active audit data, its limitations, or compare two audited properties in Battle Mode.'
+                ? 'Ask what the score, FS, Vs30, PGA, or flood hazard mean for the location being audited.'
                 : 'Tanyakan arti skor, FS, Vs30, PGA, banjir, atau keterbatasan data pada lokasi yang sedang diaudit.'}
             </p>
           </div>
