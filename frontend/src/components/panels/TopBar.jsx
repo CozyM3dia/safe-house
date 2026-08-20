@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Badge } from '../ui/badge';
 import { LanguageSelector } from '../ui/language-selector';
-import { cn } from '../../lib/utils';
+import { cn, getModifierShortcut } from '../../lib/utils';
 
 export function TopBar() {
   const t = useT();
@@ -17,6 +17,7 @@ export function TopBar() {
   const loading = useAppStore((s) => s.loading);
   const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
+  const shortcutLabel = getModifierShortcut();
 
   const status =
     loading ? { label: t('status.analyzing'), variant: 'moderate' }
@@ -30,7 +31,7 @@ export function TopBar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 20 }}
       data-testid="topbar"
-      className="fixed inset-x-0 top-0 z-10 flex h-14 min-w-0 items-center justify-between gap-2 border-b border-white/8 bg-bg/80 px-2 backdrop-blur-xl sm:gap-4 sm:px-4"
+      className="fixed inset-x-2 top-2 z-10 flex h-14 min-w-0 items-center justify-between gap-2 rounded-2xl border border-white/10 bg-bg/90 px-2 shadow-[0_12px_36px_rgba(15,11,8,0.22)] backdrop-blur-xl sm:inset-x-4 sm:top-3 sm:gap-4 sm:px-4"
     >
       {/* Left: Logo + descriptor + panel toggle */}
       <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-3">
@@ -50,13 +51,13 @@ export function TopBar() {
           <img
             src="/safe_house_logo.png"
             alt="S.A.F.E House"
-            className="h-12 max-w-[5rem] w-auto object-contain sm:h-20 sm:max-w-none sm:-my-5"
+            className="h-8 w-20 object-cover object-center sm:h-9 sm:w-36"
           />
-          <div className="hidden xl:flex flex-col justify-center border-l border-white/10 pl-2.5 leading-none">
+          <div className="hidden lg:flex flex-col justify-center border-l border-white/10 pl-2.5 leading-none">
             <span className="text-[11px] font-medium tracking-tight text-text-secondary">
               {lang === 'en' ? 'AI Geotechnical & Risk Platform' : 'Platform Audit Geoteknik & Risiko Bencana'}
             </span>
-            <span className="text-[8.5px] font-mono uppercase tracking-widest text-text-muted mt-0.5">
+            <span className="mt-1 text-[10px] font-mono uppercase tracking-widest text-text-muted">
               SNI 1726 · PuSGeN 2024 · InaRISK
             </span>
           </div>
@@ -69,15 +70,16 @@ export function TopBar() {
         data-tour="topbar-search"
         onClick={() => setCmdPalette(true)}
         aria-label={t('accessibility.search')}
-        className="group flex min-h-[44px] min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2 text-left transition-all hover:border-white/16 hover:bg-white/[0.06] sm:min-h-0 sm:gap-2.5 sm:px-3.5"
+        aria-keyshortcuts={shortcutLabel.startsWith('⌘') ? 'Meta+K' : 'Control+K'}
+        className="group flex min-h-[44px] min-w-[44px] max-w-[28rem] flex-1 items-center gap-2 rounded-xl border border-white/10 bg-bg-surface/75 px-2.5 py-2 text-left transition-all hover:border-accent/35 hover:bg-white/[0.06] sm:min-h-0 sm:min-w-0 sm:gap-2.5 sm:px-3.5"
       >
-        <Search className="h-3.5 w-3.5 text-text-muted" />
-        <span className="flex-1 truncate text-xs text-text-muted">
+        <Search className="h-3.5 w-3.5 text-accent/75" />
+        <span className="flex-1 truncate text-xs text-text-secondary">
           <span className="sm:hidden">{t('search.shortPlaceholder')}</span>
           <span className="hidden sm:inline">{t('search.placeholder')}</span>
         </span>
-        <kbd className="hidden sm:inline-flex items-center gap-1 rounded border border-white/12 bg-white/6 px-1.5 py-0.5 font-mono text-[10px] text-text-muted">
-          ⌘K
+        <kbd className="hidden sm:inline-flex items-center gap-1 rounded-md border border-white/12 bg-white/6 px-1.5 py-0.5 font-mono text-[10px] text-text-secondary">
+          {shortcutLabel}
         </kbd>
       </button>
 
@@ -119,7 +121,7 @@ export function TopBar() {
           </button>
         </div>
 
-        <Badge data-tour="topbar-status" variant={status.variant} aria-label={status.label} className="min-h-7 px-2 sm:px-2.5">
+        <Badge data-tour="topbar-status" variant={status.variant} aria-label={status.label} className="min-h-8 px-2 sm:px-2.5" aria-live="polite">
           <span className={cn(
             'pulse-dot mr-0 sm:mr-1',
             status.variant === 'safe' ? 'text-risk-safe'

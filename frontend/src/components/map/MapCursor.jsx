@@ -113,11 +113,11 @@ export function MapCursor() {
               <div className="absolute left-[16px] top-[14px] flex items-center gap-1 whitespace-nowrap rounded border border-white/20 bg-bg/90 px-1.5 py-0.5 shadow-md backdrop-blur-md">
                 <span className="h-1 w-1 rounded-full bg-accent animate-pulse" />
                 {targetSlot && (
-                  <span className="rounded-sm bg-accent px-1 text-[8px] font-bold uppercase tracking-wide text-bg">
+                  <span className="rounded-sm bg-accent px-1 text-[9px] font-bold uppercase tracking-wide text-bg">
                     Lokasi {targetSlot}
                   </span>
                 )}
-                <span className="font-mono text-[8px] font-semibold tracking-wide text-white">
+                <span className="font-mono text-[9px] font-semibold tracking-wide text-text-primary">
                   {coords.lat}°, {coords.lng}°
                 </span>
               </div>

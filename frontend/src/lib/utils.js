@@ -10,6 +10,18 @@ export function cn(...inputs) {
 }
 
 /**
+ * Display the platform-appropriate modifier for command shortcuts.
+ * The app is frequently used on Windows, where showing a Mac glyph is
+ * needlessly confusing, but the same UI still reads correctly on macOS.
+ */
+export function getModifierShortcut(key = 'K') {
+  const platform = typeof navigator !== 'undefined'
+    ? (navigator.userAgentData?.platform || navigator.platform || '')
+    : '';
+  return /Mac|iPhone|iPad|iPod/i.test(platform) ? `⌘${key}` : `Ctrl ${key}`;
+}
+
+/**
  * Risk level → color token mapping.
  */
 export function riskColor(score) {

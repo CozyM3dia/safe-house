@@ -15,7 +15,9 @@ export default {
         text: {
           primary: '#f0e4cc',
           secondary: '#c4a87e',
-          muted: '#7d6245',
+          // Secondary metadata still needs to be readable over the warm dark
+          // surfaces. This is 6.14:1 on bg and 5.81:1 on elevated panels.
+          muted: '#a98b69',
         },
         risk: {
           safe: '#10b981',
@@ -28,10 +30,10 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-        display: ['var(--font-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        body: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Red Hat Display"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"Azeret Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        display: ['"Red Hat Display"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['"Red Hat Display"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         data: ['"Azeret Mono"', 'ui-monospace', 'monospace'],
       },
       backdropBlur: { xs: '2px' },

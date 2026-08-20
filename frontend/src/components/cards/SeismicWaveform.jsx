@@ -104,7 +104,7 @@ export function SeismicWaveform({ property }) {
         />
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-[9px] font-mono tracking-wider text-text-muted">
+      <div className="mt-2 flex items-center justify-between text-[10px] font-mono tracking-wider text-text-muted">
         <span>Fault: {fault?.name ?? '—'}</span>
         <span>{fault?.distance_km != null ? `${Number(fault.distance_km).toFixed(0)} km` : ''}</span>
       </div>

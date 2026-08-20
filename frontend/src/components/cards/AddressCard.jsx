@@ -118,7 +118,7 @@ function CoordCell({ icon, label, value }) {
     <div className="rounded-lg border border-white/6 bg-white/[0.02] px-2.5 py-2 hover:border-white/12 transition-colors shadow-[inset_0_1px_0_rgba(255,210,170,0.05)]">
       <div className="flex items-center gap-1 mb-1">
         {icon}
-        <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-text-muted">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-muted">
           {label}
         </p>
       </div>

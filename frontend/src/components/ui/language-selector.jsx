@@ -48,7 +48,7 @@ export function LanguageSelector() {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full border px-2 py-2 text-xs font-medium transition-all duration-200 sm:min-h-8 sm:min-w-0 sm:justify-start sm:px-3.5",
+          "flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-full border px-1.5 py-2 text-xs font-medium transition-all duration-200 sm:min-h-8 sm:min-w-0 sm:justify-start sm:gap-2 sm:px-3.5",
           open 
             ? "border-accent/45 bg-white/10 text-text-primary shadow-[0_0_0_3px_rgba(212,149,106,0.08)]"
             : "border-white/10 bg-bg-elevated/80 text-text-secondary hover:border-accent/35 hover:bg-white/10 hover:text-text-primary"

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Share2, Download, Search, Mountain, Waves, Activity } from 'lucide-react';
+import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Share2, Download, Crosshair, Mountain, Waves, Activity, ArrowUpRight } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
 import { createShare } from '../../services/api';
@@ -55,7 +55,7 @@ export function LeftPanel() {
           exit={{ x: -440, opacity: 0 }}
           transition={{ type: 'spring', damping: 26, stiffness: 220 }}
           data-tour="left-panel"
-          className="glass fixed left-2 top-[72px] bottom-4 z-20 flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl sm:left-4 sm:w-[380px] sm:max-w-none"
+          className="glass audit-panel fixed left-2 top-[72px] bottom-4 z-20 flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl sm:left-4 sm:w-[380px] sm:max-w-none"
         >
           <div className="flex-1 overflow-y-auto scrollbar-none">
             <AnimatePresence mode="wait">
@@ -101,12 +101,12 @@ export function LeftPanel() {
 // ── Section divider ────────────────────────────────────────────
 function SectionLabel({ children, icon: Icon }) {
   return (
-    <div className="flex items-center gap-2 mt-1 mb-0.5">
-      {Icon && <Icon className="h-2.5 w-2.5 text-accent/40" />}
-      <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-text-muted/60">
+    <div className="mt-1 mb-1 flex items-center gap-2">
+      {Icon && <Icon className="h-3 w-3 text-accent/65" />}
+      <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
         {children}
       </span>
-      <div className="flex-1 h-px bg-gradient-to-r from-white/6 to-transparent" />
+      <div className="h-px flex-1 bg-gradient-to-r from-accent/25 to-transparent" />
     </div>
   );
 }
@@ -138,7 +138,7 @@ const CAPABILITIES = [
 
 function EmptyState() {
   const t = useT();
-  const setCmdPalette = useAppStore((s) => s.setCmdPalette);
+  const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
   const processLocation = useAppStore((s) => s.processLocation);
 
   return (
@@ -146,53 +146,92 @@ function EmptyState() {
       variants={container}
       initial="hidden"
       animate="show"
-      className="flex flex-col px-5 py-7"
+      className="relative isolate flex flex-col overflow-hidden px-5 pb-6 pt-6 sm:px-6 sm:pt-7"
     >
+      <div className="audit-grid pointer-events-none absolute inset-0 -z-10 opacity-40" aria-hidden="true" />
+      <div className="pointer-events-none absolute -right-16 -top-20 -z-10 h-52 w-52 rounded-full border border-accent/10" aria-hidden="true" />
+      <div className="pointer-events-none absolute -right-8 -top-12 -z-10 h-36 w-36 rounded-full border border-accent/10" aria-hidden="true" />
+
       <motion.div variants={item}>
-        <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-accent">
-          {t('empty.badge')}
-        </span>
-        <h2 className="mt-2.5 font-display text-[22px] font-bold leading-tight text-text-primary">
-          {t('empty.title')}
-        </h2>
-        <p className="mt-2 max-w-[34ch] text-[12px] leading-relaxed text-text-secondary">
-          Klik titik mana pun di peta Indonesia untuk menjalankan audit geoteknik.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="inline-flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.24em] text-accent">
+              <span className="pulse-dot text-accent" />
+              {t('empty.badge')}
+            </span>
+            <h2 className="mt-3 max-w-[14ch] font-sans text-[26px] font-semibold leading-[1.04] tracking-[-0.035em] text-text-primary">
+              {t('empty.title')}
+            </h2>
+            <p className="mt-3 max-w-[32ch] text-[13px] leading-6 text-text-secondary">
+              Satu titik di peta menjadi briefing risiko yang bisa Anda pahami dalam hitungan menit.
+            </p>
+          </div>
+          <div className="hidden shrink-0 pt-1 sm:block" aria-hidden="true">
+            <svg viewBox="0 0 92 56" className="h-14 w-[92px] text-accent/75" fill="none">
+              <path d="M2 37h15l5-12 6 23 8-42 7 30 7-13 9 14h31" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 47h88" stroke="currentColor" strokeOpacity=".25" strokeDasharray="2 5" />
+              <circle cx="43" cy="6" r="2.5" fill="currentColor" />
+            </svg>
+            <span className="block text-right font-mono text-[9px] tracking-[0.18em] text-text-muted">FIELD SIGNAL</span>
+          </div>
+        </div>
       </motion.div>
 
-      {/* Aksi utama. Kartu lama punya efek hover tapi tidak bisa diklik sama
-          sekali, jadi satu-satunya jalan masuk justru tidak terlihat. */}
-      <motion.div variants={item} className="mt-5 flex items-center gap-2">
-        <Button size="sm" className="flex-1" onClick={() => setCmdPalette(true)}>
-          <Search className="h-3.5 w-3.5" />
-          Cari lokasi
+      <motion.div variants={item} className="mt-5">
+        <Button
+          size="lg"
+          variant="accent"
+          onClick={toggleLeftPanel}
+          className="group h-12 w-full justify-between rounded-xl px-3.5 text-[13px]"
+        >
+          <span className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 transition-transform group-hover:scale-105">
+              <Crosshair className="h-4 w-4" />
+            </span>
+            Pilih titik di peta
+          </span>
+          <ArrowUpRight className="h-4 w-4 text-accent/80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </Button>
-        <kbd className="shrink-0 rounded border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-[10px] text-text-muted">
-          Ctrl K
-        </kbd>
+      </motion.div>
+
+      <motion.div variants={item} className="mt-5 grid grid-cols-3 gap-2 border-y border-white/[0.08] py-3">
+        {[
+          ['01', 'Pilih', 'lokasi'],
+          ['02', 'Baca', 'evidence'],
+          ['03', 'Ambil', 'keputusan'],
+        ].map(([number, label, detail]) => (
+          <div key={number} className="min-w-0 border-l border-accent/25 pl-2.5 first:border-l-0 first:pl-0">
+            <span className="font-mono text-[9px] text-accent/80">{number}</span>
+            <p className="mt-1 text-[10px] font-semibold text-text-primary">{label}</p>
+            <p className="text-[10px] text-text-muted">{detail}</p>
+          </div>
+        ))}
       </motion.div>
 
       {/* Lokasi contoh */}
-      <motion.div variants={item} className="mt-7">
-        <h3 className="mb-2.5 text-[9px] font-bold uppercase tracking-[0.22em] text-text-muted/70">
+      <motion.div variants={item} className="mt-6">
+        <h3 className="mb-2.5 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent/70" />
           Coba lokasi contoh
         </h3>
-        <div className="flex flex-col">
+        <div className="flex flex-col border-t border-white/[0.08]">
           {SAMPLE_SITES.map((site) => (
             <button
               key={site.label}
               type="button"
               onClick={() => processLocation(site.lat, site.lon)}
-              className="group flex items-center gap-3 border-b border-white/[0.06] py-2.5 text-left last:border-b-0"
+              className="group flex min-h-[58px] items-center gap-3 border-b border-white/[0.08] py-2.5 text-left transition-colors hover:bg-white/[0.035]"
             >
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-text-muted transition-colors group-hover:text-accent" />
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.035] transition-colors group-hover:border-accent/35 group-hover:bg-accent/10">
+                <MapPin className="h-3.5 w-3.5 text-text-secondary transition-colors group-hover:text-accent" />
+              </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[12px] font-semibold text-text-primary">
+                <span className="block text-[12px] font-semibold text-text-primary transition-colors group-hover:text-accent">
                   {site.label}
                 </span>
-                <span className="block text-[10px] text-text-muted">{site.sub}</span>
+                <span className="mt-0.5 block text-[10px] text-text-secondary">{site.sub}</span>
               </span>
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-text-muted/50 transition-all group-hover:translate-x-0.5 group-hover:text-accent" />
+              <ArrowUpRight className="h-4 w-4 shrink-0 text-text-muted transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
             </button>
           ))}
         </div>
@@ -200,14 +239,17 @@ function EmptyState() {
 
       {/* Apa yang dihasilkan satu audit. Dulu empat kartu seragam berikon
           emoji, padahal seluruh aplikasi memakai ikon lucide. */}
-      <motion.div variants={item} className="mt-7">
-        <h3 className="mb-3 text-[9px] font-bold uppercase tracking-[0.22em] text-text-muted/70">
+      <motion.div variants={item} className="mt-6">
+        <h3 className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
+          <span className="h-1.5 w-1.5 rounded-full bg-risk-safe/80" />
           Yang Anda dapat
         </h3>
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-2.5">
           {CAPABILITIES.map(({ icon: Icon, label, desc }) => (
-            <li key={label} className="flex gap-2.5">
-              <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent/70" />
+            <li key={label} className="flex gap-3">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03]">
+                <Icon className="h-3.5 w-3.5 text-accent/75" />
+              </span>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-text-primary">{label}</p>
                 <p className="mt-0.5 text-[10px] leading-snug text-text-secondary">{desc}</p>
@@ -216,6 +258,10 @@ function EmptyState() {
           ))}
         </ul>
       </motion.div>
+
+      <motion.p variants={item} className="mt-6 border-t border-white/[0.08] pt-4 text-[10px] leading-relaxed text-text-muted">
+        Screening awal berbasis data, bukan pengganti penyelidikan geoteknik profesional.
+      </motion.p>
     </motion.div>
   );
 }

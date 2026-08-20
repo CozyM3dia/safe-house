@@ -80,7 +80,7 @@ export function CompareSetup({
               onClick={swapSites}
               title="Tukar Lokasi A dan B"
               aria-label="Tukar Lokasi A dan B"
-              className="flex h-6 items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2 text-[9px] font-semibold uppercase tracking-[0.15em] text-text-muted transition-colors hover:border-white/20 hover:text-text-secondary"
+              className="flex h-6 items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-text-muted transition-colors hover:border-white/20 hover:text-text-secondary"
             >
               <ArrowLeftRight className="h-2.5 w-2.5" />
               Tukar
@@ -108,13 +108,13 @@ export function CompareSetup({
           <Marker done={Boolean(reportContent)} active={bothReady && !reportContent} index={3} />
 
           <div className="min-w-0 flex-1">
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-muted/70">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
               Laporan Perbandingan
             </span>
 
             <div className="mt-1.5">
               {!bothReady && (
-                <p className="flex items-center gap-1.5 text-[10px] text-text-muted/60">
+                <p className="flex items-center gap-1.5 text-[10px] text-text-muted">
                   <Lock className="h-2.5 w-2.5 shrink-0" />
                   Terkunci sampai kedua lokasi siap
                 </p>
@@ -180,7 +180,7 @@ function Step({
       <Marker done={filled && !loading} active={active || armed || loading} index={index} />
 
       <div className="min-w-0 flex-1">
-        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-muted/70">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
           {label}
         </span>
 
@@ -224,7 +224,7 @@ function Step({
         ) : (
           <div className="mt-1.5">
             {disabled ? (
-              <p className="text-[10px] text-text-muted/60">{disabledHint}</p>
+              <p className="text-[10px] text-text-muted">{disabledHint}</p>
             ) : armed ? (
               <div className="flex items-center gap-2">
                 <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[10px] text-accent">
@@ -257,7 +257,7 @@ function StepAction({ children, onClick, tone, title }) {
       className={[
         'flex h-5 items-center rounded px-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] transition-colors',
         tone === 'danger'
-          ? 'text-risk-danger/70 hover:bg-risk-danger/10 hover:text-risk-danger'
+          ? 'text-risk-danger hover:bg-risk-danger/10 hover:text-risk-danger'
           : 'text-text-muted hover:bg-white/8 hover:text-text-primary',
       ].join(' ')}
     >
@@ -277,7 +277,7 @@ function Marker({ index, done, active }) {
             ? 'border-risk-safe/40 bg-risk-safe/15 text-risk-safe'
             : active
               ? 'border-accent/50 bg-accent/15 text-accent'
-              : 'border-white/10 bg-white/[0.03] text-text-muted/50',
+              : 'border-white/10 bg-white/[0.03] text-text-muted',
         ].join(' ')}
       >
         {done ? <Check className="h-2.5 w-2.5" /> : index}

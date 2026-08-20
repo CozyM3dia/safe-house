@@ -50,7 +50,7 @@ export function VerdictCard({ propertyA, propertyB }) {
           delta={winner === 'A' && scoreDelta !== null ? Math.abs(scoreDelta) : null}
         />
         <div className="flex items-center justify-center">
-          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-muted/60">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
             vs
           </span>
         </div>
@@ -67,7 +67,7 @@ export function VerdictCard({ propertyA, propertyB }) {
       {/* ── Tabel delta parameter ── */}
       <div className="mt-3.5">
         <div className="mb-1.5 flex items-center gap-2">
-          <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-text-muted/60">
+          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-text-muted">
             Perbandingan Parameter
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-white/6 to-transparent" />
@@ -150,7 +150,7 @@ function ParamRow({ row }) {
     <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 py-1.5">
       <span className="text-[10px] text-text-muted">
         {row.label}
-        {row.unit && <span className="text-text-muted/50"> ({row.unit})</span>}
+        {row.unit && <span className="text-text-muted"> ({row.unit})</span>}
       </span>
       <ParamValue
         display={row.aDisplay}
@@ -165,7 +165,7 @@ function ParamRow({ row }) {
         muted={!row.known}
         trailing={
           row.better === 'equal' ? (
-            <Minus className="h-2.5 w-2.5 text-text-muted/50" aria-label="setara" />
+            <Minus className="h-2.5 w-2.5 text-text-muted" aria-label="setara" />
           ) : null
         }
       />
@@ -182,7 +182,7 @@ function ParamValue({ display, note, highlight, muted, trailing }) {
           className={[
             'data-num text-[11px] font-semibold',
             muted
-              ? 'text-text-muted/50'
+              ? 'text-text-muted'
               : highlight
                 ? 'text-risk-safe'
                 : 'text-text-secondary',
@@ -192,7 +192,7 @@ function ParamValue({ display, note, highlight, muted, trailing }) {
         </span>
       </div>
       {note && (
-        <span className="block truncate text-[9px] text-text-muted/60" title={note}>
+        <span className="block truncate text-[10px] text-text-muted" title={note}>
           {note}
         </span>
       )}

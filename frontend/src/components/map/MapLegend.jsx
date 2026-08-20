@@ -32,7 +32,7 @@ export function MapLegend() {
           {/* Header */}
           <div className="flex items-center gap-1.5 border-b border-white/6 pb-2">
             <Info size={12} className="text-accent" />
-            <span className="text-[9px] font-bold tracking-wider uppercase text-text-muted">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-text-muted">
               {t('panel.mapLegend')}
             </span>
           </div>
@@ -48,13 +48,13 @@ export function MapLegend() {
                 className="h-2.5 w-full rounded border border-white/10"
                 style={{ background: RAINBOW_CSS }}
               />
-              <div className="flex justify-between text-[8px] font-bold text-text-secondary">
+              <div className="flex justify-between text-[9px] font-bold text-text-secondary">
                 {HAZARD_RAMP_STOPS.map((stop) => (
                   <span key={stop.label}>{t(stop.translationKey)}</span>
                 ))}
               </div>
               {overlaySources[hazard.key] === 'fallback' && hazard.fallbackLegendKey && (
-                <p className="text-[8px] leading-relaxed text-risk-moderate">
+                <p className="text-[10px] leading-relaxed text-risk-moderate">
                   {t(hazard.fallbackLegendKey)}
                 </p>
               )}
@@ -77,17 +77,17 @@ export function MapLegend() {
                 <span
                   className={`w-7 border-t-2 border-[#b86f63] ${faultLayerSource === 'official' ? '' : 'border-dashed'}`}
                 />
-                <span className="text-[8px] leading-relaxed text-text-secondary">
+                <span className="text-[10px] leading-relaxed text-text-secondary">
                   {t(faultLegendKey)}
                 </span>
               </div>
-              <p className="text-[8px] leading-relaxed text-text-muted">{t('panel.faultSource')}</p>
+              <p className="text-[9px] leading-relaxed text-text-muted">{t('panel.faultSource')}</p>
             </div>
           )}
 
           {/* Atribusi sumber hazard */}
           {activeHazards.length > 0 && (
-            <p className="text-[7px] leading-relaxed text-text-muted">{t('panel.hazardAttribution')}</p>
+            <p className="text-[9px] leading-relaxed text-text-muted">{t('panel.hazardAttribution')}</p>
           )}
         </motion.div>
       )}

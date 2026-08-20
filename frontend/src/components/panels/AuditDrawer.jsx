@@ -55,7 +55,7 @@ function SoilVisual({ property }) {
                 className={`p-2.5 rounded-xl border text-center transition-all ${
                   isActive 
                     ? 'border-accent bg-accent/[0.05] shadow-[0_0_12px_rgba(212,149,106,0.1)] scale-[1.02]' 
-                    : 'border-white/5 bg-white/[0.005] opacity-50'
+                    : 'border-white/8 bg-white/[0.005]'
                 }`}
               >
                 <div className="text-[11.5px] font-extrabold" style={{ color: isActive ? 'var(--accent)' : c.color }}>{c.name}</div>
@@ -85,7 +85,7 @@ function SoilVisual({ property }) {
             style={{ left: `${Math.min(98, (fs / 2) * 100)}%` }}
           />
         </div>
-        <div className="flex justify-between text-[7px] font-mono text-text-muted mt-1.5">
+        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
           <span>0.0 (Sangat Rawan)</span>
           <span>1.0 (Batas Kritis)</span>
           <span>2.0+ (Sangat Aman)</span>
@@ -116,7 +116,7 @@ function SeismicVisual({ property }) {
             style={{ left: `${Math.min(98, (pga / 1.0) * 100)}%` }}
           />
         </div>
-        <div className="flex justify-between text-[7px] font-mono text-text-muted mt-1.5">
+        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
           <span>0.1g (Aman)</span>
           <span>0.4g (Sedang)</span>
           <span>0.8g+ (Sangat Tinggi)</span>
@@ -149,7 +149,7 @@ function SeismicVisual({ property }) {
           </div>
           <span className="text-[8.5px] font-extrabold text-text-muted font-mono shrink-0">AMAN</span>
         </div>
-        <div className="flex justify-between text-[7px] font-mono text-text-muted mt-1.5">
+        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
           <span>Sangat Rawan (&lt;10km)</span>
           <span>Waspada (10-30km)</span>
           <span>Aman (&gt;50km)</span>
@@ -193,7 +193,7 @@ function EnvironmentVisual({ property }) {
             <div className="h-4 w-0.5 bg-accent" />
           </div>
         </div>
-        <div className="flex justify-between text-[7px] font-mono text-text-muted mt-1.5">
+        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
           <span>Rawan Pasang Air Laut</span>
           <span>Potensi Banjir Lokal</span>
           <span>Bebas Luapan Banjir</span>
@@ -216,7 +216,7 @@ function EnvironmentVisual({ property }) {
             style={{ left: `${Math.min(98, (aqi / 150) * 100)}%` }}
           />
         </div>
-        <div className="flex justify-between text-[7px] font-mono text-text-muted mt-1.5">
+        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
           <span>0 (Sangat Sehat)</span>
           <span>50 (Sedang)</span>
           <span>100+ (Tidak Sehat)</span>
@@ -955,7 +955,7 @@ export function AuditDrawer() {
 
                     {/* Satu-satunya disclaimer. Sebelumnya ada tiga blok
                         peringatan bernada sama bertumpuk di bagian atas. */}
-                    <p className="mt-6 max-w-[72ch] text-[10px] leading-relaxed text-text-muted/80">
+                    <p className="mt-6 max-w-[72ch] text-[11px] leading-relaxed text-text-muted">
                       {t('drawer.disclaimer')}
                     </p>
                   </div>
@@ -1027,7 +1027,7 @@ function HeroScore({ score, ready, status }) {
                 style={{ left: `calc(${Math.min(100, Math.max(0, score))}% - 1.5px)`, background: hex }}
               />
             </div>
-            <div className="mt-1.5 flex justify-between font-mono text-[8px] tracking-wider text-text-muted/70">
+            <div className="mt-1.5 flex justify-between font-mono text-[9px] tracking-wider text-text-muted">
               <span>0</span>
               <span>40</span>
               <span>70</span>
@@ -1090,7 +1090,7 @@ function KeyParameters({ property }) {
 
   return (
     <section>
-      <h2 className="mb-3 text-[9px] font-bold uppercase tracking-[0.25em] text-text-muted/70">
+      <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-text-muted">
         Parameter Kunci
       </h2>
       <dl className="divide-y divide-white/[0.06]">
@@ -1106,7 +1106,7 @@ function KeyParameters({ property }) {
                 {row.value}
               </span>
               {row.note && (
-                <span className="ml-2 text-[10px] text-text-muted/80">{row.note}</span>
+                <span className="ml-2 text-[10px] text-text-muted">{row.note}</span>
               )}
             </dd>
           </div>

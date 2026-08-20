@@ -155,7 +155,7 @@ export function SafeScoreCard({ property }) {
             <span className="data-num text-[32px] leading-none text-text-primary font-bold">
               {hasScore ? animatedScore : 'N/A'}
             </span>
-            <span className="data-num text-[10px] text-text-muted mt-0.5">{hasScore ? '/100' : ''}</span>
+            <span className="data-num text-[11px] text-text-muted mt-0.5">{hasScore ? '/100' : ''}</span>
           </div>
         </div>
 
@@ -206,7 +206,7 @@ function MiniBar({ label, value }) {
   const hex = value >= 70 ? '#ef4444' : value >= 40 ? '#f59e0b' : '#10b981';
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[8px] font-semibold tracking-wider text-text-muted uppercase w-12 shrink-0">{label}</span>
+      <span className="text-[9px] font-semibold tracking-wider text-text-muted uppercase w-12 shrink-0">{label}</span>
       <div className="flex-1 h-1 rounded-full bg-white/6 overflow-hidden">
         <motion.div
           className="h-full rounded-full"

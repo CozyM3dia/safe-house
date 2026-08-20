@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Red+Hat+Display:wght@400;500;600;700;800&display=swap');
 @import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
@@ -25,7 +25,7 @@
   }
 
   body {
-    @apply bg-bg text-text-primary font-sans antialiased;
+    @apply bg-bg text-text-primary font-body antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
@@ -51,7 +51,7 @@
   /* Leaflet — Carto Positron sits under warm dark UI */
   .leaflet-container {
     background: #e8e4df !important;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Red Hat Display', sans-serif;
     height: 100%;
     width: 100%;
   }
@@ -95,7 +95,7 @@
 @layer components {
   /* Glass panel — warm dark frosted */
   .glass {
-    background: rgba(22, 14, 8, 0.80);
+    background: rgba(22, 14, 8, 0.86);
     backdrop-filter: blur(24px) saturate(150%);
     -webkit-backdrop-filter: blur(24px) saturate(150%);
     border: 1px solid rgba(255, 210, 170, 0.10);
@@ -108,6 +108,23 @@
     -webkit-backdrop-filter: blur(32px) saturate(170%);
     border: 1px solid rgba(255, 210, 170, 0.12);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.30);
+  }
+
+  /* The audit panel is a deliberate instrument surface, not a generic card. */
+  .audit-panel {
+    background:
+      radial-gradient(circle at 100% 0%, rgba(212, 149, 106, 0.07), transparent 28%),
+      rgba(22, 14, 8, 0.91);
+    box-shadow: 0 18px 48px rgba(15, 11, 8, 0.42), 0 2px 8px rgba(15, 11, 8, 0.3);
+  }
+
+  .audit-grid {
+    background-image:
+      linear-gradient(rgba(212, 149, 106, 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212, 149, 106, 0.055) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(to bottom, black, transparent 72%);
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent 72%);
   }
 
   /* Double-Bezel (Doppelrand) — machined hardware card enclosure */
@@ -168,7 +185,7 @@
   }
 
   .data-num {
-    @apply font-mono font-medium tabular-nums tracking-tight;
+    @apply font-data font-medium tabular-nums tracking-tight;
   }
 
   .marker-glow {
@@ -204,7 +221,7 @@
 .prose-safe h3,
 .prose-safe h4 {
   color: #f0e4cc;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Red Hat Display', sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin-top: 1.6em;
@@ -256,7 +273,7 @@
   color: #d4956a;
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: 'Geist Mono', monospace;
+  font-family: 'Azeret Mono', monospace;
   font-size: 0.85em;
   border: 1px solid rgba(212, 149, 106, 0.22);
 }
@@ -364,7 +381,7 @@ html.landing-scroll #root {
   --ring: 25 57% 62%;
   --radius: 0.5rem;
   --font-display: 'Instrument Serif', serif;
-  --font-body: 'Inter', sans-serif;
+  --font-body: 'Red Hat Display', sans-serif;
   --shadow-dashboard: 0 25px 80px -12px rgba(0, 0, 0, 0.60), 0 0 0 1px rgba(212, 149, 106, 0.08);
 
   background: hsl(var(--background));

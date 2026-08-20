@@ -45,7 +45,7 @@ export function DisasterLayersPanel() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-text-primary">
                     {t('panel.mapView')}
                   </h3>
-                  <p className="mt-0.5 text-[8px] text-text-muted">{t('panel.mapLayerControls')}</p>
+                  <p className="mt-0.5 text-[10px] text-text-muted">{t('panel.mapLayerControls')}</p>
                 </div>
               </div>
               {(() => {
@@ -53,7 +53,7 @@ export function DisasterLayersPanel() {
                   (overlays.faults ? 1 : 0) +
                   INARISK_HAZARDS.filter((h) => overlays[h.key]).length;
                 return activeCount > 0 ? (
-                  <span className="rounded-md border border-accent/30 bg-accent/10 px-1.5 py-1 text-[8px] font-bold uppercase tracking-wider text-accent">
+                  <span className="rounded-md border border-accent/30 bg-accent/10 px-1.5 py-1 text-[9px] font-bold uppercase tracking-wider text-accent">
                     {activeCount} {t('status.active')}
                   </span>
                 ) : null;
@@ -91,10 +91,10 @@ export function DisasterLayersPanel() {
             {/* Nationwide hazard rasters */}
             <div className="mt-4 border-t border-white/8 pt-3">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-text-muted">
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
                   {t('panel.hazardLayers')}
                 </span>
-                <span className="text-[8px] font-mono text-text-muted">{t('panel.hazardSource')}</span>
+                <span className="text-[10px] font-mono text-text-muted">{t('panel.hazardSource')}</span>
               </div>
               <div className="flex flex-col gap-1.5">
                 {INARISK_HAZARDS.map((h) => {
@@ -142,14 +142,14 @@ export function DisasterLayersPanel() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-[10px] font-bold text-text-primary">{label}</span>
-                        <span className="mt-0.5 block text-[8px] leading-relaxed text-text-muted">
+                        <span className="mt-0.5 block text-[10px] leading-relaxed text-text-muted">
                           {description}
                         </span>
                       </span>
                       <span
                         data-testid={`overlay-status-${h.key}`}
                         className={cn(
-                          'rounded-md border px-1.5 py-0.5 text-[8px] font-bold tracking-wider',
+                          'rounded-md border px-1.5 py-0.5 text-[9px] font-bold tracking-wider',
                           status === 'error'
                             ? 'border-risk-danger/35 text-risk-danger'
                             : isFallback && active
@@ -168,10 +168,10 @@ export function DisasterLayersPanel() {
             {/* Reference geohazard layers */}
             <div className="mt-4 border-t border-white/8 pt-3">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-text-muted">
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
                   {t('panel.referenceLayers')}
                 </span>
-                <span className="text-[8px] font-mono text-text-muted">{t('panel.referenceSource')}</span>
+                <span className="text-[10px] font-mono text-text-muted">{t('panel.referenceSource')}</span>
               </div>
               <button
                 type="button"
@@ -199,7 +199,7 @@ export function DisasterLayersPanel() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[10px] font-bold text-text-primary">{t('panel.faults')}</span>
-                  <span className="mt-0.5 block text-[8px] leading-relaxed text-text-muted">
+                  <span className="mt-0.5 block text-[10px] leading-relaxed text-text-muted">
                     {!overlays.faults
                       ? t('panel.faultsDescription')
                       : faultLayerSource === 'loading'
@@ -212,7 +212,7 @@ export function DisasterLayersPanel() {
                 <span
                   data-testid="overlay-status-faults"
                   className={cn(
-                    'rounded-md border px-1.5 py-0.5 text-[8px] font-bold tracking-wider',
+                    'rounded-md border px-1.5 py-0.5 text-[9px] font-bold tracking-wider',
                     overlays.faults
                       ? 'border-[#b86f63]/35 text-[#d28a7b]'
                       : 'border-white/8 text-text-muted'

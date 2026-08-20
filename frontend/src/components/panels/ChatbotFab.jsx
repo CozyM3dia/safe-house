@@ -84,6 +84,7 @@ export function ChatbotFab() {
   const propertyA = useAppStore((s) => s.propertyA);
   const propertyB = useAppStore((s) => s.propertyB);
   const mode = useAppStore((s) => s.mode);
+  const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -158,7 +159,10 @@ export function ChatbotFab() {
         initial={{ y: 30, opacity: 0, scale: 0.96 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
         transition={{ delay: 0.3, type: 'spring', damping: 22, stiffness: 200 }}
-        className="fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[340px]"
+        className={cn(
+          'fixed bottom-5 left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[340px]',
+          leftPanelOpen && 'max-[639px]:left-auto max-[639px]:right-4 max-[639px]:w-14'
+        )}
       >
         <div className="bezel-outer">
           <div className="bezel-inner relative overflow-hidden bg-bg-surface/90 backdrop-blur-xl border border-white/8 shadow-glass-lg rounded-2xl">
@@ -167,7 +171,10 @@ export function ChatbotFab() {
             <div className="absolute -left-8 -bottom-8 h-16 w-16 rounded-full bg-accent/4 blur-xl pointer-events-none" />
             
             {/* Single-row layout: icon + input + send */}
-            <div className="flex items-center gap-2.5 px-3.5 py-3 relative z-10">
+            <div className={cn(
+              'relative z-10 flex items-center gap-2.5 px-3.5 py-3',
+              leftPanelOpen && 'max-[639px]:justify-center max-[639px]:gap-0 max-[639px]:px-1.5'
+            )}>
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
@@ -178,7 +185,10 @@ export function ChatbotFab() {
                 <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
               </button>
 
-              <div className="relative flex-1 min-w-0">
+              <div className={cn(
+                'relative min-w-0 flex-1',
+                leftPanelOpen && 'max-[639px]:hidden'
+              )}>
                 <input
                   type="text"
                   value={input}
@@ -202,6 +212,7 @@ export function ChatbotFab() {
                 disabled={!input.trim() || loading}
                 className={cn(
                   'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full transition-all duration-300',
+                  leftPanelOpen && 'max-[639px]:hidden',
                   input.trim()
                     ? 'bg-accent text-[#0f0b08] hover:scale-105 shadow-[0_0_8px_rgba(212,149,106,0.4)]'
                     : 'bg-white/[0.04] text-text-muted cursor-not-allowed'
@@ -250,7 +261,7 @@ export function ChatbotFab() {
               <span>S.A.F.E AI</span>
               <span className="bg-accent/10 border border-accent/25 rounded-md px-1.5 py-0.5 text-[8px] font-mono font-bold text-accent tracking-wider">AUDIT-GROUNDED</span>
             </p>
-            <p className="mt-1 text-[8px] font-mono tracking-widest text-text-muted">
+            <p className="mt-1 text-[10px] font-mono tracking-widest text-text-muted">
               ASISTEN AUDIT GEOTEKNIK
             </p>
           </div>
@@ -309,7 +320,7 @@ export function ChatbotFab() {
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '120ms' }} />
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '240ms' }} />
             </span>
-            <span className="font-mono text-[9px] tracking-wider uppercase text-accent/80">
+            <span className="font-mono text-[10px] tracking-wider uppercase text-accent/80">
               {lang === 'en' ? 'CHECKING AUDIT DATA...' : 'MEMERIKSA DATA AUDIT...'}
             </span>
           </div>
@@ -321,7 +332,7 @@ export function ChatbotFab() {
       {/* Suggested prompts — show only if no messages yet */}
       {!hasMessages && (
         <div className="border-t border-white/8 px-5 py-3.5 bg-white/[0.01] space-y-2">
-          <p className="text-[8px] font-bold uppercase tracking-widest text-text-muted">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
             {t('chat.suggestions')}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -364,7 +375,7 @@ export function ChatbotFab() {
             </div>
 
             <div className="flex h-9.5 items-center justify-between rounded-b-[13px] bg-white/[0.02] border-t border-white/4 px-3.5">
-              <span className="inline-flex items-center gap-1 rounded bg-accent/8 border border-accent/15 px-2 py-0.5 text-[8px] font-mono text-accent tracking-widest select-none">
+              <span className="inline-flex items-center gap-1 rounded bg-accent/8 border border-accent/15 px-2 py-0.5 text-[9px] font-mono text-accent tracking-widest select-none">
                 ● {mode === 'battle' ? (lang === 'en' ? 'BATTLE MODE' : 'MODE BANDINGKAN') : (lang === 'en' ? 'AUDIT MODE' : 'MODE AUDIT')}
               </span>
 
@@ -443,7 +454,7 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
               {/* Sources actually available in the current audit */}
               {citations && citations.length > 0 && (
                 <div className="mt-3 border-t border-white/8 pt-2.5 flex flex-col gap-1.5">
-                  <span className="text-[8px] font-bold text-accent tracking-[0.15em] uppercase select-none">
+                  <span className="text-[9px] font-bold text-accent tracking-[0.15em] uppercase select-none">
                     {t('chat.sources')} ({citations.length}):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
@@ -468,7 +479,7 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
       {/* Dynamic Follow-up Questions */}
       {!isUser && followUps && followUps.length > 0 && (
         <div className="max-w-[85%] flex flex-col gap-1.5 mt-1.5 pl-1">
-          <p className="text-[8px] font-bold tracking-[0.15em] text-accent uppercase select-none">
+          <p className="text-[9px] font-bold tracking-[0.15em] text-accent uppercase select-none">
             {t('chat.followUps')}:
           </p>
           <div className="flex flex-col gap-1.5">

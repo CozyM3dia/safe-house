@@ -48,7 +48,7 @@ export function GaussianCard({ property }) {
           <div className="flex h-5 w-5 items-center justify-center rounded-md bg-accent/10 border border-accent/25 text-accent">
             <Activity className="h-3 w-3" />
           </div>
-          <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-text-muted">
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-text-muted">
             SPEKTRUM RESPONS GEMPA (SNI 1726)
           </span>
         </div>
@@ -57,7 +57,7 @@ export function GaussianCard({ property }) {
           <span className="text-lg font-mono font-extrabold text-text-primary tracking-tight">
             {pga.toFixed(2)}g
           </span>
-          <span className="text-[8px] font-semibold text-text-muted uppercase tracking-wider">
+          <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
             PGA Permukaan (Sa Peak: {sds.toFixed(2)}g)
           </span>
         </div>

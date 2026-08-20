@@ -34,7 +34,7 @@ export function ErrorFallback({ error, resetErrorBoundary }) {
         </p>
         <details className="mb-6 rounded-md border border-risk-danger/20 bg-bg/40 p-3 text-left">
           <summary className="cursor-pointer text-xs font-medium text-text-secondary">{copy.details}</summary>
-          <pre className="mt-3 max-h-32 overflow-auto text-[10px] text-risk-danger/80 font-mono">
+          <pre className="mt-3 max-h-32 overflow-auto text-[10px] text-risk-danger font-mono">
             {error?.message || copy.unknown}
           </pre>
         </details>

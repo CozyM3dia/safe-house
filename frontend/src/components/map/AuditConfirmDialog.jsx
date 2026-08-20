@@ -131,9 +131,9 @@ export function AuditConfirmDialog() {
               <button
                 type="button"
                 onClick={confirmPendingAudit}
-                className="flex items-center gap-1.5 rounded-xl border border-[#d4956a] bg-[#d4956a] px-5 py-2 text-xs font-bold text-[#140e0a] shadow-[0_0_20px_rgba(212,149,106,0.35)] transition-all hover:bg-[#e4a87e] hover:text-black hover:shadow-[0_0_25px_rgba(212,149,106,0.55)] active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl border border-[#d4956a] bg-[#d4956a] px-5 py-2 text-xs font-bold text-bg shadow-[0_0_20px_rgba(212,149,106,0.35)] transition-all hover:bg-[#e4a87e] hover:text-bg hover:shadow-[0_0_25px_rgba(212,149,106,0.55)] active:scale-95 cursor-pointer"
               >
-                <Zap className="h-3.5 w-3.5 fill-[#140e0a] text-[#140e0a]" />
+                <Zap className="h-3.5 w-3.5 fill-bg text-bg" />
                 <span>{isEn ? 'Audit This Location' : 'Audit Lokasi Sekarang'}</span>
               </button>
             </div>

@@ -88,12 +88,12 @@ function MetricTile({ m, delay = 0 }) {
           <span className="data-num text-xl text-text-primary font-semibold">
             {m.decimals > 0 ? animated.toFixed(m.decimals) : animated}
           </span>
-          <span className="data-num text-[10px] text-text-muted ml-0.5">
+          <span className="data-num text-[11px] text-text-muted ml-0.5">
             {m.suffix}
           </span>
         </div>
 
-        <p className="mt-0.5 truncate text-[10px] text-text-muted">{m.sub}</p>
+        <p className="mt-0.5 truncate text-[11px] text-text-muted">{m.sub}</p>
 
         {/* Mini indicator bar */}
         <div className="mt-2 h-0.5 rounded-full bg-white/6 overflow-hidden">
