@@ -2,7 +2,7 @@ import { ShieldCheck, Minus, Info } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { riskHex } from '../../lib/utils';
+import { riskHex, comparisonLabels } from '../../lib/utils';
 import { compareAudits } from '../../lib/compare';
 
 /**
@@ -16,6 +16,7 @@ export function VerdictCard({ propertyA, propertyB }) {
   if (!propertyA || !propertyB) return null;
 
   const result = compareAudits(propertyA, propertyB);
+  const [labelA, labelB] = comparisonLabels(propertyA, propertyB);
   const { rows, winner, status, scoreA, scoreB, scoreDelta, reason, unknownLabels } = result;
 
   const verdictLabel =
@@ -42,6 +43,7 @@ export function VerdictCard({ propertyA, propertyB }) {
       <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
         <ScorePane
           side="A"
+          label={labelA}
           address={propertyA.address}
           score={scoreA}
           isWinner={winner === 'A'}
@@ -54,6 +56,7 @@ export function VerdictCard({ propertyA, propertyB }) {
         </div>
         <ScorePane
           side="B"
+          label={labelB}
           address={propertyB.address}
           score={scoreB}
           isWinner={winner === 'B'}
@@ -101,7 +104,7 @@ export function VerdictCard({ propertyA, propertyB }) {
 }
 
 // ── Panel skor per lokasi ────────────────────────────────────────
-function ScorePane({ side, address, score, isWinner, delta }) {
+function ScorePane({ side, label, address, score, isWinner, delta }) {
   const ready = Number.isFinite(score);
   const hex = riskHex(ready ? score : 0);
 
@@ -135,7 +138,7 @@ function ScorePane({ side, address, score, isWinner, delta }) {
       </div>
 
       <p className="mt-1 line-clamp-1 text-[10px] text-text-muted" title={address}>
-        {address}
+        {label}
       </p>
     </div>
   );

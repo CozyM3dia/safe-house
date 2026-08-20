@@ -41,9 +41,9 @@ export function RadarCard({ propertyA, propertyB }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <RadarIcon className="h-3 w-3 text-accent" />
-          Risk Radar (5-axis)
+          Radar Risiko (5 sumbu)
         </CardTitle>
-        <span className="text-[9px] font-mono text-text-muted">0-100 scale</span>
+        <span className="text-[9px] font-mono text-text-muted">skala 0-100</span>
       </CardHeader>
 
       <div className="h-52 w-full -ml-2 -mt-2">
@@ -74,7 +74,7 @@ export function RadarCard({ propertyA, propertyB }) {
               cursor={{ stroke: 'rgba(255,210,170,0.12)', strokeWidth: 1 }}
             />
             <Radar
-              name="Site A"
+              name="Lokasi A"
               dataKey="A"
               stroke="#d4956a"
               strokeWidth={2}
@@ -84,11 +84,11 @@ export function RadarCard({ propertyA, propertyB }) {
             />
             {b && (
               <Radar
-                name="Site B"
+                name="Lokasi B"
                 dataKey="B"
-                stroke="#ef4444"
+                stroke="#6ea8d4"
                 strokeWidth={2}
-                fill="#ef4444"
+                fill="#6ea8d4"
                 fillOpacity={0.18}
                 animationDuration={1400}
               />
@@ -100,10 +100,10 @@ export function RadarCard({ propertyA, propertyB }) {
       {b && (
         <div className="mt-1 flex justify-center gap-4 text-[10px]">
           <span className="flex items-center gap-1.5 text-accent">
-            <span className="h-2 w-2 rounded-full" style={{ background: '#d4956a' }} /> Site A
+            <span className="h-2 w-2 rounded-full" style={{ background: '#d4956a' }} /> Lokasi A
           </span>
-          <span className="flex items-center gap-1.5 text-risk-danger">
-            <span className="h-2 w-2 rounded-full bg-risk-danger" /> Site B
+          <span className="flex items-center gap-1.5" style={{ color: '#6ea8d4' }}>
+            <span className="h-2 w-2 rounded-full" style={{ background: '#6ea8d4' }} /> Lokasi B
           </span>
         </div>
       )}

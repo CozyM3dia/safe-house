@@ -63,6 +63,7 @@ function buildPendingIcon() {
 }
 
 export function MapMarker() {
+  const mode = useAppStore((s) => s.mode);
   const propertyA = useAppStore((s) => s.propertyA);
   const propertyB = useAppStore((s) => s.propertyB);
   const pendingAudit = useAppStore((s) => s.pendingAudit);
@@ -104,11 +105,11 @@ export function MapMarker() {
       {/* ── Pin A ── */}
       {propertyA?.lat != null && (
         <Marker
-          key={`A-${propertyA.lat}`}
+          key={`A-${propertyA.lat}-${mode}`}
           position={[propertyA.lat, propertyA.lon]}
           icon={buildIcon(
             Number.isFinite(computeScore(propertyA)) ? riskHex(computeScore(propertyA)) : '#6b7280',
-            'A'
+            mode === 'battle' ? 'A' : ''
           )}
         />
       )}

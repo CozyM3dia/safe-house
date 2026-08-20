@@ -46,3 +46,54 @@ export function locationToUrl(lat, lng) {
   url.searchParams.set('lng', lng.toFixed(6));
   return url.toString();
 }
+
+/**
+ * Alamat Nominatim yang dipangkas untuk ruang sempit.
+ *
+ * Alamat penuh ("Sukolilo, Pati, Jawa Tengah, 59171, Indonesia") selalu
+ * terpotong di kolom sempit, dan dua lokasi berdekatan jadi terlihat identik
+ * karena yang tersisa cuma awalannya. Dua segmen pertama sudah cukup untuk
+ * membedakan, dan bagian yang paling spesifik justru yang dipertahankan.
+ */
+export function shortAddress(address, segments = 2) {
+  if (typeof address !== 'string' || !address.trim()) return '';
+  const parts = address
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+    // Kode pos tak membedakan apa pun secara visual.
+    .filter((p) => !/^\d{4,6}$/.test(p));
+  if (parts.length === 0) return address;
+  return parts.slice(0, segments).join(', ');
+}
+
+/**
+ * Label pembeda untuk dua lokasi yang dibandingkan.
+ *
+ * Dua titik di desa yang sama menghasilkan alamat Nominatim yang identik
+ * ("Kondang Wetan, Kalikondang" vs "Kondang Wetan, Kalikondang"), sehingga
+ * kartu perbandingan jadi mustahil dibaca. Saat itu terjadi, koordinat yang
+ * dipakai sebagai pembeda — bukan alamatnya, karena justru alamat itulah yang
+ * sama.
+ */
+export function comparisonLabels(propertyA, propertyB) {
+  const shortA = shortAddress(propertyA?.address);
+  const shortB = shortAddress(propertyB?.address);
+
+  if (!shortA || !shortB || shortA !== shortB) {
+    return [shortA, shortB];
+  }
+
+  const coord = (p) =>
+    typeof p?.lat === 'number' && typeof p?.lon === 'number'
+      ? `${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}`
+      : '';
+
+  const coordA = coord(propertyA);
+  const coordB = coord(propertyB);
+
+  // Tanpa koordinat pun, label tetap dikembalikan apa adanya daripada kosong.
+  if (!coordA || !coordB) return [shortA, shortB];
+
+  return [`${shortA} · ${coordA}`, `${shortB} · ${coordB}`];
+}

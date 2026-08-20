@@ -12,7 +12,7 @@ import {
 import { useAppStore } from '../../store/useAppStore';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { riskHex } from '../../lib/utils';
+import { riskHex, comparisonLabels } from '../../lib/utils';
 
 /**
  * Penyiapan perbandingan dalam tiga langkah eksplisit.
@@ -24,6 +24,7 @@ import { riskHex } from '../../lib/utils';
 export function CompareSetup({
   propertyA,
   propertyB,
+  loading,
   onGenerateReport,
   onOpenReport,
   reportContent,
@@ -33,8 +34,29 @@ export function CompareSetup({
   const armSlot = useAppStore((s) => s.armSlot);
   const clearPropertyB = useAppStore((s) => s.clearPropertyB);
   const swapSites = useAppStore((s) => s.swapSites);
+  const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
+  const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
 
   const bothReady = Boolean(propertyA && propertyB);
+
+  // Di bawah breakpoint `sm`, panel ini menutupi seluruh peta. Menyuruh
+  // pengguna "klik peta" sambil menutupi petanya adalah jalan buntu, jadi panel
+  // menyingkir begitu sebuah slot di-arm. Panel terbuka lagi sendiri saat audit
+  // selesai (processLocation menyetel leftPanelOpen).
+  const arm = (slot) => {
+    armSlot(slot);
+    const isNarrow =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 639px)').matches;
+    if (slot && isNarrow && leftPanelOpen) toggleLeftPanel();
+  };
+
+  // Slot yang sedang diaudit — cerminan resolveSlot() di store. Dipakai untuk
+  // menaruh indikator progres di langkah yang bersangkutan, bukan mengganti
+  // seluruh stepper dengan skeleton dan menghilangkan konteks.
+  const loadingSlot = loading ? (!propertyA ? 'A' : armedSlot ?? 'A') : null;
+
+  const [labelA, labelB] = comparisonLabels(propertyA, propertyB);
 
   return (
     <Card className="p-3">
@@ -42,10 +64,12 @@ export function CompareSetup({
         <Step
           index={1}
           label="Lokasi A"
+          displayLabel={labelA}
           property={propertyA}
           armed={armedSlot === 'A'}
+          loading={loadingSlot === 'A'}
           active={!propertyA}
-          onArm={() => armSlot('A')}
+          onArm={() => arm('A')}
           onCancel={() => armSlot(null)}
         />
 
@@ -67,12 +91,14 @@ export function CompareSetup({
         <Step
           index={2}
           label="Lokasi B"
+          displayLabel={labelB}
           property={propertyB}
           armed={armedSlot === 'B'}
+          loading={loadingSlot === 'B'}
           active={Boolean(propertyA) && !propertyB}
           disabled={!propertyA}
           disabledHint="Pilih Lokasi A dulu"
-          onArm={() => armSlot('B')}
+          onArm={() => arm('B')}
           onCancel={() => armSlot(null)}
           onRemove={clearPropertyB}
         />
@@ -134,8 +160,10 @@ export function CompareSetup({
 function Step({
   index,
   label,
+  displayLabel,
   property,
   armed,
+  loading,
   active,
   disabled,
   disabledHint,
@@ -149,14 +177,19 @@ function Step({
 
   return (
     <li className="flex gap-2.5 py-1">
-      <Marker done={filled} active={active || armed} index={index} />
+      <Marker done={filled && !loading} active={active || armed || loading} index={index} />
 
       <div className="min-w-0 flex-1">
         <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-muted/70">
           {label}
         </span>
 
-        {filled ? (
+        {loading ? (
+          <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-accent">
+            <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+            Menganalisis {label}…
+          </p>
+        ) : filled ? (
           <div className="mt-1 flex items-center gap-2">
             {score !== null && (
               <span
@@ -170,7 +203,7 @@ function Step({
               className="min-w-0 flex-1 truncate text-[11px] text-text-secondary"
               title={property.address}
             >
-              {property.address}
+              {displayLabel}
             </p>
 
             <div className="flex shrink-0 items-center gap-1">

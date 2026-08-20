@@ -129,6 +129,10 @@ const translations = {
   },
   'panel.battleMode': { id: 'Mode Bandingkan', en: 'Compare Mode' },
   'panel.headToHead': { id: 'Lokasi A vs Lokasi B', en: 'Site A vs Site B' },
+  'panel.riskProfile': {
+    id: 'Profil Risiko',
+    en: 'Risk Profile',
+  },
   'panel.paramComparison': {
     id: 'Perbandingan Parameter',
     en: 'Parameter Comparison',

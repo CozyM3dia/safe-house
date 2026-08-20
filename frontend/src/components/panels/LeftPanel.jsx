@@ -64,7 +64,7 @@ export function LeftPanel() {
                   <EmptyState />
                 </motion.div>
               )}
-              {loading && (
+              {loading && mode === 'audit' && (
                 <motion.div key="skeleton" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
                   <SkeletonState />
                 </motion.div>
@@ -77,11 +77,12 @@ export function LeftPanel() {
                   />
                 </motion.div>
               )}
-              {!loading && mode === 'battle' && (
+              {mode === 'battle' && (
                 <motion.div key="battle" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
                   <CompareState
                     propertyA={propertyA}
                     propertyB={propertyB}
+                    loading={loading}
                     onOpenDrawer={() => setAuditDrawer(true)}
                     onGenerateReport={() => runBattleReportAction()}
                     battleReportContent={battleReportContent}
@@ -453,7 +454,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
   );
 }
 
-function CompareState({ propertyA, propertyB, onOpenDrawer, onGenerateReport, battleReportContent, battleReportLoading }) {
+function CompareState({ propertyA, propertyB, loading, onOpenDrawer, onGenerateReport, battleReportContent, battleReportLoading }) {
   const t = useT();
   const hasBothSites = Boolean(propertyA && propertyB);
 
@@ -464,12 +465,14 @@ function CompareState({ propertyA, propertyB, onOpenDrawer, onGenerateReport, ba
       animate="show"
       className="flex flex-col gap-3 p-4 pb-6"
     >
-      <motion.div variants={item} className="flex items-center justify-between">
+      {/* Di bawah `sm` panel selebar layar, sehingga judul kanan bertabrakan
+          dengan tombol layer peta yang melayang di pojok kanan atas. */}
+      <motion.div variants={item} className="flex items-center justify-between gap-2 pr-11 sm:pr-0">
         <Badge variant="accent" className="mb-1">
           <GitCompareArrows className="h-2.5 w-2.5" />
           {t('panel.battleMode')}
         </Badge>
-        <h2 className="font-display text-sm font-semibold text-text-primary">
+        <h2 className="truncate font-display text-sm font-semibold text-text-primary">
           {t('panel.headToHead')}
         </h2>
       </motion.div>
@@ -479,6 +482,7 @@ function CompareState({ propertyA, propertyB, onOpenDrawer, onGenerateReport, ba
         <CompareSetup
           propertyA={propertyA}
           propertyB={propertyB}
+          loading={loading}
           onGenerateReport={onGenerateReport}
           onOpenReport={onOpenDrawer}
           reportContent={battleReportContent}
@@ -494,7 +498,7 @@ function CompareState({ propertyA, propertyB, onOpenDrawer, onGenerateReport, ba
 
       {propertyA && (
         <motion.div variants={item}>
-          <SectionLabel>{t('panel.paramComparison')}</SectionLabel>
+          <SectionLabel>{t('panel.riskProfile')}</SectionLabel>
           <RadarCard propertyA={propertyA} propertyB={propertyB} />
         </motion.div>
       )}

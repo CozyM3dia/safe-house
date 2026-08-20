@@ -15,6 +15,7 @@ import { NationwideOverlays } from './NationwideOverlays';
 import { FaultOverlay } from './FaultOverlay';
 import { MapCursor } from './MapCursor';
 import { AuditConfirmDialog } from './AuditConfirmDialog';
+import { CompareMapBanner } from './CompareMapBanner';
 
 function MapInteractionLayer() {
   const loading = useAppStore((s) => s.loading);
@@ -93,6 +94,9 @@ export function MapArea() {
         <MapControls />
         <MapCursor />
       </MapContainer>
+
+      {/* Penanda mode bandingkan + instruksi slot tujuan */}
+      <CompareMapBanner />
 
       {/* Audit Click Confirmation Dialog */}
       <AuditConfirmDialog />

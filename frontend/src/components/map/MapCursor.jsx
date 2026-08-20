@@ -11,7 +11,15 @@ export function MapCursor() {
   const pendingAudit = useAppStore((s) => s.pendingAudit);
   const auditDrawerOpen = useAppStore((s) => s.auditDrawerOpen);
   const cmdPaletteOpen = useAppStore((s) => s.cmdPaletteOpen);
+  const mode = useAppStore((s) => s.mode);
+  const armedSlot = useAppStore((s) => s.armedSlot);
+  const propertyA = useAppStore((s) => s.propertyA);
   const animRef = useRef(null);
+
+  // Slot yang akan terisi bila pengguna mengklik sekarang — cerminan
+  // resolveSlot() di store. Ditempelkan ke reticle supaya niat klik terbaca di
+  // titik perhatian pengguna, bukan cuma di panel kiri.
+  const targetSlot = mode === 'battle' ? (!propertyA ? 'A' : armedSlot) : null;
 
   useEffect(() => {
     if (!map) return;
@@ -104,6 +112,11 @@ export function MapCursor() {
             {coords && (
               <div className="absolute left-[16px] top-[14px] flex items-center gap-1 whitespace-nowrap rounded border border-white/20 bg-black/90 px-1.5 py-0.5 shadow-md backdrop-blur-md">
                 <span className="h-1 w-1 rounded-full bg-accent animate-pulse" />
+                {targetSlot && (
+                  <span className="rounded-sm bg-accent px-1 text-[8px] font-bold uppercase tracking-wide text-bg">
+                    Lokasi {targetSlot}
+                  </span>
+                )}
                 <span className="font-mono text-[8px] font-semibold tracking-wide text-white">
                   {coords.lat}°, {coords.lng}°
                 </span>
