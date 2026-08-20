@@ -389,7 +389,7 @@ export function ChatbotFab() {
             ...(viewportHeight ? { '--safe-chat-height': `${viewportHeight}px` } : {}),
             transformOrigin: 'bottom right',
           }}
-          className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-[0_24px_64px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:left-auto sm:right-4 sm:w-[392px] max-[639px]:bottom-auto max-[639px]:left-0 max-[639px]:right-0 max-[639px]:top-[calc(4.5rem+env(safe-area-inset-top))] max-[639px]:h-[calc(var(--safe-chat-height,100dvh)-5.25rem)] max-[639px]:max-h-[calc(100dvh-5.25rem)] max-[639px]:rounded-b-none max-[639px]:rounded-t-3xl"
+          className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[45] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-[0_24px_64px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:left-auto sm:right-4 sm:w-[392px] max-[639px]:bottom-auto max-[639px]:left-0 max-[639px]:right-0 max-[639px]:top-[calc(4.5rem+env(safe-area-inset-top))] max-[639px]:h-[calc(var(--safe-chat-height,100dvh)-5.25rem)] max-[639px]:max-h-[calc(100dvh-5.25rem)] max-[639px]:rounded-b-none max-[639px]:rounded-t-3xl"
         >
       <header className="border-b border-white/8 bg-white/[0.02] px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">

@@ -31,17 +31,24 @@ export function DisasterLayersPanel() {
   useEffect(() => () => setMapLayersOpen(false), [setMapLayersOpen]);
 
   return (
-    <div className="pointer-events-auto fixed right-2 top-20 z-[40] flex items-start gap-2 sm:right-4 max-[639px]:left-3 max-[639px]:right-3 max-[639px]:top-[calc(4.75rem+env(safe-area-inset-top))] max-[639px]:flex-col-reverse max-[639px]:items-end max-[639px]:gap-2"
-    >
-      {/* Retractable Container */}
-      <AnimatePresence initial={false}>
-        {!collapsed && !chatExpanded && (
-          <motion.div
-            data-testid="disaster-layers-panel"
-            initial={{ opacity: 0, x: 24, scale: 0.97, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, x: 24, scale: 0.97, filter: 'blur(4px)' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
+    <AnimatePresence>
+      {!chatExpanded && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.15 }}
+          className="pointer-events-auto fixed right-2 top-20 z-[30] flex items-start gap-2 sm:right-4 max-[639px]:left-3 max-[639px]:right-3 max-[639px]:top-[calc(4.75rem+env(safe-area-inset-top))] max-[639px]:flex-col-reverse max-[639px]:items-end max-[639px]:gap-2"
+        >
+          {/* Retractable Container */}
+          <AnimatePresence initial={false}>
+            {!collapsed && (
+              <motion.div
+                data-testid="disaster-layers-panel"
+                initial={{ opacity: 0, x: 24, scale: 0.97, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: 24, scale: 0.97, filter: 'blur(4px)' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
             className="overscroll-contain flex w-[min(18rem,calc(100vw-1rem))] max-h-[calc(100dvh-6rem)] flex-col overflow-y-auto rounded-2xl border border-white/8 bg-bg-surface/90 p-4 shadow-glass-lg backdrop-blur-xl max-[639px]:w-full max-[639px]:max-h-[min(70dvh,620px)] max-[639px]:p-3"
           >
             {/* Header */}
@@ -333,6 +340,8 @@ export function DisasterLayersPanel() {
           {collapsed ? <Layers className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
       </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
