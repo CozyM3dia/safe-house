@@ -3,7 +3,7 @@ import { Drawer } from 'vaul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, FileText, AlertTriangle, MapPin, GitCompareArrows, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award, ExternalLink } from 'lucide-react';
+import { Copy, Check, X, FileText, AlertTriangle, MapPin, GitCompareArrows, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award, ExternalLink, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -14,6 +14,7 @@ import { Skeleton, SkeletonText } from '../ui/skeleton';
 import { locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
 import { siteClass } from '../../lib/formatters';
 import { parseBuildingCodes } from '../../lib/standards';
+import { canExportSniReport, exportPrintReadyPdf } from '../../lib/pdfExport';
 
 // ─── Local Helpers ──────────────────────────────────────────────────
 function computeScore(p) {
@@ -711,6 +712,8 @@ export function AuditDrawer() {
 
   const lang = useAppStore((s) => s.lang);
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+
   const handleCopy = async () => {
     if (propertyA?.lat == null) return;
     const url = locationToUrl(propertyA.lat, propertyA.lon);
@@ -721,6 +724,34 @@ export function AuditDrawer() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error(t('toast.shareFailed'));
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!propertyA || !canExportSniReport(propertyA)) {
+      toast.warning(
+        lang === 'en'
+          ? 'PDF is locked because this audit has insufficient evidence.'
+          : 'PDF dikunci karena bukti audit belum cukup.'
+      );
+      return;
+    }
+    setPdfLoading(true);
+    const toastId = toast.loading(lang === 'en' ? 'Preparing full audit PDF…' : 'Menyiapkan PDF audit full…');
+    try {
+      await exportPrintReadyPdf(propertyA, lang);
+      toast.success(
+        lang === 'en' ? 'Full AI audit PDF downloaded.' : 'PDF full audit AI berhasil diunduh.',
+        { id: toastId }
+      );
+    } catch (error) {
+      console.error('PDF export failed', error);
+      toast.error(
+        error.message || (lang === 'en' ? 'PDF export failed.' : 'Ekspor PDF gagal.'),
+        { id: toastId }
+      );
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -811,7 +842,24 @@ export function AuditDrawer() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              {!isBattle && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleDownloadPdf}
+                  disabled={pdfLoading}
+                  className="min-h-[44px] px-2.5 sm:px-3 text-xs flex items-center gap-1.5 border border-white/10 hover:border-accent/40 hover:text-accent"
+                  title={lang === 'en' ? 'Download full PDF report' : 'Unduh laporan PDF full'}
+                >
+                  {pdfLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 text-accent" />
+                  )}
+                  <span className="max-[639px]:hidden">{lang === 'en' ? 'Full PDF' : 'Unduh PDF'}</span>
+                </Button>
+              )}
               <Button variant="secondary" size="sm" onClick={handleCopy} className="min-h-[44px] px-2 sm:px-3">
                 {copied
                   ? <Check className="h-3.5 w-3.5" />

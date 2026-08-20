@@ -10,6 +10,7 @@
  */
 
 import axios from 'axios';
+import { generateProceduralNarrative } from '../lib/proceduralNarrative';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -84,6 +85,7 @@ export async function checkAIStatus() {
  * Generate an AI explanation without allowing the model to alter audit scores.
  * Persisted audits use the cacheable ID endpoint; local/demo audits send the
  * validated AuditResult inline so MongoDB remains optional.
+ * Falls back to deterministic procedural narrative if backend AI is unavailable.
  */
 export async function generateNarrative(audit, lang = 'id', signal = undefined) {
   try {
@@ -96,7 +98,9 @@ export async function generateNarrative(audit, lang = 'id', signal = undefined) 
       : await client.post('/api/narrative', { audit, lang }, { signal });
     return adaptNarrative(response.data);
   } catch (err) {
-    throw new Error(toReadableError(err, lang), { cause: err });
+    if (signal?.aborted) throw err;
+    console.warn('Backend narrative unavailable; falling back to deterministic narrative', err);
+    return generateProceduralNarrative(audit, lang);
   }
 }
 

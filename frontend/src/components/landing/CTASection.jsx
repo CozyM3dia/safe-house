@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { BrandLogo } from '../ui/BrandLogo';
 
 export default function CTASection({ t }) {
   const navigate = useNavigate();
@@ -71,10 +72,10 @@ export default function CTASection({ t }) {
           {/* Brand Col */}
           <div className="col-span-1 flex flex-col gap-4 sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-1.5 mb-2">
-              <img 
-                src="/safe_house_logo.png" 
+              <BrandLogo 
+                variant="full" 
                 alt="S.A.F.E House" 
-                className="h-16 md:h-20 object-contain -my-4 md:-my-5 drop-shadow-[0_0_8px_rgba(212,149,106,0.3)] origin-left" 
+                className="h-7 md:h-8 w-auto object-contain origin-left" 
               />
             </div>
             <p className="text-[11px] text-muted-foreground/80 leading-relaxed font-body max-w-[25ch]">

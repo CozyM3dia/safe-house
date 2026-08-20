@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { adaptAuditResult } from '../services/auditAdapter.js';
 import { ensureLogo, drawLogo } from './brandLogo.js';
+import { generateProceduralNarrative } from './proceduralNarrative.js';
 
 // ── Color tokens ──────────────────────────────────────────────
 const C = {
@@ -55,6 +56,14 @@ export function normalizePdfProperty(property) {
   if (property.narrative?.detailed_report && !normalized.aiReport?.detailedReport) {
     normalized.aiReport = adaptAuditResult({ ...property, aiReport: property.narrative }).aiReport;
   }
+  if (property.narrative?.detailedReport && !normalized.aiReport?.detailedReport) {
+    normalized.aiReport = property.narrative;
+  }
+
+  // If detailedReport is not present but property is valid, synthesize procedural narrative
+  if (!normalized.aiReport?.detailedReport && Number.isFinite(normalized.safeScore)) {
+    normalized.aiReport = generateProceduralNarrative(property);
+  }
 
   return normalized;
 }
@@ -76,8 +85,15 @@ export function canExportPdf(property) {
     (normalized?.auditStatus === 'valid' || normalized?.auditStatus === 'provisional') &&
     Number.isFinite(normalized?.safeScore) &&
     normalized?.aiReport?.detailedReport?.trim() &&
-    normalized?.aiReport?.reportLoading !== true &&
-    normalized?.aiReport?.aiError !== true
+    normalized?.aiReport?.reportLoading !== true
+  );
+}
+
+export function canExportSniReport(property) {
+  const normalized = normalizePdfProperty(property);
+  return Boolean(
+    (normalized?.auditStatus === 'valid' || normalized?.auditStatus === 'provisional') &&
+    Number.isFinite(normalized?.safeScore)
   );
 }
 

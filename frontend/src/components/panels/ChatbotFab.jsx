@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Activity,
@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Send,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -21,6 +22,7 @@ import { SUGGESTED_PROMPTS_ID, SUGGESTED_PROMPTS_EN } from '../../lib/constants'
 import { cn, shortAddress } from '../../lib/utils';
 import { getViewportHeight, subscribeToViewport } from '../../lib/responsive';
 import { SkeletonText } from '../ui/skeleton';
+import { BrandLogo } from '../ui/BrandLogo';
 
 // ─── Auto-resize textarea hook ──────────────────────────────────────
 const MIN_HEIGHT = 44;
@@ -122,6 +124,8 @@ export function ChatbotFab() {
   const [viewportHeight, setViewportHeight] = useState(0);
   const expanded = useAppStore((s) => s.chatExpanded);
   const setExpanded = useAppStore((s) => s.setChatExpanded);
+  const chatDockDismissed = useAppStore((s) => s.chatDockDismissed);
+  const setChatDockDismissed = useAppStore((s) => s.setChatDockDismissed);
   const { textareaRef, adjustHeight } = useAutoResizeTextarea();
   const messagesEndRef = useRef(null);
 
@@ -135,6 +139,14 @@ export function ChatbotFab() {
   const scrollToBottom = () => {
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   };
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const timer = setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [expanded, textareaRef]);
 
   useEffect(() => {
     if (!expanded) return undefined;
@@ -213,142 +225,177 @@ export function ChatbotFab() {
     ? (lang === 'en' ? 'CHECKING AUDIT DATA' : 'MEMERIKSA DATA AUDIT')
     : dockState === 'composing'
       ? (lang === 'en' ? 'COMPOSING' : 'MENYUSUN PESAN')
-      : 'READY';
+      : null;
 
   // ─── Collapsed: compact Agent Dock over the map ──────────────────
   if (!expanded && mapLayersOpen) return null;
 
-  if (!expanded) {
-    return (
-      <motion.div
-        data-tour="chatbot-fab"
-        data-chat-dock-state={dockState}
-        initial={{ y: 24, opacity: 0, scale: 0.98 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
-        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        className={cn(
-          'safe-fixed-bottom fixed left-3 right-3 z-[35] sm:left-auto sm:right-5 sm:w-[440px]',
-          leftPanelOpen && 'max-[639px]:left-auto max-[639px]:right-4 max-[639px]:w-14'
-        )}
-      >
-        <div className="bezel-outer">
-          <div className="bezel-inner overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-glass-lg backdrop-blur-xl">
-            <div className={cn(
-              'flex flex-col gap-3 p-3 sm:p-4',
-              leftPanelOpen && 'max-[639px]:items-center max-[639px]:gap-0 max-[639px]:p-1.5'
-            )}>
-              <div className={cn(
-                'flex w-full min-w-0 items-center gap-3',
-                leftPanelOpen && 'max-[639px]:justify-center'
-              )}>
-                <button
-                  type="button"
-                  onClick={() => setExpanded(true)}
-                  aria-label={t('chat.open')}
-                  title={t('chat.open')}
-                  data-chat-dock-mark="safehouse"
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 transition-colors hover:bg-accent/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
-                >
-                  <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
-                </button>
+  return (
+    <AnimatePresence initial={false}>
+      {!expanded && chatDockDismissed && (
+        <motion.button
+          key="chatbot-fab-launcher"
+          data-tour="chatbot-fab"
+          data-chat-dock-state={dockState}
+          initial={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: 20, scale: 0.96, filter: 'blur(4px)' }}
+          transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
+          type="button"
+          onClick={() => {
+            setChatDockDismissed(false);
+            setExpanded(true);
+          }}
+          aria-label={t('chat.open')}
+          title={t('chat.open')}
+          data-chat-dock-mark="safehouse"
+          className="safe-fixed-bottom fixed bottom-4 right-3 z-[35] flex h-13 w-13 items-center justify-center rounded-2xl border border-accent/35 bg-bg-surface/95 shadow-[0_12px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-colors hover:border-accent/60 hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:right-5"
+        >
+          <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-7 w-7 object-contain" />
+          {hasMessages && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-bg shadow-glow">
+              {messages.filter((message) => message.role === 'assistant').length}
+            </span>
+          )}
+        </motion.button>
+      )}
 
+      {!expanded && !chatDockDismissed && (
+        <motion.div
+          key="chatbot-fab-dock"
+          data-tour="chatbot-fab"
+          data-chat-dock-state={dockState}
+          initial={{ opacity: 0, y: 32, scale: 0.96, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(4px)' }}
+          transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
+          onClick={() => setExpanded(true)}
+          role="button"
+          tabIndex={0}
+          aria-label={t('chat.open')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setExpanded(true);
+            }
+          }}
+          className={cn(
+            'safe-fixed-bottom group fixed left-3 right-3 z-[35] cursor-pointer select-none sm:left-auto sm:right-5 sm:w-[440px]',
+            leftPanelOpen && 'max-[639px]:left-auto max-[639px]:right-4 max-[639px]:w-14'
+          )}
+        >
+          <div className="bezel-outer">
+            <div className="bezel-inner overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-[0_16px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-colors group-hover:border-accent/40">
+              <div className={cn(
+                'flex flex-col gap-3 p-3 sm:p-4',
+                leftPanelOpen && 'max-[639px]:items-center max-[639px]:gap-0 max-[639px]:p-1.5'
+              )}>
                 <div className={cn(
-                  'min-w-0 flex-1',
-                  leftPanelOpen && 'max-[639px]:hidden'
+                  'flex w-full min-w-0 items-center gap-3',
+                  leftPanelOpen && 'max-[639px]:justify-center'
                 )}>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="font-display text-sm font-bold tracking-tight text-text-primary">S.A.F.E AI</span>
-                    <span className={cn(
-                      'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[8px] font-semibold tracking-[0.14em]',
-                      dockState === 'working'
-                        ? 'border-accent/25 bg-accent/8 text-accent'
-                        : dockState === 'composing'
-                          ? 'border-risk-moderate/25 bg-risk-moderate/8 text-risk-moderate'
-                          : 'border-risk-safe/20 bg-risk-safe/8 text-risk-safe'
-                    )}>
-                      <StatusDot className={dockState === 'working' ? 'bg-accent' : dockState === 'composing' ? 'bg-risk-moderate' : undefined} />
-                      {dockStatus}
-                    </span>
+                  <div
+                    data-chat-dock-mark="safehouse"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 transition-all duration-200 group-hover:border-accent/55 group-hover:bg-accent/20 group-hover:shadow-[0_0_12px_rgba(212,149,106,0.25)]"
+                  >
+                    <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-7 w-7 object-contain" />
                   </div>
-                  <ContextLabel propertyA={propertyA} lang={lang} />
+
+                  <div className={cn(
+                    'min-w-0 flex-1',
+                    leftPanelOpen && 'max-[639px]:hidden'
+                  )}>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="font-display text-sm font-bold tracking-tight text-text-primary group-hover:text-accent transition-colors">
+                        S.A.F.E AI
+                      </span>
+                      {dockStatus && (
+                        <span className={cn(
+                          'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[8px] font-semibold tracking-[0.14em]',
+                          dockState === 'working'
+                            ? 'border-accent/25 bg-accent/8 text-accent'
+                            : 'border-risk-moderate/25 bg-risk-moderate/8 text-risk-moderate'
+                        )}>
+                          <StatusDot className={dockState === 'working' ? 'bg-accent' : 'bg-risk-moderate'} />
+                          {dockStatus}
+                        </span>
+                      )}
+                    </div>
+                    <ContextLabel propertyA={propertyA} lang={lang} />
+                  </div>
+
+                  <div className={cn(
+                    'flex items-center gap-1.5',
+                    leftPanelOpen && 'max-[639px]:hidden'
+                  )}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setChatDockDismissed(true);
+                      }}
+                      aria-label={t('chat.close')}
+                      title={t('chat.close')}
+                      className="flex h-9 w-9 min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.035] text-text-muted transition-all hover:border-white/20 hover:bg-white/10 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setExpanded(true)}
-                  aria-label={t('chat.open')}
-                  title={t('chat.open')}
-                  className="hidden min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-[10px] font-semibold text-text-secondary transition-colors hover:border-accent/30 hover:bg-accent/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:inline-flex"
-                >
-                  <span>{lang === 'en' ? 'Open' : 'Buka'}</span>
-                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </div>
-
-              <div className={cn(
-                'flex w-full min-w-0 items-center gap-3 rounded-xl border border-accent/18 bg-bg/35 px-3 py-2 shadow-inner',
-                leftPanelOpen && 'max-[639px]:hidden'
-              )}>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  onKeyDown={handleKeyDown}
-                  aria-label={t('chat.placeholder')}
-                  placeholder={lang === 'en' ? 'Ask what this location signal means…' : 'Tanyakan arti sinyal lokasi ini…'}
-                  className="min-w-0 flex-1 border-none bg-transparent py-1 text-base text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-0 sm:text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => send()}
-                  aria-label={t('chat.send')}
-                  disabled={!input.trim() || loading}
-                  className={cn(
-                    'flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
-                    input.trim()
-                      ? 'bg-accent text-bg hover:bg-accent-hover'
-                      : 'bg-white/[0.04] text-text-muted'
-                  )}
-                >
-                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                </button>
+                <div className={cn(
+                  'flex w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-accent/20 bg-bg/40 px-3.5 py-2.5 shadow-inner transition-all duration-200 group-hover:border-accent/45 group-hover:bg-bg/60',
+                  leftPanelOpen && 'max-[639px]:hidden'
+                )}>
+                  <span className="min-w-0 flex-1 truncate text-xs text-text-muted">
+                    {input.trim() || (lang === 'en' ? 'Ask what this location signal means…' : 'Tanyakan arti sinyal lokasi ini…')}
+                  </span>
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/15 text-accent transition-all duration-200 group-hover:bg-accent group-hover:text-bg">
+                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {hasMessages && (
-          <motion.button
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            type="button"
-            onClick={() => setExpanded(true)}
-            aria-label={t('chat.open')}
-            className="absolute -left-2 -top-2 flex min-h-7 min-w-7 items-center justify-center rounded-full border border-bg bg-accent px-1 text-[9px] font-bold text-bg shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
-          >
-            {messages.filter((message) => message.role === 'assistant').length}
-          </motion.button>
-        )}
-      </motion.div>
-    );
-  }
+          {hasMessages && (
+            <motion.button
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(true);
+              }}
+              aria-label={t('chat.open')}
+              className="absolute -left-2 -top-2 flex min-h-7 min-w-7 items-center justify-center rounded-full border border-bg bg-accent px-1 text-[9px] font-bold text-bg shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+            >
+              {messages.filter((message) => message.role === 'assistant').length}
+            </motion.button>
+          )}
+        </motion.div>
+      )}
 
-  // ─── Expanded: premium Chat Panel ───────────────────────────────
-  return (
-    <motion.aside
-      data-testid="chatbot-expanded"
-      initial={{ x: 24, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      aria-labelledby="safe-ai-chat-title"
-      style={viewportHeight ? { '--safe-chat-height': `${viewportHeight}px` } : undefined}
-      className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-glass-lg backdrop-blur-xl sm:left-auto sm:right-4 sm:w-[392px] max-[639px]:bottom-auto max-[639px]:left-0 max-[639px]:right-0 max-[639px]:top-[calc(4.5rem+env(safe-area-inset-top))] max-[639px]:h-[calc(var(--safe-chat-height,100dvh)-5.25rem)] max-[639px]:max-h-[calc(100dvh-5.25rem)] max-[639px]:rounded-b-none max-[639px]:rounded-t-3xl"
-    >
+      {expanded && (
+        <motion.aside
+          key="chatbot-expanded-panel"
+          data-testid="chatbot-expanded"
+          initial={{ opacity: 0, y: 32, scale: 0.96, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(4px)' }}
+          transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
+          aria-labelledby="safe-ai-chat-title"
+          style={{
+            ...(viewportHeight ? { '--safe-chat-height': `${viewportHeight}px` } : {}),
+            transformOrigin: 'bottom right',
+          }}
+          className="glass-strong fixed bottom-4 left-3 right-3 top-[72px] z-[35] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface/95 shadow-[0_24px_64px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:left-auto sm:right-4 sm:w-[392px] max-[639px]:bottom-auto max-[639px]:left-0 max-[639px]:right-0 max-[639px]:top-[calc(4.5rem+env(safe-area-inset-top))] max-[639px]:h-[calc(var(--safe-chat-height,100dvh)-5.25rem)] max-[639px]:max-h-[calc(100dvh-5.25rem)] max-[639px]:rounded-b-none max-[639px]:rounded-t-3xl"
+        >
       <header className="border-b border-white/8 bg-white/[0.02] px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent">
-              <ShieldCheck className="h-4.5 w-4.5" aria-hidden="true" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 p-1.5 text-accent">
+              <BrandLogo variant="icon" alt="" aria-hidden="true" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -365,15 +412,29 @@ export function ChatbotFab() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setExpanded(false)}
-            aria-label={t('chat.minimize')}
-            title={t('chat.minimize')}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
-          >
-            <ChevronDown className="h-4 w-4" aria-hidden="true" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              aria-label={t('chat.minimize')}
+              title={t('chat.minimize')}
+              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+            >
+              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setExpanded(false);
+                setChatDockDismissed(true);
+              }}
+              aria-label={t('chat.close')}
+              title={t('chat.close')}
+              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         <div className="mt-3 flex min-w-0 items-center justify-between gap-3 border-t border-white/6 pt-3">
@@ -565,6 +626,8 @@ export function ChatbotFab() {
         </p>
       </div>
     </motion.aside>
+    )}
+  </AnimatePresence>
   );
 }
 
@@ -721,8 +784,8 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
         </div>
       ) : (
         <div className="flex max-w-[94%] gap-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/8 text-accent">
-            <Bot className="h-3.5 w-3.5" aria-hidden="true" />
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/8 p-1 text-accent">
+            <BrandLogo variant="icon" alt="" aria-hidden="true" className="h-full w-full object-contain" />
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
             <div className="mb-2 flex items-center gap-2">

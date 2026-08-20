@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ContainerScroll } from '../ui/container-scroll-animation';
+import { BrandLogo } from '../ui/BrandLogo';
 
 export default function HeroSection({ t }) {
   const navigate = useNavigate();
@@ -15,10 +16,10 @@ export default function HeroSection({ t }) {
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="mb-5 sm:mb-8"
       >
-        <img 
-          src="/safe_house_logo.png" 
+        <BrandLogo 
+          variant="full" 
           alt="S.A.F.E House Logo" 
-          className="h-20 object-contain drop-shadow-[0_0_20px_rgba(212,149,106,0.25)] sm:h-32 md:h-40 lg:h-48"
+          className="h-10 w-auto sm:h-16 md:h-20 lg:h-24 object-contain filter drop-shadow-[0_4px_20px_rgba(91,67,48,0.14)] dark:drop-shadow-[0_0_24px_rgba(212,149,106,0.35)]"
         />
       </motion.div>
 

@@ -4,9 +4,10 @@ import { toast } from 'sonner';
 import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Share2, Download, Crosshair, Mountain, Waves, Activity, ArrowUpRight, X } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
-import { createShare } from '../../services/api';
-import { canExportPdf, exportPrintReadyPdf } from '../../lib/pdfExport';
+import { createShare, generateNarrative } from '../../services/api';
+import { canExportPdf, canExportSniReport, exportPrintReadyPdf } from '../../lib/pdfExport';
 import { exportProfessionalReport } from '../../lib/professionalReport';
+import { generateProceduralNarrative } from '../../lib/proceduralNarrative';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -334,7 +335,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
   );
 
   const handleDownloadReport = async () => {
-    if (!canExportPdf(propertyA)) {
+    if (!canExportSniReport(propertyA)) {
       toast.warning(
         lang === 'en'
           ? 'Report is locked because this audit has insufficient evidence.'
@@ -356,15 +357,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
   };
 
   const handleDownloadPdf = async () => {
-    if (aiLoading || !hasAiReport) {
-      toast.info(
-        lang === 'en'
-          ? 'The full PDF will be available after the AI audit finishes.'
-          : 'PDF full tersedia setelah audit AI selesai dibuat.'
-      );
-      return;
-    }
-    if (!canExportPdf(propertyA)) {
+    if (!canExportSniReport(propertyA)) {
       toast.warning(
         lang === 'en'
           ? 'PDF is locked because this audit has insufficient evidence or is not buildable.'
@@ -376,7 +369,32 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
     setPdfLoading(true);
     const toastId = toast.loading(lang === 'en' ? 'Preparing full audit PDF…' : 'Menyiapkan PDF audit full…');
     try {
-      await exportPrintReadyPdf(propertyA, lang);
+      let activeProp = propertyA;
+      // If AI report is not yet ready or detailedReport is missing, ensure it's generated/attached
+      if (!activeProp?.aiReport?.detailedReport && !activeProp?.narrative?.detailed_report) {
+        try {
+          const aiReport = await generateNarrative(activeProp, lang);
+          activeProp = {
+            ...activeProp,
+            aiReport,
+            narrative: aiReport,
+          };
+          useAppStore.setState((s) => ({
+            propertyA: s.propertyA ? { ...s.propertyA, aiReport, narrative: aiReport } : s.propertyA,
+            aiLoading: false,
+          }));
+        } catch (narrativeErr) {
+          console.warn('AI narrative generation failed, applying procedural fallback for PDF', narrativeErr);
+          const fallbackNarrative = generateProceduralNarrative(activeProp, lang);
+          activeProp = {
+            ...activeProp,
+            aiReport: fallbackNarrative,
+            narrative: fallbackNarrative,
+          };
+        }
+      }
+
+      await exportPrintReadyPdf(activeProp, lang);
       toast.success(
         lang === 'en' ? 'Full AI audit PDF downloaded.' : 'PDF full audit AI berhasil diunduh.',
         { id: toastId }
@@ -559,12 +577,12 @@ function CompareState({ propertyA, propertyB, loading, onOpenDrawer, onGenerateR
     >
       {/* Di bawah `sm` panel selebar layar, sehingga judul kanan bertabrakan
           dengan tombol layer peta yang melayang di pojok kanan atas. */}
-      <motion.div variants={item} className="flex items-center justify-between gap-2 pr-11 sm:pr-0">
-        <Badge variant="accent" className="mb-1">
-          <GitCompareArrows className="h-2.5 w-2.5" />
+      <motion.div variants={item} className="flex items-center justify-between gap-3 pr-11 sm:pr-0">
+        <Badge variant="accent" className="flex items-center gap-1.5 font-mono text-[9px] font-bold tracking-[0.14em]">
+          <GitCompareArrows className="h-3 w-3" />
           {t('panel.battleMode')}
         </Badge>
-        <h2 className="truncate font-display text-sm font-semibold text-text-primary">
+        <h2 className="truncate font-display text-sm font-semibold text-text-secondary">
           {t('panel.headToHead')}
         </h2>
       </motion.div>

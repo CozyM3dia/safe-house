@@ -6,6 +6,7 @@ import { useT } from '../../hooks/useTranslation';
 import { Badge } from '../ui/badge';
 import { LanguageSelector } from '../ui/language-selector';
 import { ThemeToggle } from '../ui/theme-toggle';
+import { BrandLogo } from '../ui/BrandLogo';
 import { cn, getModifierShortcut } from '../../lib/utils';
 
 export function TopBar() {
@@ -60,10 +61,10 @@ export function TopBar() {
         </button>
 
         <div className="flex min-w-0 items-center gap-2.5">
-          <img
-            src="/safe_house_logo.png"
+          <BrandLogo
+            variant="full"
             alt="S.A.F.E House"
-            className="h-8 w-12 object-cover object-center sm:h-9 sm:w-36"
+            className="h-7 w-auto max-w-[120px] object-contain sm:h-8 sm:max-w-none"
           />
           <div className="hidden xl:flex flex-col justify-center border-l border-white/10 pl-2.5 leading-none">
             <span className="text-[11px] font-medium tracking-tight text-text-secondary">

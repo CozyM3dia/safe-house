@@ -75,7 +75,13 @@ function AppShell() {
   useHotkeys('c', () => {
     const state = useAppStore.getState();
     if (state.cmdPaletteOpen || state.onboardingActive) return;
-    setChatExpanded(!state.chatExpanded);
+    if (state.chatExpanded) {
+      setChatExpanded(false);
+    } else if (state.chatDockDismissed) {
+      useAppStore.getState().setChatDockDismissed(false);
+    } else {
+      setChatExpanded(true);
+    }
   });
 
   return (

@@ -259,6 +259,7 @@ const translations = {
   'chat.thinking': { id: 'Berpikir…', en: 'Thinking…' },
   'chat.open': { id: 'Buka chatbot', en: 'Open chatbot' },
   'chat.minimize': { id: 'Minimalkan chatbot', en: 'Minimize chatbot' },
+  'chat.close': { id: 'Tutup chatbot', en: 'Close chatbot' },
   'chat.send': { id: 'Kirim pesan', en: 'Send message' },
   'chat.sources': { id: 'Sumber Data', en: 'Data Sources' },
   'chat.followUps': { id: 'Pertanyaan Lanjutan', en: 'Follow-up Questions' },

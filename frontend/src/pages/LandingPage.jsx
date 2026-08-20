@@ -11,6 +11,7 @@ import DisclaimerSection from '../components/landing/DisclaimerSection';
 import FAQSection from '../components/landing/FAQSection';
 import CTASection from '../components/landing/CTASection';
 import { LanguageSelector } from '../components/ui/language-selector';
+import { BrandLogo } from '../components/ui/BrandLogo';
 
 const COPY = {
   id: {
@@ -256,11 +257,11 @@ export default function LandingPage() {
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
           >
-            <div className="relative">
-              <img 
-                src="/safe_house_logo.png" 
+            <div className="relative flex items-center">
+              <BrandLogo 
+                variant="full" 
                 alt="S.A.F.E House" 
-                className="h-14 w-auto object-contain -my-3 transition-all duration-300 group-hover:brightness-110 group-hover:drop-shadow-[0_0_8px_rgba(212,149,106,0.5)] sm:h-20 sm:-my-5 md:h-24 md:-my-6"
+                className="h-8 w-auto sm:h-9 md:h-10 transition-all duration-300 group-hover:brightness-110"
               />
             </div>
             <div className="hidden sm:flex flex-col justify-center border-l border-white/10 pl-3 leading-tight">
@@ -362,6 +363,9 @@ export default function LandingPage() {
                   {link.label}
                 </button>
               ))}
+              <div className="mt-1 flex items-center justify-between border-t border-white/10 px-2 pt-2">
+                <LanguageSelector />
+              </div>
               <button
                 type="button"
                 onClick={() => navigate('/app')}

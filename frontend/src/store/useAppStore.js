@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { generateBattleReport, generateNarrative, runAudit } from '../services/api';
+import { generateProceduralNarrative } from '../lib/proceduralNarrative';
 import { STADIA_MAPS_ENABLED } from '../lib/constants';
 import { MAP_OVERLAY_KEYS } from '../lib/hazardOverlay';
 
@@ -63,6 +64,7 @@ export const useAppStore = create(
       leftPanelOpen: true,
       cmdPaletteOpen: false,
       chatExpanded: false,
+      chatDockDismissed: false,
       mapLayersOpen: false,
       simulatedPga: null,
       battleReportContent: null,
@@ -159,7 +161,13 @@ export const useAppStore = create(
       cancelPendingAudit: () => set({ pendingAudit: null }),
       setSimulatedPga: (v) => set({ simulatedPga: v }),
       setBaseMapStyle: (style) => set({ baseMapStyle: style }),
-      setChatExpanded: (chatExpanded) => set({ chatExpanded }),
+      setChatExpanded: (chatExpanded) =>
+        set({
+          chatExpanded: Boolean(chatExpanded),
+          ...(chatExpanded ? { chatDockDismissed: false } : {}),
+        }),
+      setChatDockDismissed: (chatDockDismissed) =>
+        set({ chatDockDismissed: Boolean(chatDockDismissed) }),
       setOverlayStatus: (key, status) =>
         set((s) => (
           Object.prototype.hasOwnProperty.call(s.overlayStatuses, key)
@@ -354,15 +362,13 @@ export const useAppStore = create(
               .catch((error) => {
                 if (abortController.signal.aborted) return;
                 if (get().currentAiAbortController !== abortController) return;
+                const fallbackNarrative = generateProceduralNarrative(data, lang);
                 set((state) => ({
                   propertyA: state.propertyA
                     ? {
                         ...state.propertyA,
-                        aiReport: {
-                          aiError: true,
-                          reportLoading: false,
-                          errorMessage: error.message,
-                        },
+                        aiReport: fallbackNarrative,
+                        narrative: fallbackNarrative,
                       }
                     : state.propertyA,
                   aiLoading: false,

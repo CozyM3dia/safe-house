@@ -10,7 +10,7 @@ const languages = [
   { code: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
 ];
 
-export function LanguageSelector() {
+export function LanguageSelector({ className }) {
   const lang = useAppStore((s) => s.lang);
   const setLang = useAppStore((s) => s.setLang);
   const t = useT();
@@ -39,7 +39,7 @@ export function LanguageSelector() {
   }, []);
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className={cn("relative inline-flex items-center text-left", className)} ref={dropdownRef}>
       {/* Trigger Button */}
       <motion.button
         type="button"
@@ -50,7 +50,7 @@ export function LanguageSelector() {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-full border px-1.5 py-2 text-xs font-medium transition-all duration-200 sm:min-h-8 sm:min-w-0 sm:justify-start sm:gap-2 sm:px-3.5",
+          "flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:px-3",
           open 
             ? "border-accent/45 bg-white/10 text-text-primary shadow-[0_0_0_3px_rgba(212,149,106,0.08)]"
             : "border-white/10 bg-bg-elevated/80 text-text-secondary hover:border-accent/35 hover:bg-white/10 hover:text-text-primary"
@@ -59,7 +59,7 @@ export function LanguageSelector() {
         <span aria-hidden="true" className="text-sm leading-none">{selected.flag}</span>
         <span className="hidden sm:inline">{selected.label}</span>
         <ChevronDown 
-          size={14}
+          size={13}
           aria-hidden="true"
           className={cn("text-text-muted transition-transform duration-200", open && "rotate-180")}
         />
@@ -76,7 +76,7 @@ export function LanguageSelector() {
             role="menu"
             aria-label={t('accessibility.languageOptions')}
             className={cn(
-              "absolute right-0 mt-2 z-50 w-48 overflow-hidden rounded-xl border border-white/10",
+              "absolute right-0 top-[calc(100%+0.5rem)] z-50 w-48 overflow-hidden rounded-xl border border-white/10",
               "bg-bg-elevated/95 shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl"
             )}
           >
