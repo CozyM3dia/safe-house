@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { adaptAuditResult } from '../services/auditAdapter.js';
+import { ensureLogo, drawLogo } from './brandLogo.js';
 
 // ── Color tokens ──────────────────────────────────────────────
 const C = {
@@ -16,6 +17,7 @@ const C = {
   violet: [168, 85, 247],
   white: [255, 255, 255],
 };
+
 
 function riskHex(score) {
   if (score >= 70) return C.safe;
@@ -193,15 +195,17 @@ function drawCoverPage(pdf, property, score, lang) {
   setColor(pdf, C.accent);
   pdf.text(lang === 'en' ? 'OFFICIAL RISK AUDIT' : 'LAPORAN AUDIT RESMI', W / 2, 20.2, { align: 'center' });
 
-  // Logo text
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  setColor(pdf, C.accent);
-  pdf.text('S.A.F.E HOUSE', W / 2, 40, { align: 'center' });
+  // Logo resmi (jatuh ke wordmark teks bila gambar gagal dimuat)
+  if (drawLogo(pdf, W / 2, 30, 62) === null) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    setColor(pdf, C.accent);
+    pdf.text('S.A.F.E HOUSE', W / 2, 40, { align: 'center' });
 
-  pdf.setFontSize(7);
-  setColor(pdf, C.textMuted);
-  pdf.text('GEOPHYSICS CORE', W / 2, 47, { align: 'center' });
+    pdf.setFontSize(7);
+    setColor(pdf, C.textMuted);
+    pdf.text('GEOPHYSICS CORE', W / 2, 47, { align: 'center' });
+  }
 
   // Separator
   pdf.setDrawColor(...C.accent);
@@ -1267,11 +1271,13 @@ function drawPageHeader(pdf, W, title) {
   pdf.setFillColor(...C.accent);
   pdf.rect(0, 0, W, 2, 'F');
 
-  // Left: logo text
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.accent);
-  pdf.text('S.A.F.E House', 18, 14);
+  // Kiri: logo resmi, dengan wordmark teks sebagai cadangan
+  if (drawLogo(pdf, 18 + 14, 8, 28) === null) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    setColor(pdf, C.accent);
+    pdf.text('S.A.F.E House', 18, 14);
+  }
 
   // Right: page title
   pdf.setFont('helvetica', 'normal');
@@ -1325,6 +1331,7 @@ export function createAuditPdf(property, lang = 'id') {
 }
 
 export async function exportPrintReadyPdf(property, lang = 'id') {
+  await ensureLogo();
   const pdf = createAuditPdf(property, lang);
   const normalized = normalizePdfProperty(property);
 
@@ -1343,14 +1350,17 @@ function drawBattleCoverPage(pdf, propA, propB, scoreA, scoreB, lang) {
   pdf.setFillColor(...C.accent);
   pdf.rect(0, 0, W, 3, 'F');
 
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  setColor(pdf, C.accent);
-  pdf.text('S.A.F.E HOUSE', W / 2, 40, { align: 'center' });
+  if (drawLogo(pdf, W / 2, 30, 62) === null) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    setColor(pdf, C.accent);
+    pdf.text('S.A.F.E HOUSE', W / 2, 40, { align: 'center' });
+  }
 
+  pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(7);
   setColor(pdf, C.textMuted);
-  pdf.text('GEOPHYSICS BATTLE MODE', W / 2, 47, { align: 'center' });
+  pdf.text(lang === 'en' ? 'COMPARE MODE' : 'MODE BANDINGKAN', W / 2, 47, { align: 'center' });
 
   pdf.setDrawColor(...C.accent);
   pdf.setLineWidth(0.3);
@@ -1361,7 +1371,7 @@ function drawBattleCoverPage(pdf, propA, propB, scoreA, scoreB, lang) {
   pdf.text(lang === 'en' ? 'Property Risk' : 'Risiko Properti', W / 2, 80, { align: 'center' });
   pdf.setFontSize(28);
   setColor(pdf, C.accent);
-  pdf.text('BATTLE REPORT', W / 2, 92, { align: 'center' });
+  pdf.text(lang === 'en' ? 'Comparison Report' : 'Laporan Perbandingan', W / 2, 92, { align: 'center' });
 
   const radius = 24;
   const cy = 145;
@@ -1555,6 +1565,8 @@ export async function exportBattlePdf(propA, propB, battleReport, lang = 'id') {
   ) {
     throw new Error('PDF battle belum tersedia: kedua audit dan laporan AI harus selesai.');
   }
+
+  await ensureLogo();
 
   const scoreA = computeScore(propA);
   const scoreB = computeScore(propB);

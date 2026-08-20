@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { ensureLogo, drawLogoOnPlate } from './brandLogo.js';
 import autoTable from 'jspdf-autotable';
 import {
   riskLabel, formatNum, reportNumber, siteClassDescription,
@@ -131,11 +132,21 @@ function renderCover(doc, property, ctx, score) {
   // Pita atas
   doc.setFillColor(...STRUCT).rect(0, 0, PAGE.w, 4, 'F');
 
-  // Wordmark
-  doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(...STRUCT);
-  doc.text('S.A.F.E HOUSE', PAGE.m, 30);
+  // Logo resmi. Dokumen ini berlatar putih sementara logo berwarna krem,
+  // jadi logo ditaruh di atas plat gelap agar tetap terbaca.
+  const plateH = drawLogoOnPlate(doc, PAGE.m, 20, 42, STRUCT);
+  if (plateH === null) {
+    doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(...STRUCT);
+    doc.text('S.A.F.E HOUSE', PAGE.m, 30);
+  }
+  // "Spatial Analyst for Flood & Environment" adalah kepanjangan karangan;
+  // seluruh permukaan lain memakai kepanjangan resmi di bawah ini.
   doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED);
-  doc.text('Spatial Analyst for Flood & Environment', PAGE.m, 34.5);
+  doc.text(
+    'Seismic Analysis for Foundation Evaluation',
+    PAGE.m,
+    plateH === null ? 34.5 : 20 + plateH + 4.5
+  );
 
   // Judul
   doc.setFont('helvetica', 'bold').setFontSize(23).setTextColor(...INK);
@@ -344,6 +355,7 @@ export function buildReportDoc(property, lang = 'id') {
 }
 
 export async function exportProfessionalReport(property, lang = 'id') {
+  await ensureLogo();
   const doc = buildReportDoc(property, lang);
   doc.save(`Laporan-SAFE-${slugify(property.address)}.pdf`);
 }
