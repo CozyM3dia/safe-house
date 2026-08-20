@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { riskHex, riskLabel } from '../../lib/utils';
+import { useT } from '../../hooks/useTranslation';
 
 function computeScore(p) {
   // Backend adalah sumber kebenaran. Skor sudah dihitung deterministik di
@@ -122,6 +123,7 @@ function ArcGauge({ score, hex, size = 140 }) {
 }
 
 export function SafeScoreCard({ property }) {
+  const t = useT();
   const rawScore = useMemo(() => computeScore(property), [property]);
   const hasScore = Number.isFinite(rawScore);
   const score = hasScore ? rawScore : 0;
@@ -204,11 +206,11 @@ export function SafeScoreCard({ property }) {
 
           {/* Mini risk breakdown */}
           <div className="space-y-1.5">
-            <MiniBar label="Seismic" value={property?.hazard?.radar?.seismic ?? 0} />
-            <MiniBar label="Flood" value={property?.hazard?.radar?.flood ?? 0} />
-            <MiniBar label="Soil" value={property?.hazard?.radar?.soil ?? 0} />
-            <MiniBar label="Landslide" value={property?.hazard?.radar?.landslide ?? 0} />
-            <MiniBar label="Subsidence" value={property?.hazard?.radar?.subsidence ?? 50} />
+            <MiniBar label={t('axis.seismic')} value={property?.hazard?.radar?.seismic ?? 0} />
+            <MiniBar label={t('axis.flood')} value={property?.hazard?.radar?.flood ?? 0} />
+            <MiniBar label={t('axis.soil')} value={property?.hazard?.radar?.soil ?? 0} />
+            <MiniBar label={t('axis.landslide')} value={property?.hazard?.radar?.landslide ?? 0} />
+            <MiniBar label={t('axis.subsidence')} value={property?.hazard?.radar?.subsidence ?? 50} />
           </div>
         </div>
       </div>

@@ -166,6 +166,16 @@ const translations = {
   'card.stable': { id: 'Stabil', en: 'Stable' },
   'card.lowFlood': { id: 'Rendah — rawan banjir', en: 'Low — flood prone' },
   'card.standard': { id: 'Standar', en: 'Standard' },
+  'card.highShaking': { id: 'Guncangan tinggi', en: 'High shaking' },
+  'card.elevation2': { id: 'Elevasi', en: 'Elevation' },
+  'card.liqFs': { id: 'FS Likuefaksi', en: 'Liq. FS' },
+  'panel.technicalMetrics': { id: 'Metrik Teknis', en: 'Technical Metrics' },
+  'panel.riskAnalysis': { id: 'Analisis Risiko', en: 'Risk Analysis' },
+  'axis.seismic': { id: 'Seismik', en: 'Seismic' },
+  'axis.flood': { id: 'Banjir', en: 'Flood' },
+  'axis.soil': { id: 'Tanah', en: 'Soil' },
+  'axis.landslide': { id: 'Longsor', en: 'Landslide' },
+  'axis.subsidence': { id: 'Penurunan', en: 'Subsidence' },
 
   // ─── Kartu Bandingkan ───────────────────────────────────────────
   'battle.setup': { id: 'Siapkan Perbandingan', en: 'Set Up Comparison' },

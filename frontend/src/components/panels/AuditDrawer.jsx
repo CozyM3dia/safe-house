@@ -597,7 +597,7 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
       <button
         type="button"
         aria-expanded={expanded}
-        aria-label={`${expanded ? 'Collapse' : 'Expand'} ${title}`}
+        aria-label={`${expanded ? 'Tutup' : 'Buka'} ${title}`}
         onClick={() => setExpanded(!expanded)}
         className={`flex w-full items-center justify-between px-5 py-4.5 text-left transition-all duration-300 ${
           expanded ? 'bg-white/[0.03]' : 'hover:bg-white/[0.02]'
@@ -613,11 +613,6 @@ function SectionCard({ title, content, defaultExpanded = false, property }) {
             <h3 className="font-display text-xs font-bold tracking-wider text-text-primary uppercase">
               {title}
             </h3>
-            {isImportant && (
-              <span className="inline-block mt-0.5 text-[8px] font-mono text-amber-400 font-bold tracking-widest">
-                • CORE REPORT FINDINGS
-              </span>
-            )}
           </div>
         </div>
         <div className={`transition-transform duration-300 ${expanded ? 'rotate-180 text-accent' : 'text-text-muted'}`}>
@@ -841,7 +836,7 @@ export function AuditDrawer() {
                 <div className="mb-6 rounded-lg border border-risk-moderate/25 bg-risk-moderate/5 px-3 py-2 text-[11px] text-risk-moderate relative z-10">
                   Audit {propertyA.audit_status}.
                   {propertyA.data_quality?.optional_missing?.length > 0 && (
-                    <> Layer belum tersedia: {propertyA.data_quality.optional_missing.join(', ')}.</>
+                    <> Layer belum tersedia: {propertyA.data_quality.optional_missing.map((name) => COVERAGE_LABELS[name] || name).join(', ')}.</>
                   )}
                 </div>
               )}
@@ -1066,6 +1061,8 @@ const COVERAGE_LABELS = {
   liquefaction_map: 'Peta likuefaksi InaRISK',
   volcanic_map: 'Peta letusan gunungapi InaRISK',
   coastal_map: 'Peta abrasi/gelombang InaRISK',
+  official_vs30_grid: 'Grid Vs30 resmi',
+  official_pga_grid: 'Grid PGA resmi',
 };
 
 function DataCoverageSummary({ property }) {

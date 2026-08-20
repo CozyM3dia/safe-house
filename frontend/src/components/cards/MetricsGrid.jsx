@@ -2,9 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Mountain, Activity, Droplets, Waves } from 'lucide-react';
 import { siteClass } from '../../lib/formatters';
+import { useT } from '../../hooks/useTranslation';
 
 // Membaca AuditResult langsung: geotech + hazard.radar + elevation.
-const metrics = (p) => {
+const metrics = (p, t) => {
   const g = p?.geotech || {};
   const soil = p?.hazard?.radar?.soil ?? 0;
   const vs30 = g.vs30 ?? 0;
@@ -29,28 +30,28 @@ const metrics = (p) => {
       value: pga,
       suffix: 'g',
       decimals: 2,
-      sub: pga >= 0.5 ? 'High shaking' : 'Peak accel.',
+      sub: pga >= 0.5 ? t('card.highShaking') : t('card.peakAccel'),
       icon: Activity,
       color: '#f59e0b',
       indicator: Math.min(100, pga * 100),
     },
     {
-      label: 'Liq. FS',
+      label: t('card.liqFs'),
       // FS likuefaksi langsung dari engine, bukan diturunkan dari skor.
       value: fs,
       suffix: '',
       decimals: 2,
-      sub: soil > 60 ? 'High risk' : 'Stable',
+      sub: soil > 60 ? t('card.highRisk') : t('card.stable'),
       icon: Waves,
       color: soil > 60 ? '#ef4444' : '#10b981',
       indicator: Math.max(0, 100 - soil),
     },
     {
-      label: 'Elevation',
+      label: t('card.elevation2'),
       value: elevation,
       suffix: ' m',
       decimals: 0,
-      sub: elevation < 10 ? 'Flood prone' : 'Standard',
+      sub: elevation < 10 ? t('card.lowFlood') : t('card.standard'),
       icon: Droplets,
       color: elevation < 10 ? '#ef4444' : '#a78bfa',
       indicator: Math.min(100, (elevation / 200) * 100),
@@ -129,7 +130,8 @@ function MetricTile({ m, delay = 0 }) {
 }
 
 export function MetricsGrid({ property }) {
-  const data = metrics(property);
+  const t = useT();
+  const data = metrics(property, t);
   return (
     <div className="grid grid-cols-2 gap-2">
       {data.map((m, i) => (

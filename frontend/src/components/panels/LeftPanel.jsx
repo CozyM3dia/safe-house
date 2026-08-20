@@ -353,13 +353,13 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
 
       {/* Metrics section */}
       <motion.div variants={item}>
-        <SectionLabel>Technical Metrics</SectionLabel>
+        <SectionLabel>{t('panel.technicalMetrics')}</SectionLabel>
         <MetricsGrid property={propertyA} />
       </motion.div>
 
       {/* Analysis section */}
       <motion.div variants={item}>
-        <SectionLabel>Risk Analysis</SectionLabel>
+        <SectionLabel>{t('panel.riskAnalysis')}</SectionLabel>
         <RadarCard propertyA={propertyA} />
       </motion.div>
 
