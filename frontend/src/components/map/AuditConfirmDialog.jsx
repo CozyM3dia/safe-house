@@ -43,7 +43,7 @@ export function AuditConfirmDialog() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={cancelPendingAudit}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="absolute inset-0 bg-bg/80 backdrop-blur-md"
           />
 
           {/* Modal Card */}

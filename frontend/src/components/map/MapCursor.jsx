@@ -103,14 +103,14 @@ export function MapCursor() {
             className="absolute -left-[12px] -top-[12px] h-[24px] w-[24px]"
           >
             {/* ── Subtle low-profile ring ── */}
-            <div className="absolute inset-[2px] rounded-full border border-black/70 drop-shadow-[0_0_1px_#ffffff]" />
+            <div className="absolute inset-[2px] rounded-full border border-bg/80 drop-shadow-[0_0_1px_#f0e4cc]" />
 
             {/* ── Precision center dot ── */}
-            <div className="absolute left-1/2 top-1/2 h-[3.5px] w-[3.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black ring-1 ring-white shadow-sm" />
+            <div className="absolute left-1/2 top-1/2 h-[3.5px] w-[3.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-bg ring-1 ring-text-primary shadow-sm" />
 
             {/* ── Sleek low-profile coordinate pill ── */}
             {coords && (
-              <div className="absolute left-[16px] top-[14px] flex items-center gap-1 whitespace-nowrap rounded border border-white/20 bg-black/90 px-1.5 py-0.5 shadow-md backdrop-blur-md">
+              <div className="absolute left-[16px] top-[14px] flex items-center gap-1 whitespace-nowrap rounded border border-white/20 bg-bg/90 px-1.5 py-0.5 shadow-md backdrop-blur-md">
                 <span className="h-1 w-1 rounded-full bg-accent animate-pulse" />
                 {targetSlot && (
                   <span className="rounded-sm bg-accent px-1 text-[8px] font-bold uppercase tracking-wide text-bg">

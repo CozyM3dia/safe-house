@@ -246,7 +246,7 @@ export function ChatbotFab() {
             <Sparkles className="h-4 w-4 text-accent" />
           </div>
           <div className="leading-none">
-            <p className="text-sm font-bold bg-gradient-to-r from-accent via-[#f0e4cc] to-accent bg-clip-text text-transparent flex items-center gap-1.5 font-display tracking-tight">
+            <p className="flex items-center gap-1.5 text-sm font-bold text-text-primary font-display tracking-tight">
               <span>S.A.F.E AI</span>
               <span className="bg-accent/10 border border-accent/25 rounded-md px-1.5 py-0.5 text-[8px] font-mono font-bold text-accent tracking-wider">AUDIT-GROUNDED</span>
             </p>
@@ -305,9 +305,9 @@ export function ChatbotFab() {
         {loading && (
           <div className="flex items-center gap-2.5 text-xs text-text-muted py-1 pl-1">
             <span className="flex gap-1">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{ animationDelay: '0ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{ animationDelay: '120ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{ animationDelay: '240ms' }} />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '0ms' }} />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '120ms' }} />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" style={{ animationDelay: '240ms' }} />
             </span>
             <span className="font-mono text-[9px] tracking-wider uppercase text-accent/80">
               {lang === 'en' ? 'CHECKING AUDIT DATA...' : 'MEMERIKSA DATA AUDIT...'}
@@ -429,7 +429,7 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
                     <strong className="text-text-primary font-bold">{children}</strong>
                   ),
                   code: ({ children }) => (
-                    <code className="rounded bg-black/35 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+                    <code className="rounded bg-bg/35 px-1.5 py-0.5 font-mono text-[10px] text-accent">
                       {children}
                     </code>
                   ),

@@ -131,7 +131,7 @@ function SeismicVisual({ property }) {
             {faultDist.toFixed(1)} km
           </span>
         </div>
-        <div className="flex items-center gap-2 bg-black/25 rounded-xl px-3 py-2 border border-white/5">
+        <div className="flex items-center gap-2 bg-bg/25 rounded-xl px-3 py-2 border border-white/5">
           <span className="text-[8.5px] font-extrabold text-red-400 font-mono shrink-0">SESAR</span>
           <div className="flex-1 relative h-3 flex items-center">
             {/* Dotted horizontal line */}
@@ -171,7 +171,7 @@ function EnvironmentVisual({ property }) {
           <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">Ketinggian vs Level Banjir Rob</span>
           <span className="text-[11px] font-mono font-bold text-accent">{elevasi} mdpl</span>
         </div>
-        <div className="flex items-end gap-3 h-10 pb-1.5 relative border-b border-white/10 px-1 bg-black/15 rounded-xl border border-white/5 pt-2">
+        <div className="flex items-end gap-3 h-10 pb-1.5 relative border-b border-white/10 px-1 bg-bg/15 rounded-xl border border-white/5 pt-2">
           {/* Sea */}
           <div className="w-1/4 h-2 bg-blue-500/30 border-t border-blue-400 rounded-l text-center text-[7px] text-blue-300 font-mono font-bold pt-0.5 leading-none">LAUT</div>
           {/* Coastal flat */}
@@ -434,20 +434,20 @@ function MitigationCard({ item }) {
   const { title, action, why, cost, priority } = item;
   const p = priority.toLowerCase();
   let priorityLabel = priority;
-  let priorityStyle = 'border-l-4 border-l-gray-500/80 bg-gray-500/[0.02] border-white/8';
+  let priorityStyle = 'bg-gray-500/[0.02] border-white/8';
   let badgeColor = 'secondary';
   
   if (p.includes('wajib') || p.includes('required') || p.includes('high') || p.includes('urgent')) {
     priorityLabel = priority.includes('wajib') ? 'WAJIB' : 'REQUIRED';
-    priorityStyle = 'border-l-4 border-l-risk-danger bg-risk-danger/[0.02] border-risk-danger/20';
+    priorityStyle = 'bg-risk-danger/[0.02] border-risk-danger/20';
     badgeColor = 'danger';
   } else if (p.includes('disarankan') || p.includes('recommended') || p.includes('moderate') || p.includes('medium')) {
     priorityLabel = priority.includes('disarankan') ? 'DISARANKAN' : 'RECOMMENDED';
-    priorityStyle = 'border-l-4 border-l-risk-moderate bg-risk-moderate/[0.02] border-risk-moderate/20';
+    priorityStyle = 'bg-risk-moderate/[0.02] border-risk-moderate/20';
     badgeColor = 'warning';
   } else if (p.includes('jangka panjang') || p.includes('long-term') || p.includes('low') || p.includes('long term')) {
     priorityLabel = priority.includes('jangka') ? 'JANGKA PANJANG' : 'LONG-TERM';
-    priorityStyle = 'border-l-4 border-l-accent bg-accent/[0.02] border-accent/20';
+    priorityStyle = 'bg-accent/[0.02] border-accent/20';
     badgeColor = 'accent';
   }
   
@@ -735,7 +735,7 @@ export function AuditDrawer() {
           aria-hidden="true"
           data-testid="audit-drawer-backdrop"
           onClick={() => setOpen(false)}
-          className="pointer-events-auto fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+          className="pointer-events-auto fixed inset-0 z-30 bg-bg/60 backdrop-blur-sm"
         />
         {/* Keep this control outside the drawer stacking context: the chatbot stays interactive above the report, while close remains above both. */}
         <button
@@ -1191,7 +1191,7 @@ function DataCoverageSummary({ property }) {
       {open && (
       <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
         {entries.map(([key, label, item]) => (
-          <div key={key} className="flex items-center justify-between gap-2 rounded-lg border border-white/6 bg-black/15 px-2 py-1.5">
+          <div key={key} className="flex items-center justify-between gap-2 rounded-lg border border-white/6 bg-bg/15 px-2 py-1.5">
             <span className="truncate text-[9px] text-text-muted">{label}</span>
             <span className={`shrink-0 rounded border px-1 py-0.5 text-[7px] font-bold tracking-wider ${statusClass(item.status)}`}>
               {statusLabel(item.status)}

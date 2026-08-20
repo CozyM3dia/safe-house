@@ -15,7 +15,7 @@ const metrics = (p, t) => {
 
   return [
     {
-      label: 'Vs30',
+      label: t('card.vs30'),
       value: vs30,
       suffix: ' m/s',
       decimals: 0,
@@ -26,7 +26,7 @@ const metrics = (p, t) => {
       indicator: Math.min(100, Math.max(0, ((vs30 || 250) - 100) / 6)),
     },
     {
-      label: 'PGA',
+      label: t('card.pga'),
       value: pga,
       suffix: 'g',
       decimals: 2,
