@@ -1209,24 +1209,33 @@ async def generate_with_fallback(
     }
 
     models_to_try = [
-        (model, "live" if index == 0 else "fallback")
-        for index, model in enumerate(chain)
+        (model, "fallback")
+        for model in chain
     ]
     last_error: Optional[AIServiceError] = None
     openrouter_ready = openrouter_configured()
 
-    for index, (model, delivery_mode) in enumerate(models_to_try):
-        if last_error is not None and last_error.status_code in {401, 403}:
-            if openrouter_ready:
-                # Kunci Gemini ditolak, tapi OpenRouter memakai kunci dan
-                # kuota sendiri — masih layak dicoba sebelum menyerah.
-                log.warning(
-                    "Gemini auth rejected (%s), switching to OpenRouter fallback",
-                    last_error.status_code,
-                )
-                break
-            raise last_error
+    # OpenRouter (ox-alpha) adalah primary — dicoba pertama bila dikonfigurasi.
+    if openrouter_ready:
+        try:
+            or_model = openrouter_model()
+            response = await _post_openrouter_model(gemini_payload, client=client)
+            parsed = _parse_openrouter_json(response)
 
+            meta = AIMetadata(
+                model=f"openrouter/{or_model}",
+                delivery_mode="live",
+                prompt_version=PROMPT_VERSION,
+                generated_at=datetime.now(timezone.utc),
+            )
+            log.info("AI response ok provider=openrouter model=%s delivery=live", or_model)
+            return parsed, meta
+        except AIServiceError as exc:
+            last_error = exc
+            log.warning("OpenRouter primary failed (%s), falling back to Gemini chain", exc.status_code)
+
+    # Gemini chain sebagai fallback.
+    for index, (model, delivery_mode) in enumerate(models_to_try):
         try:
             response = await _post_gemini_model(gemini_payload, model, client=client)
             parsed = _parse_gemini_json(response)
@@ -1245,30 +1254,14 @@ async def generate_with_fallback(
             has_next = index + 1 < len(models_to_try)
             if has_next and exc.status_code not in {401, 403}:
                 log.warning(
-                    "Model %s failed (%s), trying next: %s",
+                    "Gemini %s failed (%s), trying next: %s",
                     model, exc.status_code, models_to_try[index + 1][0],
                 )
             else:
-                log.warning("Model %s failed (%s)", model, exc.status_code)
+                log.warning("Gemini %s failed (%s)", model, exc.status_code)
+            if exc.status_code in {401, 403}:
+                break
             continue
-
-    if openrouter_ready:
-        try:
-            or_model = openrouter_model()
-            response = await _post_openrouter_model(gemini_payload, client=client)
-            parsed = _parse_openrouter_json(response)
-
-            meta = AIMetadata(
-                model=f"openrouter/{or_model}",
-                delivery_mode="fallback",
-                prompt_version=PROMPT_VERSION,
-                generated_at=datetime.now(timezone.utc),
-            )
-            log.info("AI response ok provider=openrouter model=%s delivery=fallback", or_model)
-            return parsed, meta
-        except AIServiceError as exc:
-            last_error = exc
-            log.warning("OpenRouter fallback failed (%s)", exc.status_code)
 
     if last_error is not None:
         raise last_error
