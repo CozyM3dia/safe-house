@@ -1,0 +1,303 @@
+.sw-root {
+  --sw-safe: #10b981;
+  --sw-moderate: #f59e0b;
+  --sw-danger: #ef4444;
+  --sw-status: var(--sw-safe);
+
+  --sw-grid: rgba(255, 210, 170, 0.07);
+  --sw-grid-strong: rgba(255, 210, 170, 0.16);
+  --sw-baseline: rgba(255, 210, 170, 0.24);
+  --sw-frame: rgba(255, 210, 170, 0.2);
+  --sw-mark: #d4956a;
+}
+
+.sw-root[data-tone='moderate'] {
+  --sw-status: var(--sw-moderate);
+}
+
+.sw-root[data-tone='danger'] {
+  --sw-status: var(--sw-danger);
+}
+
+html[data-theme='light'] .sw-root {
+  --sw-safe: #059669;
+  --sw-moderate: #b45309;
+  --sw-danger: #dc2626;
+  --sw-grid: rgba(61, 42, 26, 0.14);
+  --sw-grid-strong: rgba(61, 42, 26, 0.26);
+  --sw-baseline: rgba(61, 42, 26, 0.34);
+  --sw-frame: rgba(61, 42, 26, 0.28);
+  --sw-mark: #8f5630;
+}
+
+.sw-readout-label {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.24em;
+  color: hsl(var(--safe-text-muted));
+  margin-bottom: 3px;
+}
+
+.sw-readout-value {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--sw-status);
+  transition: color 0.3s ease;
+}
+
+.sw-readout-unit {
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 1px;
+  color: hsl(var(--safe-text-secondary));
+}
+
+.sw-readout-cat {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 7px;
+  line-height: 1;
+  letter-spacing: 0.3em;
+  margin-top: 4px;
+  color: hsl(var(--safe-text-muted));
+}
+
+.sw-reg {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 0 solid var(--sw-frame);
+  pointer-events: none;
+}
+
+.sw-reg-tl {
+  top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.sw-reg-tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+
+.sw-reg-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.sw-reg-br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+.sw-tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  transform: translateY(-50%);
+}
+
+.sw-tick-label {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--safe-text-muted));
+}
+
+.sw-tick-dash {
+  width: 5px;
+  height: 1px;
+  background: var(--sw-grid-strong);
+}
+
+.sw-tick-zero .sw-tick-label {
+  color: hsl(var(--safe-text-secondary));
+}
+
+.sw-tick-zero .sw-tick-dash {
+  width: 9px;
+  background: var(--sw-baseline);
+}
+
+.sw-gl {
+  stroke: var(--sw-grid);
+}
+
+.sw-base {
+  stroke: var(--sw-baseline);
+}
+
+.sw-marker-dash {
+  stroke: var(--sw-mark);
+}
+
+.sw-marker-cap {
+  stroke: var(--sw-mark);
+}
+
+.sw-trace-halo,
+.sw-trace-glow,
+.sw-trace-core {
+  stroke: var(--sw-status);
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: stroke 0.3s ease;
+}
+
+.sw-phase {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  color: hsl(var(--safe-text-muted));
+}
+
+.sw-phase::after {
+  content: '';
+  width: 1px;
+  height: 5px;
+  background: var(--sw-grid-strong);
+}
+
+.sw-node {
+  position: absolute;
+  top: 11px;
+  width: 5px;
+  height: 5px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: hsl(var(--safe-bg-surface));
+  border: 1px solid var(--sw-mark);
+}
+
+.sw-fault-tag {
+  position: absolute;
+  top: 17px;
+  display: flex;
+  align-items: center;
+  max-width: 74%;
+  padding: 2px 7px;
+  border-left: 1px solid var(--sw-mark);
+  background: hsl(var(--safe-bg-surface) / 0.78);
+  backdrop-filter: blur(2px);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8px;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: hsl(var(--safe-text-secondary));
+}
+
+.sw-fault-tag > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sw-fault-tag-flip {
+  border-left: 0;
+  border-right: 1px solid var(--sw-mark);
+}
+
+.sw-sweep-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sw-sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--sw-status) 30%,
+    var(--sw-status) 70%,
+    transparent
+  );
+  box-shadow: 0 0 6px var(--sw-status);
+  opacity: 0.9;
+}
+
+.sw-time-tick {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transform: translateX(-50%);
+}
+
+.sw-time-tick-first {
+  transform: none;
+  align-items: flex-start;
+}
+
+.sw-time-tick-last {
+  transform: translateX(-100%);
+  align-items: flex-end;
+}
+
+.sw-time-dash {
+  width: 1px;
+  height: 3px;
+  background: var(--sw-grid-strong);
+}
+
+.sw-time-label {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8px;
+  line-height: 1;
+  color: hsl(var(--safe-text-muted));
+}
+
+.sw-src {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 7.5px;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  color: hsl(var(--safe-text-muted));
+}
+
+.sw-fig {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 7.5px;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  color: hsl(var(--safe-text-secondary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-sweep-wrap {
+    display: none;
+  }
+}

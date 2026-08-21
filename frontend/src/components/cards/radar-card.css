@@ -1,0 +1,253 @@
+.rcard-scope {
+  --rc-grid: rgba(255, 210, 170, 0.13);
+  --rc-ring-strong: rgba(255, 210, 170, 0.24);
+  --rc-spoke: rgba(255, 210, 170, 0.1);
+  --rc-spoke-hot: rgba(212, 149, 106, 0.85);
+  --rc-tick-ink: rgba(236, 226, 211, 0.45);
+  --rc-name-ink: rgba(240, 230, 212, 0.92);
+  --rc-val-ink: rgba(236, 226, 211, 0.55);
+  --rc-a: #d4956a;
+  --rc-b: #6ea8d4;
+  --rc-halo: rgba(212, 149, 106, 0.35);
+  --rc-center: rgba(255, 210, 170, 0.28);
+  --rc-reg-mark: rgba(212, 149, 106, 0.55);
+}
+
+html[data-theme='light'] .rcard-scope {
+  --rc-grid: rgba(61, 42, 26, 0.14);
+  --rc-ring-strong: rgba(61, 42, 26, 0.28);
+  --rc-spoke: rgba(61, 42, 26, 0.12);
+  --rc-spoke-hot: rgba(146, 89, 48, 0.9);
+  --rc-tick-ink: rgba(61, 42, 26, 0.55);
+  --rc-name-ink: #3d2a1a;
+  --rc-val-ink: rgba(61, 42, 26, 0.66);
+  --rc-a: #a86a3f;
+  --rc-b: #3e7ca8;
+  --rc-halo: rgba(168, 106, 63, 0.35);
+  --rc-center: rgba(61, 42, 26, 0.3);
+  --rc-reg-mark: rgba(122, 82, 50, 0.55);
+}
+
+.rc-ring {
+  fill: none;
+  stroke: var(--rc-grid);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+
+.rc-ring-outer {
+  stroke: var(--rc-ring-strong);
+  stroke-dasharray: none;
+}
+
+.rc-spoke {
+  stroke: var(--rc-spoke);
+  stroke-width: 1;
+}
+
+.rc-spoke-hot {
+  stroke: var(--rc-spoke-hot);
+}
+
+.rc-tick-dash {
+  stroke: var(--rc-tick-ink);
+  stroke-width: 1;
+}
+
+.rc-tick-num {
+  fill: var(--rc-tick-ink);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.rc-center-mark {
+  stroke: var(--rc-center);
+  stroke-width: 1;
+}
+
+.rc-axis-name {
+  fill: var(--rc-name-ink);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  transition: fill 0.25s ease;
+}
+
+.rc-axis-val {
+  fill: var(--rc-val-ink);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  transition: fill 0.25s ease;
+}
+
+.rc-axis-val-max {
+  fill: var(--rc-a);
+  font-weight: 700;
+}
+
+.rc-axis-name-hot {
+  fill: var(--rc-a);
+}
+
+.rc-axis-val-hot {
+  fill: var(--rc-a);
+}
+
+.rc-fade {
+  transition: opacity 0.25s ease;
+}
+
+.rc-is-dim {
+  opacity: 0.3;
+}
+
+.rc-poly-a {
+  stroke: var(--rc-a);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.rc-poly-b {
+  stroke: var(--rc-b);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.rc-grad-stop-a-top {
+  stop-color: var(--rc-a);
+  stop-opacity: 0.16;
+}
+
+.rc-grad-stop-a-bottom {
+  stop-color: var(--rc-a);
+  stop-opacity: 0.04;
+}
+
+.rc-grad-stop-b-top {
+  stop-color: var(--rc-b);
+  stop-opacity: 0.13;
+}
+
+.rc-grad-stop-b-bottom {
+  stop-color: var(--rc-b);
+  stop-opacity: 0.03;
+}
+
+.rc-dot-a {
+  fill: var(--rc-a);
+}
+
+.rc-dot-b {
+  fill: var(--rc-b);
+}
+
+.rc-dot-halo {
+  fill: none;
+  stroke: var(--rc-halo);
+  stroke-width: 1;
+}
+
+.rc-sector {
+  fill: transparent;
+  cursor: crosshair;
+  outline: none;
+}
+
+.rc-grow {
+  transform-box: view-box;
+  transform-origin: 172px 136px;
+}
+
+.rc-reg {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 0 solid var(--rc-reg-mark);
+  pointer-events: none;
+}
+
+.rc-reg-tl {
+  top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.rc-reg-tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+
+.rc-reg-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.rc-reg-br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+.rc-motto,
+.rc-fig,
+.rc-chip {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 7.5px;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.rc-motto {
+  color: hsl(var(--safe-text-muted));
+}
+
+.rc-fig {
+  color: hsl(var(--safe-text-secondary));
+}
+
+.rc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: hsl(var(--safe-text-muted));
+}
+
+.rc-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.rc-chip-dot-a {
+  background: var(--rc-a);
+}
+
+.rc-chip-dot-b {
+  background: var(--rc-b);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcard-scope *,
+  .rcard-scope *::before,
+  .rcard-scope *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .rc-grow {
+    transform: none !important;
+  }
+}
