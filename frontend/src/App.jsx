@@ -21,6 +21,7 @@ import { isNarrowViewport } from './lib/responsive';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const SharedReport = lazy(() => import('./pages/SharedReport'));
+const ValidationPage = lazy(() => import('./pages/ValidationPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -184,6 +185,14 @@ export default function App() {
           element={
             <Suspense fallback={<RouteSkeleton label="Memuat laporan S.A.F.E House" />}>
               <SharedReport />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/validasi"
+          element={
+            <Suspense fallback={<RouteSkeleton label="Memuat halaman validasi S.A.F.E House" />}>
+              <ValidationPage />
             </Suspense>
           }
         />

@@ -3,7 +3,10 @@
 Satu koordinat masuk, satu laporan risiko lengkap keluar.
 """
 
+import asyncio
 import logging
+import os
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -14,6 +17,7 @@ import db
 from data.constants import INDONESIA_BOUNDS
 from models import AuditRequest, AuditResult
 from services import completeness, external, scoring
+from services import pbg_checklist as pbg
 from services.geotech import geotech_profile
 from services.location import LocationClassification, classify_location
 
@@ -25,6 +29,18 @@ router = APIRouter(prefix="/api", tags=["audit"])
 # laut / luar negeri yang sama ditolak instan tanpa panggilan jaringan lagi.
 _REJECTED_CACHE: dict[tuple[float, float], tuple[str, str]] = {}
 _REJECTED_CACHE_MAX = 1024
+
+# Cache hasil audit sukses per titik (~110 m grid). Engine-nya deterministik,
+# jadi koordinat yang sama dalam jangka pendek tidak perlu mengulang 11+
+# panggilan sumber luar. Data volatil (cuaca/AQI live) hanya menyentuh field
+# lingkungan; TTL membatasi usia staleness-nya.
+_AUDIT_CACHE: dict[tuple[float, float], tuple[float, dict]] = {}
+_AUDIT_CACHE_MAX = 512
+_AUDIT_CACHE_TTL_S = float(os.getenv("AUDIT_CACHE_TTL_SECONDS", "600"))
+
+# Tahan referensi task persist agar tidak dibersihkan GC selesai sebelum
+# INSERT-nya berjalan (pola fire-and-forget asyncio).
+_pending_persist_tasks: set[asyncio.Task] = set()
 
 
 def _within_indonesia(lat: float, lon: float) -> bool:
@@ -42,6 +58,47 @@ def _remember_rejection(key: tuple[float, float], location: LocationClassificati
     _REJECTED_CACHE[key] = (location.status, location.reason)
 
 
+def _audit_cache_get(key: tuple[float, float]) -> Optional[dict]:
+    entry = _AUDIT_CACHE.get(key)
+    if entry is None:
+        return None
+    stored_at, payload = entry
+    if time.monotonic() - stored_at > _AUDIT_CACHE_TTL_S:
+        _AUDIT_CACHE.pop(key, None)
+        return None
+    return payload
+
+
+def _audit_cache_store(key: tuple[float, float], payload: dict) -> None:
+    if len(_AUDIT_CACHE) >= _AUDIT_CACHE_MAX:
+        _AUDIT_CACHE.pop(next(iter(_AUDIT_CACHE)))
+    _AUDIT_CACHE[key] = (time.monotonic(), payload)
+
+
+def _spawn_persist(pool: Any, audit_id: str, lat: float, lon: float, document: dict) -> None:
+    """Tulis audit ke DB tanpa membuat pengguna menunggu round-trip Supabase.
+
+    ID sudah dibuat aplikasi sehingga respons tetap membawa id/persisted;
+    kegagalan tulis hanya dicatat — penyimpanan memang bersifat toleran gagal.
+    """
+
+    async def _insert() -> None:
+        try:
+            await pool.execute(
+                "INSERT INTO audits (id, lat, lon, data) VALUES ($1, $2, $3, $4)",
+                uuid.UUID(audit_id),
+                lat,
+                lon,
+                document,
+            )
+        except Exception as exc:  # noqa: BLE001 — gagal simpan tidak boleh menggagalkan audit
+            log.warning("Audit tidak tersimpan: %s", exc)
+
+    task = asyncio.create_task(_insert())
+    _pending_persist_tasks.add(task)
+    task.add_done_callback(_pending_persist_tasks.discard)
+
+
 def _raise_for_location(location: LocationClassification) -> None:
     if location.status == "out_of_scope":
         raise HTTPException(status_code=422, detail=location.reason)
@@ -54,12 +111,13 @@ def _raise_for_location(location: LocationClassification) -> None:
         raise HTTPException(status_code=503, detail=location.reason)
 
 
-async def _preflight_gate(lat: float, lon: float) -> dict:
+async def _preflight_gate(lat: float, lon: float) -> tuple[dict, Optional[float], LocationClassification]:
     """Tolak cepat koordinat perairan / luar Indonesia sebelum audit penuh.
 
     Hanya satu panggilan geocode + elevasi; sumber audit lain tidak disentuh.
     `insufficient_data` sengaja tidak di-cache karena bisa jadi geocoder yang
-    sedang gagal, bukan lokasinya yang bermasalah.
+    sedang gagal, bukan lokasinya yang bermasalah. Klasifikasi gerbang
+    dikembalikan agar tidak dihitung ulang setelah fetch (item ray-casting).
     """
     key = _cache_key(lat, lon)
     cached = _REJECTED_CACHE.get(key)
@@ -74,7 +132,7 @@ async def _preflight_gate(lat: float, lon: float) -> dict:
         if location.status != "insufficient_data":
             _remember_rejection(key, location)
         _raise_for_location(location)
-    return geocode
+    return geocode, elevation, location
 
 
 def _extract_elevation(weather: Optional[dict]) -> Optional[float]:
@@ -159,10 +217,19 @@ async def create_audit(req: AuditRequest) -> AuditResult:
             detail="Lokasi di luar cakupan data Indonesia",
         )
 
+    # Audit koordinat yang sama dalam jendela TTL dijawab instan dari memori —
+    # skor, geoteknik, dan kelas bahaya deterministik, jadi hasilnya identik.
+    key = _cache_key(req.lat, req.lon)
+    cached_payload = _audit_cache_get(key)
+    if cached_payload is not None:
+        return AuditResult.model_validate(cached_payload)
+
     # Gerbang tolak-cepat: laut / luar negeri ditolak di sini, sebelum
     # seluruh sumber data dipanggil. Geocode-nya dipakai ulang agar
     # Nominatim tidak dihubungi dua kali untuk audit yang valid.
-    prefetched_geocode = await _preflight_gate(req.lat, req.lon)
+    prefetched_geocode, preflight_elevation, gate_location = await _preflight_gate(
+        req.lat, req.lon
+    )
 
     raw, failed = await external.fetch_all(
         req.lat,
@@ -177,9 +244,18 @@ async def create_audit(req: AuditRequest) -> AuditResult:
             detail="Semua sumber data sedang tidak dapat dihubungi. Coba lagi beberapa saat lagi.",
         )
 
-    elevation = _extract_elevation(raw.get("weather"))
+    weather_elevation = _extract_elevation(raw.get("weather"))
+    # Elevasi preflight tidak dibuang: kalau cuaca gagal membawa elevasi,
+    # nilai gerbang tetap terpakai sehingga audit tidak kehilangan sumbu tanah.
+    elevation = weather_elevation if weather_elevation is not None else preflight_elevation
     address = _extract_address(raw.get("geocode"))
-    location = classify_location(req.lat, req.lon, raw.get("geocode"), elevation)
+
+    # Klasifikasi gerbang sudah memakai geocode yang sama; hitung ulang hanya
+    # saat elevasi terbaik berubah (mis. preflight gagal lalu cuaca berhasil).
+    if elevation == preflight_elevation:
+        location = gate_location
+    else:
+        location = classify_location(req.lat, req.lon, raw.get("geocode"), elevation)
 
     _raise_for_location(location)
 
@@ -364,6 +440,20 @@ async def create_audit(req: AuditRequest) -> AuditResult:
     hazard["is_water"] = is_water
     environment["air_risk"] = radar["air"]
 
+    pbg_checklist = pbg.build_pbg_checklist(
+        geotech=geotech,
+        flood_class=raw.get("flood"),
+        flood_known=hazard_quality["flood"]["status"] in {"official", "model"},
+        landslide_class=raw.get("landslide"),
+        landslide_known=hazard_quality["landslide"]["status"] in {"official", "model"},
+        subsidence_risk=(
+            subsidence_quality["risk"]
+            if subsidence_quality["status"] != "unavailable"
+            else None
+        ),
+        tsunami_band=hazard["tsunami"],
+    )
+
     data_quality = {
         "status": audit_status,
         "mode": mode,
@@ -403,24 +493,22 @@ async def create_audit(req: AuditRequest) -> AuditResult:
         seismic=seismic,
         nearby=raw.get("nearby") or [],
         sources_failed=failed,
+        pbg_checklist=pbg_checklist,
         created_at=datetime.now(timezone.utc),
     )
 
+    # ID dibuat aplikasi sehingga respons tidak perlu menunggu INSERT; tulis
+    # DB berjalan di belakang. Frontend tetap menerima id + persisted seperti
+    # sebelumnya (narrative/{id} akan fallback ke audit inline bila baris
+    # belum terlanjur tersimpan).
+    result.id = str(uuid.uuid4())
     pool = db.get_pool()
     if pool is not None:
-        try:
-            document = result.model_dump(mode="json", exclude={"id", "persisted"})
-            row = await pool.fetchrow(
-                "INSERT INTO audits (lat, lon, data) VALUES ($1, $2, $3) RETURNING id",
-                result.lat,
-                result.lon,
-                document,
-            )
-            result.id = str(row["id"])
-            result.persisted = True
-        except Exception as exc:  # noqa: BLE001 — gagal simpan tidak boleh menggagalkan audit
-            log.warning("Audit tidak tersimpan: %s", exc)
+        result.persisted = True
+        document = result.model_dump(mode="json", exclude={"id", "persisted"})
+        _spawn_persist(pool, result.id, result.lat, result.lon, document)
 
+    _audit_cache_store(key, result.model_dump(mode="json"))
     return result
 
 
