@@ -202,9 +202,9 @@ async def generate_battle_report(
     return BattleReportResult(
         report=_build_report(audit_a, audit_b, raw, lang),
         generated_by=(
-            f"Gemini ({meta.model})"
-            if meta.delivery_mode != "fallback"
-            else "S.A.F.E House deterministic fallback"
+            "S.A.F.E House deterministic fallback"
+            if meta.model == "deterministic-fallback"
+            else ai._generated_by_label(meta)
         ),
         metadata=meta,
     )

@@ -306,6 +306,37 @@ const translations = {
     id: 'Laporan Perbandingan S.A.F.E',
     en: 'S.A.F.E Comparison Report',
   },
+
+  // ─── Laporan perbandingan (matriks diferensial) ────────────────
+  'battle.siteA': { id: 'Lokasi A', en: 'Site A' },
+  'battle.siteB': { id: 'Lokasi B', en: 'Site B' },
+  'battle.safer': { id: 'Lebih aman', en: 'Safer' },
+  'battle.even': { id: 'Setara', en: 'Even' },
+  'battle.noScore': { id: 'Skor belum lengkap', en: 'Score incomplete' },
+  'battle.pointGap': { id: 'Poin selisih', en: 'Point gap' },
+  'battle.noData': { id: 'Data tidak tersedia', en: 'Data unavailable' },
+  // "Lebih aman" adalah putusan tingkat lokasi; per parameter yang benar
+  // adalah "lebih baik" — satu parameter unggul tidak membuat lokasinya aman.
+  'battle.betterHere': { id: 'lebih baik', en: 'is better' },
+  'battle.headToHead': { id: 'Perbandingan dua lokasi', en: 'Head-to-head comparison' },
+  'battle.aiVerdict': { id: 'Putusan Komparatif AI', en: 'AI Comparative Verdict' },
+  'battle.engineBasis': { id: 'Dasar Deterministik · Mesin S.A.F.E', en: 'Deterministic Basis · S.A.F.E Engine' },
+  'battle.aiProvenance': {
+    id: 'Narasi ditulis model AI dari angka audit yang sudah dihitung mesin. Model:',
+    en: 'Narrative written by an AI model from audit figures already computed by the engine. Model:',
+  },
+  'battle.engineProvenance': {
+    id: 'Seluruh angka pada halaman ini dihitung mesin S.A.F.E dari data audit tersimpan. AI tidak pernah mengubah skor, Vs30, PGA, FS likuefaksi, atau kelas situs.',
+    en: 'Every figure on this page is computed by the S.A.F.E engine from stored audit data. The AI never alters score, Vs30, PGA, liquefaction FS, or site class.',
+  },
+  'battle.matrix': { id: 'Matriks Diferensial Parameter', en: 'Parameter Differential Matrix' },
+  'battle.parameter': { id: 'Parameter', en: 'Parameter' },
+  'battle.advantage': { id: 'Keunggulan', en: 'Advantage' },
+  'battle.legendLead': { id: 'Hijau menandai sisi yang lebih baik', en: 'Green marks the better side' },
+  'battle.notCompared': {
+    id: 'Tidak dibandingkan karena data tidak tersedia:',
+    en: 'Not compared because data is unavailable:',
+  },
   'drawer.microAnalysis': {
     id: 'Analisis Mikro Lingkungan',
     en: 'Micro Environment Analysis',
@@ -563,6 +594,22 @@ const translations = {
     id: 'Satu koordinat, parameter SNI 1726:2019 siap-PBG dalam dua menit.',
     en: 'One coordinate, PBG-ready SNI 1726:2019 parameters in two minutes.',
   },
+  'validasi.backHome': { id: 'Kembali ke Beranda', en: 'Back to Home' },
+  'validasi.allCases': { id: 'Semua Kasus', en: 'All Cases' },
+  'validasi.accuracy': { id: 'Tingkat Akurasi Benchmark', en: 'Benchmark Accuracy' },
+  'validasi.openInApp': { id: 'Uji Titik Ini di Peta', en: 'Test on Interactive Map' },
+  'validasi.copiedCoord': { id: 'Koordinat GPS disalin!', en: 'GPS coordinates copied!' },
+  'validasi.copyCoord': { id: 'Salin GPS', en: 'Copy GPS' },
+  'validasi.methodology': { id: 'Metodologi & Landasan Matematis', en: 'Methodology & Mathematical Basis' },
+  'validasi.methodologyP1': {
+    id: 'Validasi empiris membandingkan parameter SNI 1726:2019, model atenuasi PuSGeN, dan estimasi Factor of Safety (FS) likuefaksi metode Seed & Idriss terhadap dokumentasi riil pasca-bencana BNPB/PVMBG.',
+    en: 'Empirical validation compares SNI 1726:2019 parameters, PuSGeN attenuation models, and Seed & Idriss liquefaction Factor of Safety (FS) against official BNPB/PVMBG post-disaster documentation.',
+  },
+  'validasi.case': { id: 'KASUS', en: 'CASE' },
+  'validasi.groundTruth': { id: 'Fakta Sejarah Lapangan', en: 'Historical Field Facts' },
+  'validasi.engineCalculation': { id: 'Hasil Komputasi S.A.F.E House', en: 'S.A.F.E House Computed Output' },
+  'validasi.verified': { id: 'TERVERIFIKASI', en: 'VERIFIED' },
+  'validasi.retry': { id: 'Muat Ulang', en: 'Retry' },
 
   // --- Checklist kelengkapan teknis PBG ---
   'pbg.title': { id: 'Keperluan Dokumen PBG', en: 'PBG Document Requirements' },

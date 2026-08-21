@@ -1,9 +1,9 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Toaster } from 'sonner';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { MapArea } from './components/map/MapArea';
 import { TopBar } from './components/panels/TopBar';
@@ -58,14 +58,62 @@ function AppShell() {
   const setChatExpanded = useAppStore((s) => s.setChatExpanded);
   const theme = useAppStore((s) => s.theme);
   const setLeftPanelOpen = useAppStore((s) => s.setLeftPanelOpen);
+  const processLocation = useAppStore((s) => s.processLocation);
+  const auditedLat = useAppStore((s) => s.propertyA?.lat);
+  const auditedLon = useAppStore((s) => s.propertyA?.lon);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Kunci koordinat yang terakhir dijembatani antara URL dan store. Tanpa ini
+  // kedua efek di bawah saling memicu: URL menulis audit, audit menulis URL.
+  const bridgedCoordRef = useRef(null);
+
+  // URL → audit. Menjalankan tautan yang dibagikan.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const latStr = params.get('lat');
+    const lonStr = params.get('lon') || params.get('lng');
+    if (!latStr || !lonStr) return;
+
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+    if (isNaN(lat) || isNaN(lon)) return;
+
+    const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+    if (bridgedCoordRef.current === key) return;
+    bridgedCoordRef.current = key;
+
+    processLocation(lat, lon);
+    setLeftPanelOpen(true);
+  }, [location.search, processLocation, setLeftPanelOpen]);
+
+  // Audit → URL. Hasil audit sebelumnya hanya hidup di memori: menyegarkan
+  // halaman membuangnya, tombol Back melempar keluar aplikasi, dan satu-satunya
+  // cara membagikan lokasi adalah tombol "Salin Link" yang terkubur di dalam
+  // drawer laporan. Koordinatnya sekarang tercermin di bilah alamat, sehingga
+  // reload, bookmark, dan tombol bagikan bawaan peramban semuanya bekerja.
+  // `replace`, bukan `push`: tiap audit yang menambah entri riwayat akan
+  // mengubah satu ketukan Back jadi belasan.
+  useEffect(() => {
+    if (!auditedLat || !auditedLon) return;
+
+    const key = `${auditedLat.toFixed(5)},${auditedLon.toFixed(5)}`;
+    if (bridgedCoordRef.current === key) return;
+    bridgedCoordRef.current = key;
+
+    navigate(
+      { pathname: '/app', search: `?lat=${auditedLat.toFixed(5)}&lon=${auditedLon.toFixed(5)}` },
+      { replace: true }
+    );
+  }, [auditedLat, auditedLon, navigate]);
 
   useEffect(() => {
     // The map is the primary mobile surface. Start the sheet collapsed on a
     // narrow viewport, while leaving an existing audit untouched.
-    if (isNarrowViewport() && !useAppStore.getState().propertyA) {
+    if (isNarrowViewport() && !useAppStore.getState().propertyA && !location.search) {
       setLeftPanelOpen(false);
     }
-  }, [setLeftPanelOpen]);
+  }, [setLeftPanelOpen, location.search]);
 
   useHotkeys('mod+k', (e) => {
     e.preventDefault();
@@ -73,6 +121,26 @@ function AppShell() {
   });
 
   useHotkeys('l', () => toggleLeftPanel());
+
+  // Palet perintah, dialog konfirmasi, drawer laporan, dan panel chat semuanya
+  // tutup dengan Escape; panel kiri satu-satunya yang tidak, sehingga tombol
+  // yang sudah dipelajari pengguna tiba-tiba tak berfungsi di permukaan paling
+  // sering dibuka. Penjagaan di bawah memastikan Escape tetap dimiliki lapisan
+  // teratas: panel baru menutup saat tak ada apa pun di atasnya.
+  useHotkeys('escape', () => {
+    const state = useAppStore.getState();
+    if (
+      state.cmdPaletteOpen ||
+      state.onboardingActive ||
+      state.auditDrawerOpen ||
+      state.chatExpanded ||
+      state.mapLayersOpen ||
+      state.pendingAudit
+    ) {
+      return;
+    }
+    if (state.leftPanelOpen) setLeftPanelOpen(false);
+  });
   useHotkeys('c', () => {
     const state = useAppStore.getState();
     if (state.cmdPaletteOpen || state.onboardingActive) return;
@@ -145,7 +213,10 @@ function AppPreferences() {
   }, [theme, lang]);
 
   useEffect(() => {
-    const scrollable = location.pathname === '/' || location.pathname.startsWith('/laporan/');
+    const scrollable =
+      location.pathname === '/' ||
+      location.pathname.startsWith('/laporan/') ||
+      location.pathname.startsWith('/validasi');
     document.documentElement.classList.toggle('document-scroll', scrollable);
     document.documentElement.classList.toggle('app-scroll-lock', !scrollable);
     return () => {

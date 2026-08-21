@@ -112,11 +112,15 @@ export default function AboutSection({ t }) {
 
               {/* Seismograph interactive SVG visualizer */}
               <div className="w-full md:w-56 h-28 bg-background/50 rounded-lg border border-border/80 relative overflow-hidden flex flex-col justify-end p-2 shrink-0">
-                <div className="absolute top-2 left-2 text-[8px] font-mono text-muted-foreground/75 tracking-wider uppercase">
-                  PGA SENSOR INPUT: {seismicTrigger ? 'ACTIVE DETECT' : 'SIMULATION'}
-                </div>
-                <div className="absolute top-2 right-2 text-[8px] font-mono text-accent font-semibold">
-                  {seismicTrigger ? '0.78g max' : '0.12g normal'}
+                {/* Satu baris flex dengan truncate: dua label absolut di dua
+                    sudut saling menimpa saat kartu menyempit di ponsel. */}
+                <div className="absolute top-2 inset-x-2 flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-[8px] font-mono text-muted-foreground/75 tracking-wider uppercase">
+                    PGA SENSOR INPUT: {seismicTrigger ? 'ACTIVE DETECT' : 'SIMULATION'}
+                  </span>
+                  <span className="shrink-0 whitespace-nowrap text-[8px] font-mono text-accent font-semibold">
+                    {seismicTrigger ? '0.78g max' : '0.12g normal'}
+                  </span>
                 </div>
 
                 <svg className="w-full h-16 opacity-85" viewBox="0 0 200 60" preserveAspectRatio="none">
@@ -169,11 +173,15 @@ export default function AboutSection({ t }) {
 
                 {/* Elevation/River contour custom visualization */}
                 <div className="mt-6 w-full h-20 bg-muted/20 rounded-lg border border-border/60 overflow-hidden relative flex items-end">
-                  <div className="absolute top-2 left-2 text-[7px] font-mono text-muted-foreground/80 tracking-wider">
-                    ELEVATION PROFILE & RUNOFF
-                  </div>
-                  <div className="absolute top-2 right-2 text-[7px] font-mono text-foreground font-semibold">
-                    12.5 mdpl (Lowland)
+                  {/* Satu baris flex dengan truncate: label kiri dan nilai
+                      kanan bertabrakan di lebar ponsel bila keduanya absolut. */}
+                  <div className="absolute top-2 inset-x-2 z-10 flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-[7px] font-mono text-muted-foreground/80 tracking-wider">
+                      ELEVATION PROFILE &amp; RUNOFF
+                    </span>
+                    <span className="shrink-0 whitespace-nowrap text-[7px] font-mono text-foreground font-semibold">
+                      12.5 mdpl (Lowland)
+                    </span>
                   </div>
                   
                   <svg className="w-full h-14" viewBox="0 0 150 40" preserveAspectRatio="none">

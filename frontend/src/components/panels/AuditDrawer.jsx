@@ -33,10 +33,11 @@ import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Skeleton, SkeletonText } from '../ui/skeleton';
 import { PbgChecklistCard } from '../cards/PbgChecklistCard';
+import { BattleReport } from './BattleReport';
 import { hazardBand, locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
 import { siteClass } from '../../lib/formatters';
 import { parseBuildingCodes } from '../../lib/standards';
-import { canExportSniReport, exportPrintReadyPdf } from '../../lib/pdfExport';
+import { canExportSniReport, exportBattlePdf, exportPrintReadyPdf } from '../../lib/pdfExport';
 
 // ─── Primitif visual ────────────────────────────────────────────────
 //
@@ -1444,6 +1445,31 @@ export function AuditDrawer() {
     }
   };
 
+  // Mode bandingkan sudah punya `exportBattlePdf` di lib/pdfExport.js, tapi
+  // tombolnya tidak pernah dipasang: satu-satunya cara membawa keluar laporan
+  // perbandingan adalah menyalin tautannya.
+  const handleDownloadBattlePdf = async () => {
+    if (!propertyA || !propertyB || !battleReport) return;
+    setPdfLoading(true);
+    const toastId = toast.loading(
+      lang === 'en' ? 'Preparing comparison PDF…' : 'Menyiapkan PDF perbandingan…'
+    );
+    try {
+      await exportBattlePdf(propertyA, propertyB, battleReport, lang);
+      toast.success(
+        lang === 'en' ? 'Comparison PDF downloaded.' : 'PDF perbandingan berhasil diunduh.',
+        { id: toastId }
+      );
+    } catch (error) {
+      console.error('Battle PDF export failed', error);
+      toast.error(error.message || (lang === 'en' ? 'PDF export failed.' : 'Ekspor PDF gagal.'), {
+        id: toastId,
+      });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const handleDownloadPdf = async () => {
     if (!propertyA || !canExportSniReport(propertyA)) {
       toast.warning(
@@ -1541,14 +1567,22 @@ export function AuditDrawer() {
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
-              {!isBattle && (
+              {(!isBattle || battleReport) && (
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={handleDownloadPdf}
+                  onClick={isBattle ? handleDownloadBattlePdf : handleDownloadPdf}
                   disabled={pdfLoading}
                   className="rpt-hair flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-2.5 text-xs hover:border-accent/40 hover:text-accent sm:px-3"
-                  title={lang === 'en' ? 'Download full PDF report' : 'Unduh laporan PDF full'}
+                  title={
+                    isBattle
+                      ? lang === 'en'
+                        ? 'Download comparison PDF report'
+                        : 'Unduh laporan PDF perbandingan'
+                      : lang === 'en'
+                        ? 'Download full PDF report'
+                        : 'Unduh laporan PDF full'
+                  }
                 >
                   {pdfLoading ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
@@ -1612,12 +1646,23 @@ export function AuditDrawer() {
               )}
 
               {isBattle ? (
-                <div className="mx-auto max-w-3xl">
+                /* Perbandingan butuh dua kolom penuh berdampingan; pita
+                   max-w-3xl memaksa dua plinth skor jadi sempit dan membuat
+                   matriks diferensial kehilangan lebar simpangannya. */
+                <div className="mx-auto max-w-[72rem]">
                   {battleReport ? (
-                    <SectionList
+                    <BattleReport
+                      propertyA={propertyA}
+                      propertyB={propertyB}
                       markdown={battleReport}
-                      property={propertyA}
-                      isExpanded={(sec, idx) => idx < 2}
+                      meta={battleReportMeta}
+                      renderSections={(md) => (
+                        <SectionList
+                          markdown={md}
+                          property={propertyA}
+                          isExpanded={(sec, idx) => idx < 2}
+                        />
+                      )}
                     />
                   ) : battleReportLoading ? (
                     <ReportSkeleton

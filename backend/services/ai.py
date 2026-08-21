@@ -34,6 +34,11 @@ log = logging.getLogger(__name__)
 GEMINI_API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models"
 PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
+# Tier terakhir: OpenRouter (kompatibel OpenAI) memakai kuota & kunci terpisah
+# dari Gemini, sehingga menyelamatkan permintaan saat seluruh chain Gemini
+# rate-limited, down, atau ditolak.
+OPENROUTER_API_ROOT = "https://openrouter.ai/api/v1"
+OPENROUTER_FALLBACK_MODEL = "stealth/ox-alpha"
 THINKING_LEVEL = os.getenv("AI_THINKING_LEVEL", "low")
 PROMPT_VERSION = os.getenv("AI_PROMPT_VERSION", "institutional-v2")
 CACHE_ENABLED = os.getenv("AI_CACHE_ENABLED", "true").lower() == "true"
@@ -1001,6 +1006,156 @@ def _parse_gemini_json(response: dict[str, Any]) -> dict[str, Any]:
         ) from exc
 
 
+# ── OpenRouter transport (final fallback tier) ──────────────────────
+
+
+def _openrouter_chat_payload(gemini_payload: dict[str, Any], model: str) -> dict[str, Any]:
+    """Translate the Gemini generateContent payload to OpenAI chat format.
+
+    The grounded system instruction, user payload, and JSON schema are
+    preserved 1:1 so the OpenRouter answer obeys the same contract. The
+    schema is ALSO embedded into the message list: beberapa provider
+    OpenRouter (mis. Stealth) mengabaikan response_format secara diam-diam,
+    sehingga tanpa salinan inline model tidak pernah melihat kontraknya.
+    """
+
+    system_text = "".join(
+        part.get("text", "")
+        for part in gemini_payload.get("systemInstruction", {}).get("parts", [])
+    )
+    messages: list[dict[str, str]] = []
+    if system_text.strip():
+        messages.append({"role": "system", "content": system_text})
+    for content in gemini_payload.get("contents", []):
+        text = "".join(part.get("text", "") for part in content.get("parts", []))
+        role = "assistant" if content.get("role") == "model" else "user"
+        if text:
+            messages.append({"role": role, "content": text})
+
+    config = gemini_payload.get("generationConfig", {})
+    schema = config.get("responseJsonSchema") or {"type": "object"}
+    # Model reasoning memakan token sebelum menulis konten; beri ruang dua
+    # kali lipat agar JSON tidak terpotong di tengah.
+    max_tokens = min(int(config.get("maxOutputTokens", 4096)) * 2, 16384)
+    messages.append({
+        "role": "user",
+        "content": (
+            "ATURAN OUTPUT WAJIB: balas HANYA satu objek JSON valid tanpa "
+            "penjelasan atau markdown, sesuai persis JSON Schema berikut:\n"
+            f"{json.dumps(schema, ensure_ascii=False)}"
+        ),
+    })
+    return {
+        "model": model,
+        "messages": messages,
+        "temperature": config.get("temperature", 0.2),
+        "max_tokens": max_tokens,
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "safe_house_response",
+                "strict": True,
+                "schema": schema,
+            },
+        },
+    }
+
+
+async def _post_openrouter_model(
+    gemini_payload: dict[str, Any],
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> dict[str, Any]:
+    """POST the same grounded task to OpenRouter. Raises AIServiceError."""
+
+    api_key = openrouter_api_key()
+    if not api_key:
+        raise AIServiceError(
+            "Fallback AI belum dikonfigurasi oleh pengelola aplikasi.",
+            status_code=503,
+            retryable=False,
+        )
+
+    model = openrouter_model()
+    url = f"{OPENROUTER_API_ROOT}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "X-Title": "S.A.F.E House",
+    }
+    request_client = client if client is not None else _get_shared_ai_client()
+
+    try:
+        response = await request_client.post(
+            url,
+            json=_openrouter_chat_payload(gemini_payload, model),
+            headers=headers,
+        )
+        status = response.status_code
+        if status >= 400:
+            log.warning("OpenRouter %s returned %s", model, status)
+            if status in {401, 403}:
+                raise AIServiceError(
+                    "Permintaan ke layanan AI ditolak.",
+                    status_code=502,
+                    retryable=False,
+                )
+            if status == 429:
+                raise AIServiceError(
+                    "Kapasitas AI sedang penuh. Coba lagi sebentar lagi.",
+                    status_code=429,
+                    retryable=True,
+                )
+            raise AIServiceError(
+                "Layanan AI sedang tidak tersedia. Coba lagi sebentar lagi.",
+                status_code=503,
+                retryable=status in _RETRYABLE_STATUSES,
+            )
+        return response.json()
+    except httpx.TimeoutException as exc:
+        raise AIServiceError(
+            "Layanan AI membutuhkan waktu terlalu lama. Silakan coba lagi.",
+            status_code=504,
+            retryable=True,
+        ) from exc
+    except httpx.RequestError as exc:
+        raise AIServiceError(
+            "Layanan AI tidak dapat dihubungi. Silakan coba lagi.",
+            status_code=503,
+            retryable=True,
+        ) from exc
+
+
+def _parse_openrouter_json(response: dict[str, Any]) -> dict[str, Any]:
+    """Extract JSON from an OpenAI-compatible chat completion."""
+
+    try:
+        message = response["choices"][0].get("message") or {}
+        raw = str(message.get("content") or "").strip()
+        if raw.startswith("```"):
+            raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
+            raw = re.sub(r"\s*```$", "", raw)
+        return json.loads(raw)
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+        raise AIServiceError(
+            "AI mengembalikan format yang tidak dapat dibaca. Silakan coba lagi.",
+            status_code=502,
+            retryable=True,
+        ) from exc
+
+
+def openrouter_api_key() -> str:
+    return os.getenv("OPENROUTER_API_KEY", "").strip()
+
+
+def openrouter_model() -> str:
+    return os.getenv("OPENROUTER_MODEL", OPENROUTER_FALLBACK_MODEL).strip() or OPENROUTER_FALLBACK_MODEL
+
+
+def openrouter_configured() -> bool:
+    return bool(openrouter_api_key())
+
+
 def model_chain() -> list[str]:
     """Ordered, de-duplicated list of models to try.
 
@@ -1058,9 +1213,18 @@ async def generate_with_fallback(
         for index, model in enumerate(chain)
     ]
     last_error: Optional[AIServiceError] = None
+    openrouter_ready = openrouter_configured()
 
     for index, (model, delivery_mode) in enumerate(models_to_try):
         if last_error is not None and last_error.status_code in {401, 403}:
+            if openrouter_ready:
+                # Kunci Gemini ditolak, tapi OpenRouter memakai kunci dan
+                # kuota sendiri — masih layak dicoba sebelum menyerah.
+                log.warning(
+                    "Gemini auth rejected (%s), switching to OpenRouter fallback",
+                    last_error.status_code,
+                )
+                break
             raise last_error
 
         try:
@@ -1087,6 +1251,24 @@ async def generate_with_fallback(
             else:
                 log.warning("Model %s failed (%s)", model, exc.status_code)
             continue
+
+    if openrouter_ready:
+        try:
+            or_model = openrouter_model()
+            response = await _post_openrouter_model(gemini_payload, client=client)
+            parsed = _parse_openrouter_json(response)
+
+            meta = AIMetadata(
+                model=f"openrouter/{or_model}",
+                delivery_mode="fallback",
+                prompt_version=PROMPT_VERSION,
+                generated_at=datetime.now(timezone.utc),
+            )
+            log.info("AI response ok provider=openrouter model=%s delivery=fallback", or_model)
+            return parsed, meta
+        except AIServiceError as exc:
+            last_error = exc
+            log.warning("OpenRouter fallback failed (%s)", exc.status_code)
 
     if last_error is not None:
         raise last_error
@@ -1306,6 +1488,15 @@ async def _store_cached_narrative(
 
 # ── Public API ──────────────────────────────────────────────────────
 
+def _generated_by_label(meta: AIMetadata) -> str:
+    """Attribution string that reflects the actual transport used."""
+
+    model = meta.model
+    if model.startswith("openrouter/"):
+        return f"OpenRouter ({model.split('/', 1)[1]})"
+    return f"Gemini ({model})"
+
+
 async def generate_narrative(
     audit: AuditResult,
     lang: str = "id",
@@ -1426,7 +1617,7 @@ async def generate_narrative(
         detailed_report=raw.get("detailed_report", "").strip(),
         sources=normalized_sources,
         data_limitations=limitations,
-        generated_by=f"Gemini ({meta.model})",
+        generated_by=_generated_by_label(meta),
         metadata=meta.model_dump(mode="json"),
     )
 

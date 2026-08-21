@@ -92,17 +92,22 @@ async def ai_status() -> dict:
     """Health-like endpoint for AI layer. Never returns the key."""
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     key_configured = bool(api_key)
+    openrouter_ready = ai.openrouter_configured()
 
     cache_available = db.get_pool() is not None and ai.CACHE_ENABLED
 
     chain = ai.model_chain()
     return {
-        "status": "ready" if key_configured else "unconfigured",
+        "status": "ready" if (key_configured or openrouter_ready) else "unconfigured",
         "provider": "gemini",
         "primary_model": chain[0] if chain else os.getenv("GEMINI_MODEL", ai.PRIMARY_MODEL),
         "fallback_model": chain[1] if len(chain) > 1 else os.getenv("GEMINI_FALLBACK_MODEL", ai.FALLBACK_MODEL),
         "model_chain": chain,
         "api_key_configured": key_configured,
+        "openrouter_fallback": {
+            "configured": openrouter_ready,
+            "model": ai.openrouter_model() if openrouter_ready else None,
+        },
         "cache_enabled": ai.CACHE_ENABLED,
         "cache_available": cache_available,
         "prompt_version": ai.PROMPT_VERSION,

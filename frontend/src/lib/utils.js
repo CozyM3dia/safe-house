@@ -145,7 +145,13 @@ export function shouldSkipCountUp() {
 export function hazardBand(label) {
   const text = String(label ?? '').trim();
   if (!text) return { band: '', provisional: false };
-  const [band] = text.split('—');
+  // Hanya em dash yang dikenali sebelumnya. Begitu sumbernya memakai en dash
+  // atau tanda hubung biasa — hal yang lumrah saat label ditulis ulang atau
+  // lewat sistem yang menormalkan tanda baca — pemisahannya gagal diam-diam
+  // dan seluruh kalimat kembali membanjiri kolom yang cuma muat satu kata.
+  // Tanda hubung biasa hanya dihitung bila diapit spasi, supaya kata majemuk
+  // seperti "Sedang-Tinggi" tidak ikut terpotong.
+  const [band] = text.split(/\s*[—–]\s*|\s+-\s+/);
   return {
     band: band.trim() || text,
     provisional: /ESTIMASI|PROVISI/i.test(text),

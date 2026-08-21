@@ -1,12 +1,12 @@
 """FastAPI integration tests for audit boundary and score contract."""
 import unittest
 import os
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 
 from main import app
-from routers.audit import _REJECTED_CACHE
+from routers.audit import _AUDIT_CACHE, _REJECTED_CACHE
 
 
 def _land_geocode():
@@ -44,6 +44,7 @@ def _raw_data(*, geocode=None, flood=1, landslide=1):
 class AuditRouteIntegrationTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         _REJECTED_CACHE.clear()
+        _AUDIT_CACHE.clear()
 
     async def _post(self, lat, lon, raw):
         geocode = raw.get("geocode")
@@ -184,6 +185,81 @@ class AuditRouteIntegrationTests(unittest.IsolatedAsyncioTestCase):
         ):
             self.assertEqual(expected_status, payload["hazard"][name]["data_status"])
             self.assertIn(name, payload["data_quality"]["fields"])
+
+    async def test_repeated_valid_audit_is_served_from_memory_cache(self):
+        first = await self._post(-5.411, 105.261, _raw_data())
+        self.assertEqual(200, first.status_code)
+        body_first = first.json()
+
+        fetch_mock = AsyncMock(return_value=(_raw_data(), []))
+        preflight_mock = AsyncMock(return_value=(_land_geocode(), 102, []))
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            with patch("routers.audit.external.fetch_all", new=fetch_mock), patch(
+                "routers.audit.external.preflight_location", new=preflight_mock
+            ), patch("routers.audit.db.get_pool", return_value=None):
+                second = await client.post("/api/audit", json={"lat": -5.411, "lon": 105.261})
+
+        fetch_mock.assert_not_awaited()
+        preflight_mock.assert_not_awaited()
+        body_second = second.json()
+        self.assertEqual(body_first["id"], body_second["id"])
+        self.assertEqual(body_first["safe_score"], body_second["safe_score"])
+
+    async def test_audit_cache_expires_after_ttl(self):
+        import routers.audit as audit_router
+
+        response = await self._post(-5.412, 105.262, _raw_data())
+        self.assertEqual(200, response.status_code)
+
+        key = audit_router._cache_key(-5.412, 105.262)
+        stored_at, payload = audit_router._AUDIT_CACHE[key]
+        audit_router._AUDIT_CACHE[key] = (stored_at - audit_router._AUDIT_CACHE_TTL_S - 1, payload)
+
+        fetch_mock = AsyncMock(return_value=(_raw_data(), []))
+        preflight_mock = AsyncMock(return_value=(_land_geocode(), 102, []))
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            with patch("routers.audit.external.fetch_all", new=fetch_mock), patch(
+                "routers.audit.external.preflight_location", new=preflight_mock
+            ), patch("routers.audit.db.get_pool", return_value=None):
+                expired = await client.post("/api/audit", json={"lat": -5.412, "lon": 105.262})
+
+        self.assertEqual(200, expired.status_code)
+        fetch_mock.assert_awaited_once()
+
+    async def test_preflight_elevation_reused_and_classify_runs_once(self):
+        from services.location import LocationClassification
+
+        raw = _raw_data()
+        raw["weather"] = {"current": {"temperature_2m": 30}}  # cuaca tanpa elevasi
+        gate_location = LocationClassification(
+            status="valid_land",
+            reason="daratan",
+            country_code="id",
+            geocode_offset_km=0.0,
+            is_water=False,
+            boundary_source="geocode",
+        )
+
+        classify_mock = MagicMock(return_value=gate_location)
+        fetch_mock = AsyncMock(return_value=(raw, []))
+        preflight_mock = AsyncMock(return_value=(_land_geocode(), 102, []))
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            with patch("routers.audit.external.fetch_all", new=fetch_mock), patch(
+                "routers.audit.external.preflight_location", new=preflight_mock
+            ), patch("routers.audit.db.get_pool", return_value=None), patch(
+                "routers.audit.classify_location", new=classify_mock
+            ):
+                response = await client.post("/api/audit", json={"lat": -5.413, "lon": 105.263})
+
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        # Elevasi gerbang menyelamatkan sumbu tanah saat cuaca tak membawa elevasi.
+        self.assertEqual(102, payload["elevation"])
+        # Elevasi preflight == elevasi final -> klasifikasi gerbang dipakai ulang.
+        classify_mock.assert_called_once()
 
 
 if __name__ == "__main__":
