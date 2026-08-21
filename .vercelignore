@@ -12,7 +12,6 @@ frontend/dist
 frontend/test-output
 
 # Non-deployment project material
-backend
 Bahan Video Demo
 frontend-old
 freellmapi
