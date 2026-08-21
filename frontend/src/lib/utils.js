@@ -132,3 +132,22 @@ export function shouldSkipCountUp() {
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   );
 }
+
+/**
+ * Pisahkan band bahaya dari penanda provenance-nya.
+ *
+ * Backend menandai nilai turunan dengan sufiks panjang
+ * ("RENDAH — ESTIMASI PROVISI (BUKAN PETA BANJIR)"). Penandanya penting,
+ * tapi di chip selebar 120px seluruh kalimat itu terpotong dan justru
+ * bandnya yang hilang. Di sini band tetap utuh dan penandanya jadi flag
+ * ringkas yang bisa ditampilkan sebagai "est.".
+ */
+export function hazardBand(label) {
+  const text = String(label ?? '').trim();
+  if (!text) return { band: '', provisional: false };
+  const [band] = text.split('—');
+  return {
+    band: band.trim() || text,
+    provisional: /ESTIMASI|PROVISI/i.test(text),
+  };
+}

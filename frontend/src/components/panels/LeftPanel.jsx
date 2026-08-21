@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Share2, Download, Crosshair, Mountain, Waves, Activity, ArrowUpRight, X } from 'lucide-react';
+import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Crosshair, Mountain, Waves, Activity, ArrowUpRight, X } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
-import { createShare, generateNarrative } from '../../services/api';
-import { canExportPdf, canExportSniReport, exportPrintReadyPdf } from '../../lib/pdfExport';
+import { canExportSniReport } from '../../lib/pdfExport';
 import { exportProfessionalReport } from '../../lib/professionalReport';
-import { generateProceduralNarrative } from '../../lib/proceduralNarrative';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -50,6 +48,13 @@ export function LeftPanel() {
   const battleReportLoading = useAppStore((s) => s.battleReportLoading);
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
 
+  // Satu nama tampilan menggantikan empat kondisi bersebelahan.
+  const view =
+    mode === 'battle' ? 'battle'
+    : loading ? 'skeleton'
+    : propertyA ? 'populated'
+    : 'empty';
+
   return (
     <AnimatePresence>
       {open && (
@@ -73,39 +78,38 @@ export function LeftPanel() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto scrollbar-none">
-            <AnimatePresence mode="wait">
-              {!propertyA && !loading && mode === 'audit' && (
-                <motion.div key="empty" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
-                  <EmptyState />
-                </motion.div>
+            {/* Dulu keempat tampilan dibungkus `AnimatePresence mode="wait"`.
+                Anak yang keluar memakai variants bertahap tanpa varian `exit`,
+                sehingga exit-nya tidak pernah dianggap selesai — dan karena
+                mode "wait" menahan anak baru sampai itu terjadi, panel membeku
+                di EmptyState begitu pengguna pindah ke mode bandingkan.
+                Remount lewat `key` cukup: animasi masuk tetap ada, tanpa
+                gerbang exit yang bisa menggantung. */}
+            <motion.div
+              key={view}
+              data-panel-view={view}
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
+            >
+              {view === 'battle' ? (
+                <CompareState
+                  propertyA={propertyA}
+                  propertyB={propertyB}
+                  loading={loading}
+                  onOpenDrawer={() => setAuditDrawer(true)}
+                  onGenerateReport={() => runBattleReportAction()}
+                  battleReportContent={battleReportContent}
+                  battleReportLoading={battleReportLoading}
+                />
+              ) : view === 'skeleton' ? (
+                <SkeletonState />
+              ) : view === 'populated' ? (
+                <PopulatedState propertyA={propertyA} onOpenDrawer={() => setAuditDrawer(true)} />
+              ) : (
+                <EmptyState />
               )}
-              {loading && mode === 'audit' && (
-                <motion.div key="skeleton" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
-                  <SkeletonState />
-                </motion.div>
-              )}
-              {propertyA && !loading && mode === 'audit' && (
-                <motion.div key="populated" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
-                  <PopulatedState
-                    propertyA={propertyA}
-                    onOpenDrawer={() => setAuditDrawer(true)}
-                  />
-                </motion.div>
-              )}
-              {mode === 'battle' && (
-                <motion.div key="battle" initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}>
-                  <CompareState
-                    propertyA={propertyA}
-                    propertyB={propertyB}
-                    loading={loading}
-                    onOpenDrawer={() => setAuditDrawer(true)}
-                    onGenerateReport={() => runBattleReportAction()}
-                    battleReportContent={battleReportContent}
-                    battleReportLoading={battleReportLoading}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            </motion.div>
           </div>
         </motion.aside>
       )}
@@ -144,48 +148,83 @@ const CAPABILITIES = [
   { icon: Sparkles, labelKey: 'empty.capabilityAi', descKey: 'empty.capabilityAiDesc' },
 ];
 
+const DATA_SOURCES = ['InaRISK BNPB', 'PuSGeN 2024', 'SNI 1726:2019', 'USGS'];
+
+// Jejak seismogram: tenang → burst → peluruhan → tenang. Digambar sekali
+// saat panel muncul sehingga terbaca sebagai pembacaan alat, bukan ornamen.
+const SEISMOGRAM_PATH =
+  'M0 36 H38 l6-4 5 9 6-7 5 5 6-3 H78 l4-14 4 27 4-34 5 41 4-30 4 22 4-16 4 11 4-7 4 5 ' +
+  'H130 l6-5 5 8 6-6 5 4 H170 l4-9 4 15 4-12 4 7 H206 l6-3 5 5 6-4 H262 l5-6 4 9 5-5 H340';
+
 function EmptyState() {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
   const processLocation = useAppStore((s) => s.processLocation);
+  const isEn = lang === 'en';
 
   return (
     <motion.div
       variants={container}
       initial="hidden"
       animate="show"
-      className="relative isolate flex flex-col overflow-hidden px-5 pb-6 pt-6 sm:px-6 sm:pt-7"
+      className="relative isolate flex flex-col overflow-hidden px-5 pb-7 pt-5 sm:px-6"
     >
-      <div className="audit-grid pointer-events-none absolute inset-0 -z-10 opacity-40" aria-hidden="true" />
-      <div className="pointer-events-none absolute -right-16 -top-20 -z-10 h-52 w-52 rounded-full border border-accent/10" aria-hidden="true" />
-      <div className="pointer-events-none absolute -right-8 -top-12 -z-10 h-36 w-36 rounded-full border border-accent/10" aria-hidden="true" />
+      <div className="audit-grid pointer-events-none absolute inset-0 -z-10 opacity-[0.28]" aria-hidden="true" />
+      <div
+        className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-64 w-[130%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(212,149,106,0.16),transparent_65%)]"
+        aria-hidden="true"
+      />
 
-      <motion.div variants={item}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <span className="inline-flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.24em] text-accent">
-              <span className="pulse-dot text-accent" />
-              {t('empty.badge')}
-            </span>
-            <h2 className="mt-3 max-w-[14ch] font-sans text-[26px] font-semibold leading-[1.04] tracking-[-0.035em] text-text-primary">
-              {t('empty.title')}
-            </h2>
-            <p className="mt-3 max-w-[32ch] text-[13px] leading-6 text-text-secondary">
-              {t('empty.briefing')}
-            </p>
-          </div>
-          <div className="hidden shrink-0 pt-1 sm:block" aria-hidden="true">
-            <svg viewBox="0 0 92 56" className="h-14 w-[92px] text-accent/75" fill="none">
-              <path d="M2 37h15l5-12 6 23 8-42 7 30 7-13 9 14h31" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M2 47h88" stroke="currentColor" strokeOpacity=".25" strokeDasharray="2 5" />
-              <circle cx="43" cy="6" r="2.5" fill="currentColor" />
-            </svg>
-            <span className="block text-right font-mono text-[9px] tracking-[0.18em] text-text-muted">FIELD SIGNAL</span>
-          </div>
-        </div>
+      {/* ── Seismogram hero ── */}
+      <motion.div variants={item} className="-mx-5 mb-1 sm:-mx-6" aria-hidden="true">
+        <svg viewBox="0 0 340 72" className="h-16 w-full" fill="none" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="seismo-fade" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+              <stop offset="18%" stopColor="currentColor" stopOpacity="0.85" />
+              <stop offset="82%" stopColor="currentColor" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <g className="text-accent">
+            <line
+              x1="0"
+              y1="36"
+              x2="340"
+              y2="36"
+              stroke="currentColor"
+              strokeOpacity="0.16"
+              strokeWidth="0.6"
+              strokeDasharray="1 6"
+            />
+            <path
+              d={SEISMOGRAM_PATH}
+              className="seismic-trace"
+              stroke="url(#seismo-fade)"
+              strokeWidth="1.35"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+        </svg>
       </motion.div>
 
+      {/* ── Judul ── */}
+      <motion.div variants={item}>
+        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.26em] text-accent/85">
+          {DATA_SOURCES.slice(0, 3).join('  ·  ')}
+        </p>
+        <h2 className="mt-3 max-w-[13ch] font-sans text-[30px] font-semibold leading-[0.98] tracking-[-0.045em] text-text-primary">
+          {t('empty.title')}
+        </h2>
+        <p className="mt-3 max-w-[34ch] text-[13px] leading-[1.65] text-text-secondary">
+          {t('empty.briefing')}
+        </p>
+      </motion.div>
+
+      {/* ── Aksi utama + alur ── */}
       <motion.div variants={item} className="mt-5">
         <Button
           size="lg"
@@ -201,44 +240,49 @@ function EmptyState() {
           </span>
           <ArrowUpRight className="h-4 w-4 text-accent/80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </Button>
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-text-muted">
+          <span className="text-text-secondary">{t('empty.flowSelect')}</span>
+          <ChevronRight className="h-3 w-3 text-accent/50" />
+          <span className="text-text-secondary">{t('empty.flowRead')}</span>
+          <ChevronRight className="h-3 w-3 text-accent/50" />
+          <span className="text-text-secondary">{t('empty.flowDecide')}</span>
+          <span className="ml-auto normal-case tracking-normal">{t('empty.duration')}</span>
+        </div>
       </motion.div>
 
-      <motion.div variants={item} className="mt-5 grid grid-cols-3 gap-2 border-y border-white/[0.08] py-3">
-        {[
-          ['01', t('empty.stepSelect'), lang === 'en' ? 'location' : 'lokasi'],
-          ['02', t('empty.stepRead'), t('empty.evidence')],
-          ['03', t('empty.stepDecide'), t('empty.decision')],
-        ].map(([number, label, detail]) => (
-          <div key={number} className="min-w-0 border-l border-accent/25 pl-2.5 first:border-l-0 first:pl-0">
-            <span className="font-mono text-[9px] text-accent/80">{number}</span>
-            <p className="mt-1 text-[10px] font-semibold text-text-primary">{label}</p>
-            <p className="text-[10px] text-text-muted">{detail}</p>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Lokasi contoh */}
-      <motion.div variants={item} className="mt-6">
-        <h3 className="mb-2.5 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent/70" />
+      {/* ── Lokasi contoh: jalur tercepat menuju hasil nyata ── */}
+      <motion.div variants={item} className="mt-7">
+        <h3 className="mb-1 flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
           {t('empty.sampleLocations')}
+          <span className="h-px flex-1 bg-gradient-to-r from-accent/25 to-transparent" />
         </h3>
-        <div className="flex flex-col border-t border-white/[0.08]">
+        <div className="flex flex-col">
           {SAMPLE_SITES.map((site) => (
             <button
               key={site.label}
               type="button"
               onClick={() => processLocation(site.lat, site.lon)}
-              className="group flex min-h-[58px] items-center gap-3 border-b border-white/[0.08] py-2.5 text-left transition-colors hover:bg-white/[0.035]"
+              className="group flex min-h-[60px] items-center gap-3 border-b border-white/[0.07] py-2.5 text-left transition-colors hover:bg-white/[0.035]"
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.035] transition-colors group-hover:border-accent/35 group-hover:bg-accent/10">
                 <MapPin className="h-3.5 w-3.5 text-text-secondary transition-colors group-hover:text-accent" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[12px] font-semibold text-text-primary transition-colors group-hover:text-accent">
+                <span className="block text-[12.5px] font-semibold leading-snug text-text-primary transition-colors group-hover:text-accent">
                   {site.label}
                 </span>
-                <span className="mt-0.5 block text-[10px] text-text-secondary">{lang === 'en' ? site.subEn : site.subId}</span>
+                <span className="mt-0.5 block text-[10.5px] text-text-secondary">
+                  {isEn ? site.subEn : site.subId}
+                </span>
+              </span>
+              <span className="shrink-0 text-right">
+                <span className="block font-mono text-[9.5px] leading-tight text-text-muted tabular-nums">
+                  {site.lat.toFixed(3)}
+                </span>
+                <span className="block font-mono text-[9.5px] leading-tight text-text-muted tabular-nums">
+                  {site.lon.toFixed(3)}
+                </span>
               </span>
               <ArrowUpRight className="h-4 w-4 shrink-0 text-text-muted transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
             </button>
@@ -246,31 +290,26 @@ function EmptyState() {
         </div>
       </motion.div>
 
-      {/* Apa yang dihasilkan satu audit. Dulu empat kartu seragam berikon
-          emoji, padahal seluruh aplikasi memakai ikon lucide. */}
-      <motion.div variants={item} className="mt-6">
-        <h3 className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
-          <span className="h-1.5 w-1.5 rounded-full bg-risk-safe/80" />
+      {/* ── Apa yang dihasilkan satu audit ── */}
+      <motion.div variants={item} className="mt-7">
+        <h3 className="mb-3 flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
           {t('empty.whatYouGet')}
+          <span className="h-px flex-1 bg-gradient-to-r from-risk-safe/25 to-transparent" />
         </h3>
-        <ul className="flex flex-col gap-2.5">
+        <ul className="flex flex-col gap-3">
           {CAPABILITIES.map(({ icon: Icon, labelKey, descKey }) => (
             <li key={labelKey} className="flex gap-3">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03]">
+              <span className="mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
                 <Icon className="h-3.5 w-3.5 text-accent/75" />
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-text-primary">{t(labelKey)}</p>
-                <p className="mt-0.5 text-[10px] leading-snug text-text-secondary">{t(descKey)}</p>
+                <p className="text-[11.5px] font-semibold leading-snug text-text-primary">{t(labelKey)}</p>
+                <p className="mt-0.5 text-[10.5px] leading-snug text-text-secondary">{t(descKey)}</p>
               </div>
             </li>
           ))}
         </ul>
       </motion.div>
-
-      <motion.p variants={item} className="mt-6 border-t border-white/[0.08] pt-4 text-[10px] leading-relaxed text-text-muted">
-        {t('empty.disclaimer')}
-      </motion.p>
     </motion.div>
   );
 }
@@ -327,12 +366,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
   const aiLoading = useAppStore((s) => s.aiLoading);
-  const [sharing, setSharing] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
-  const hasAiReport = Boolean(
-    propertyA?.aiReport?.detailedReport || propertyA?.narrative?.detailed_report
-  );
 
   const handleDownloadReport = async () => {
     if (!canExportSniReport(propertyA)) {
@@ -353,86 +387,6 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
       toast.error(error.message || (lang === 'en' ? 'Report failed.' : 'Laporan gagal.'), { id: toastId });
     } finally {
       setReportLoading(false);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!canExportSniReport(propertyA)) {
-      toast.warning(
-        lang === 'en'
-          ? 'PDF is locked because this audit has insufficient evidence or is not buildable.'
-          : 'PDF dikunci karena bukti audit belum cukup atau lokasi tidak layak dinilai.'
-      );
-      return;
-    }
-
-    setPdfLoading(true);
-    const toastId = toast.loading(lang === 'en' ? 'Preparing full audit PDF…' : 'Menyiapkan PDF audit full…');
-    try {
-      let activeProp = propertyA;
-      // If AI report is not yet ready or detailedReport is missing, ensure it's generated/attached
-      if (!activeProp?.aiReport?.detailedReport && !activeProp?.narrative?.detailed_report) {
-        try {
-          const aiReport = await generateNarrative(activeProp, lang);
-          activeProp = {
-            ...activeProp,
-            aiReport,
-            narrative: aiReport,
-          };
-          useAppStore.setState((s) => ({
-            propertyA: s.propertyA ? { ...s.propertyA, aiReport, narrative: aiReport } : s.propertyA,
-            aiLoading: false,
-          }));
-        } catch (narrativeErr) {
-          console.warn('AI narrative generation failed, applying procedural fallback for PDF', narrativeErr);
-          const fallbackNarrative = generateProceduralNarrative(activeProp, lang);
-          activeProp = {
-            ...activeProp,
-            aiReport: fallbackNarrative,
-            narrative: fallbackNarrative,
-          };
-        }
-      }
-
-      await exportPrintReadyPdf(activeProp, lang);
-      toast.success(
-        lang === 'en' ? 'Full AI audit PDF downloaded.' : 'PDF full audit AI berhasil diunduh.',
-        { id: toastId }
-      );
-    } catch (error) {
-      console.error('PDF export failed', error);
-      toast.error(
-        error.message || (lang === 'en' ? 'PDF export failed.' : 'Ekspor PDF gagal.'),
-        { id: toastId }
-      );
-    } finally {
-      setPdfLoading(false);
-    }
-  };
-
-  const handleShare = async () => {
-    // Tautan publik butuh audit yang tersimpan. Tanpa database, audit tidak
-    // punya id — beri tahu jujur alih-alih gagal diam-diam.
-    if (!propertyA.id) {
-      toast.info(
-        lang === 'en'
-          ? 'Sharing needs the database — available once deployed.'
-          : 'Berbagi butuh database — tersedia setelah aplikasi ter-deploy.'
-      );
-      return;
-    }
-    setSharing(true);
-    const id = toast.loading(lang === 'en' ? 'Creating link…' : 'Membuat tautan…');
-    try {
-      const { url_path } = await createShare(propertyA.id);
-      const url = `${window.location.origin}${url_path}`;
-      await navigator.clipboard.writeText(url).catch(() => {});
-      toast.success(lang === 'en' ? 'Link copied' : 'Tautan disalin', { id });
-    } catch (e) {
-      console.error('Share failed', e);
-      toast.error(e.message || (lang === 'en' ? 'Share failed' : 'Gagal berbagi'), { id });
-    } finally {
-      setSharing(false);
     }
   };
 
@@ -501,9 +455,7 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
             <Sparkles className="h-4 w-4 shrink-0 text-accent" />
           )}
           <span className="font-semibold">
-            {aiLoading
-              ? (lang === 'en' ? 'Generating AI report…' : 'Menyusun laporan AI…')
-              : (lang === 'en' ? 'View Full AI Report' : 'Lihat Laporan Lengkap AI')}
+            {aiLoading ? t('panel.reportLoading') : t('panel.viewReport')}
           </span>
           <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60 group-hover:translate-x-0.5 transition-transform" />
         </Button>
@@ -527,39 +479,6 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
           <span className="font-semibold">{lang === 'en' ? 'SNI Report (PDF)' : 'Laporan SNI (PDF)'}</span>
         </Button>
       </motion.div>
-
-      {/* Full PDF + share actions */}
-      <motion.div variants={item} className="grid grid-cols-2 gap-2 max-[359px]:grid-cols-1">
-        <Button
-          onClick={handleDownloadPdf}
-          disabled={pdfLoading}
-          variant="secondary"
-          size="lg"
-          className="group text-xs py-2 px-3 border border-white/12 flex items-center justify-center gap-1.5 hover:border-accent/40 hover:text-accent transition-all"
-          title={lang === 'en' ? 'Download the complete AI-grounded audit PDF' : 'Unduh PDF lengkap dengan audit AI ter-grounding'}
-        >
-          {pdfLoading ? (
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
-          ) : (
-            <Download className="h-3.5 w-3.5 shrink-0 text-accent" />
-          )}
-          <span>{lang === 'en' ? 'Full PDF' : 'Unduh Full PDF'}</span>
-        </Button>
-        <Button
-          onClick={handleShare}
-          disabled={sharing}
-          variant="accent"
-          size="lg"
-          className="group text-xs py-2 px-3 border border-accent/20 flex items-center justify-center gap-1.5 hover:bg-accent/20 transition-all"
-        >
-          {sharing ? (
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
-          ) : (
-            <Share2 className="h-3.5 w-3.5 shrink-0 text-accent" />
-          )}
-          <span>{lang === 'en' ? 'Share' : 'Bagikan'}</span>
-        </Button>
-      </motion.div>
     </motion.div>
   );
 }
@@ -577,14 +496,17 @@ function CompareState({ propertyA, propertyB, loading, onOpenDrawer, onGenerateR
     >
       {/* Di bawah `sm` panel selebar layar, sehingga judul kanan bertabrakan
           dengan tombol layer peta yang melayang di pojok kanan atas. */}
-      <motion.div variants={item} className="flex items-center justify-between gap-3 pr-11 sm:pr-0">
-        <Badge variant="accent" className="flex items-center gap-1.5 font-mono text-[9px] font-bold tracking-[0.14em]">
+      <motion.div variants={item} className="pr-11 sm:pr-0">
+        <span className="inline-flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-accent">
           <GitCompareArrows className="h-3 w-3" />
           {t('panel.battleMode')}
-        </Badge>
-        <h2 className="truncate font-display text-sm font-semibold text-text-secondary">
+        </span>
+        <h2 className="mt-1.5 font-sans text-[19px] font-semibold leading-[1.15] tracking-[-0.02em] text-text-primary">
           {t('panel.headToHead')}
         </h2>
+        <p className="mt-1 text-[11.5px] leading-snug text-text-secondary">
+          {t('panel.compareIntro')}
+        </p>
       </motion.div>
 
       {/* Penyiapan tiga langkah — juga menampung tombol laporan di langkah 3. */}

@@ -10,7 +10,7 @@ export default function FAQSection({ t }) {
       question: t("faqQ1", "Apa itu S.A.F.E House?"),
       answer: t(
         "faqA1",
-        "S.A.F.E House (Seismic Analysis for Foundation Evaluation) adalah platform audit geospasial berbasis AI untuk menganalisis risiko kebencanaan properti secara cepat dan akurat di Indonesia."
+        "S.A.F.E House (Seismic Analysis for Foundation Evaluation) mengubah satu koordinat menjadi parameter SNI 1726:2019 yang dibutuhkan berkas perizinan: kelas situs, PGA desain, FS likuefaksi, dan paparan bahaya."
       ),
     },
     {

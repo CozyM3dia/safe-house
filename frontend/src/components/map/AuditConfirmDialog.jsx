@@ -1,9 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Zap, X, Crosshair } from 'lucide-react';
-import { useAppStore } from '../../store/useAppStore';
+import { X } from 'lucide-react';
+import { useAppStore, targetSlotFor } from '../../store/useAppStore';
 import { cn } from '../../lib/utils';
+
+/**
+ * Konfirmasi titik sebelum audit dijalankan.
+ *
+ * Yang dikonfirmasi adalah koordinatnya, jadi koordinat itulah satu-satunya
+ * elemen besar di kartu. Sisanya ditahan sekecil mungkin: eyebrow "Konfirmasi
+ * Titik" dulu hanya mengulang judul, dan daftar parameter berbentuk chip
+ * membungkus jadi tiga baris bergerigi untuk informasi yang sifatnya cuma
+ * penegas. Keduanya diringkas jadi satu baris teks redup.
+ */
+
+const PARAMETERS = {
+  id: 'Vs30 · kelas situs · PGA SNI 1726 · FS likuefaksi · banjir & longsor · sesar terdekat',
+  en: 'Vs30 · site class · SNI 1726 PGA · liquefaction FS · flood & landslide · nearest fault',
+};
 
 export function AuditConfirmDialog() {
   const pendingAudit = useAppStore((s) => s.pendingAudit);
@@ -11,15 +26,18 @@ export function AuditConfirmDialog() {
   const cancelPendingAudit = useAppStore((s) => s.cancelPendingAudit);
   const lang = useAppStore((s) => s.lang);
   const mode = useAppStore((s) => s.mode);
+  const propertyA = useAppStore((s) => s.propertyA);
+  const propertyB = useAppStore((s) => s.propertyB);
+  const armedSlot = useAppStore((s) => s.armedSlot);
   const theme = useAppStore((s) => s.theme);
-  const closeButtonRef = useRef(null);
+  const confirmButtonRef = useRef(null);
   const previousFocusRef = useRef(null);
   const hasPendingAudit = Boolean(pendingAudit);
 
   useEffect(() => {
     if (!hasPendingAudit) return undefined;
     previousFocusRef.current = document.activeElement;
-    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const frame = window.requestAnimationFrame(() => confirmButtonRef.current?.focus());
     return () => {
       window.cancelAnimationFrame(frame);
       previousFocusRef.current?.focus?.();
@@ -27,7 +45,7 @@ export function AuditConfirmDialog() {
     };
   }, [hasPendingAudit]);
 
-  // Keyboard accessibility: Enter to confirm, Escape to cancel
+  // Enter mengonfirmasi, Escape membatalkan.
   useEffect(() => {
     if (!pendingAudit) return;
     const handleKeyDown = (e) => {
@@ -46,13 +64,25 @@ export function AuditConfirmDialog() {
   if (typeof document === 'undefined') return null;
 
   const isEn = lang === 'en';
-  const isBattle = mode === 'battle' || Boolean(pendingAudit?.isBattlePin);
+  const isLight = theme === 'light';
+  // Label slot mengikuti resolveSlot() lewat helper yang sama, bukan menebak
+  // dari `isBattlePin` saja — dulu klik tanpa arm selalu berlabel "Lokasi A"
+  // padahal slot tujuannya bisa B.
+  const slot = pendingAudit?.isBattlePin
+    ? 'B'
+    : targetSlotFor({ mode, propertyA, propertyB, armedSlot });
+  const slotLabel = slot
+    ? slot === 'B'
+      ? isEn ? 'Site B' : 'Lokasi B'
+      : isEn ? 'Site A' : 'Lokasi A'
+    : null;
+
+  const hairline = isLight ? 'border-[rgba(91,67,48,0.14)]' : 'border-white/10';
 
   return createPortal(
     <AnimatePresence>
       {pendingAudit && (
         <div className="safe-inset-x fixed inset-y-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -62,120 +92,149 @@ export function AuditConfirmDialog() {
             className="absolute inset-0 bg-bg/80 backdrop-blur-md"
           />
 
-          {/* Modal Card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.93, y: 18 }}
+            initial={{ opacity: 0, scale: 0.96, y: 14 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.93, y: 14 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 300 }}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="audit-confirm-title"
             className={cn(
-              'relative max-h-[calc(100dvh-1.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl p-4 backdrop-blur-2xl sm:p-6',
-              theme === 'light'
-                ? 'border border-[rgba(91,67,48,0.18)] bg-[rgba(248,241,231,0.98)] shadow-[0_24px_64px_rgba(91,67,48,0.24)]'
-                : 'border border-accent/40 bg-[#16100c] shadow-2xl shadow-black/90',
+              'relative isolate max-h-[calc(100dvh-1.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-[400px] overflow-y-auto overscroll-contain rounded-2xl backdrop-blur-2xl',
+              isLight
+                ? 'border border-[rgba(91,67,48,0.18)] bg-[rgba(250,244,236,0.98)] shadow-[0_24px_64px_rgba(91,67,48,0.24)]'
+                : 'border border-white/[0.09] bg-[#15100c] shadow-[0_28px_80px_rgba(0,0,0,0.75)]',
             )}
           >
-            {/* Close button */}
-            <button
-              type="button"
-              ref={closeButtonRef}
-              onClick={cancelPendingAudit}
-              className={cn(
-                'absolute right-2 top-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:text-text-primary sm:right-3.5 sm:top-3.5',
-                theme === 'light' ? 'hover:bg-[rgba(91,67,48,0.08)]' : 'hover:bg-white/10',
-              )}
-              aria-label={isEn ? 'Cancel' : 'Batal'}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {/* Aksen atas */}
+            <span
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/70 to-transparent"
+            />
 
-            {/* Header Icon */}
-            <div className="mb-4 flex items-center gap-3">
-              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent/15 shadow-[0_0_15px_rgba(212,149,106,0.2)]">
-                <Crosshair className="h-6 w-6 text-accent animate-pulse" />
-                <div className="absolute inset-0 rounded-xl bg-accent/10 blur-sm" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
-                    <MapPin className="h-2.5 w-2.5" />
-                    {isBattle
-                      ? (pendingAudit.isBattlePin ? (isEn ? 'Site B (Comparison)' : 'Lokasi B (Pembanding)') : (isEn ? 'Site A' : 'Lokasi A'))
-                      : (isEn ? 'Target Location' : 'Titik Target')}
+            {/* ── Kepala ── */}
+            <div className="flex items-start justify-between gap-3 px-5 pb-4 pt-4">
+              <div className="min-w-0">
+                {/* Penanda slot hanya relevan di mode bandingkan; di mode audit
+                    barisnya hilang sama sekali dan judul naik ke atas. */}
+                {slotLabel && (
+                  <span className="mb-2 inline-block rounded border border-accent/30 bg-accent/10 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-accent">
+                    {slotLabel}
                   </span>
-                </div>
-                <h3 className="mt-1 font-display text-base font-bold text-text-primary">
-                  {isEn ? 'Confirm Location Audit' : 'Konfirmasi Audit Lokasi'}
+                )}
+                <h3
+                  id="audit-confirm-title"
+                  className="font-sans text-[21px] font-semibold leading-[1.1] tracking-[-0.03em] text-text-primary"
+                >
+                  {isEn ? 'Audit this location?' : 'Audit lokasi ini?'}
                 </h3>
               </div>
-            </div>
-
-            {/* Question / Description */}
-            <div className="mb-5 space-y-3 text-xs leading-relaxed text-text-secondary">
-              <p className="font-medium text-text-primary text-sm">
-                {isEn
-                  ? 'Are you sure you want to audit this location?'
-                  : 'Apakah Anda yakin ingin mengaudit lokasi ini?'}
-              </p>
-
-              {/* Coordinates Card */}
-              <div className={cn(
-                'flex items-center justify-between gap-3 rounded-xl px-4 py-3 font-mono text-xs max-[359px]:flex-col max-[359px]:items-start',
-                theme === 'light'
-                  ? 'border border-[rgba(91,67,48,0.14)] bg-[rgba(91,67,48,0.045)]'
-                  : 'border border-white/10 bg-white/[0.04]',
-              )}>
-                <div>
-                  <span className="block text-[9px] font-sans font-medium uppercase tracking-wider text-text-muted">
-                    Latitude
-                  </span>
-                  <span className="font-bold text-accent">{pendingAudit.lat.toFixed(5)}°</span>
-                </div>
-                <div className={cn('h-6 w-px max-[359px]:hidden', theme === 'light' ? 'bg-[rgba(91,67,48,0.14)]' : 'bg-white/10')} />
-                <div className="text-right">
-                  <span className="block text-[9px] font-sans font-medium uppercase tracking-wider text-text-muted">
-                    Longitude
-                  </span>
-                  <span className="font-bold text-accent">{pendingAudit.lng.toFixed(5)}°</span>
-                </div>
-              </div>
-
-              <p className="text-[11px] text-text-muted leading-normal">
-                {isEn
-                  ? 'S.A.F.E House will compute geotechnical soil stability, SNI 1726 seismic amplification, and InaRISK hazard layers for these coordinates.'
-                  : 'S.A.F.E House akan menganalisis stabilitas geoteknik, amplifikasi seismik SNI 1726, serta layer bahaya InaRISK untuk koordinat ini.'}
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className={cn(
-              'flex items-center justify-end gap-3 border-t pt-3 max-[639px]:flex-col max-[639px]:items-stretch',
-              theme === 'light' ? 'border-[rgba(91,67,48,0.14)]' : 'border-white/10',
-            )}>
               <button
                 type="button"
                 onClick={cancelPendingAudit}
                 className={cn(
-                  'flex min-h-[44px] items-center justify-center rounded-xl px-4 py-2 text-xs font-semibold text-text-secondary transition-all hover:text-text-primary active:scale-95 cursor-pointer max-[639px]:w-full',
-                  theme === 'light'
-                    ? 'border border-[rgba(91,67,48,0.14)] bg-[rgba(91,67,48,0.045)] hover:border-[rgba(91,67,48,0.25)] hover:bg-[rgba(91,67,48,0.08)]'
-                    : 'border border-white/12 bg-white/[0.04] hover:border-white/25 hover:bg-white/10',
+                  '-mr-1.5 -mt-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-text-muted transition-colors hover:text-text-primary',
+                  isLight ? 'hover:bg-[rgba(91,67,48,0.08)]' : 'hover:bg-white/10',
+                )}
+                aria-label={isEn ? 'Cancel' : 'Batal'}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* ── Pembacaan koordinat ── */}
+            <div className="px-5">
+              <div
+                className={cn(
+                  'relative overflow-hidden rounded-xl border',
+                  isLight
+                    ? 'border-[rgba(91,67,48,0.14)] bg-[rgba(91,67,48,0.05)]'
+                    : 'border-white/[0.09] bg-white/[0.035]',
+                )}
+              >
+                {/* Reticle latar */}
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 200 100"
+                  className="pointer-events-none absolute inset-0 h-full w-full text-accent/[0.09]"
+                  fill="none"
+                >
+                  <circle cx="100" cy="50" r="34" stroke="currentColor" strokeWidth="0.6" />
+                  <circle cx="100" cy="50" r="9" stroke="currentColor" strokeWidth="0.6" />
+                  <line x1="100" y1="6" x2="100" y2="94" stroke="currentColor" strokeWidth="0.6" strokeDasharray="2 5" />
+                  <line x1="6" y1="50" x2="194" y2="50" stroke="currentColor" strokeWidth="0.6" strokeDasharray="2 5" />
+                </svg>
+
+                <div className="relative grid grid-cols-2">
+                  {[
+                    ['Latitude', pendingAudit.lat],
+                    ['Longitude', pendingAudit.lng],
+                  ].map(([label, value], index) => (
+                    <div
+                      key={label}
+                      className={cn(
+                        'px-4 py-3.5',
+                        index === 1 && (isLight ? 'border-l border-[rgba(91,67,48,0.14)]' : 'border-l border-white/[0.08]'),
+                      )}
+                    >
+                      <span className="block font-mono text-[8.5px] font-bold uppercase tracking-[0.2em] text-text-muted">
+                        {label}
+                      </span>
+                      <span className="mt-1.5 block font-mono text-[19px] font-bold leading-none tabular-nums text-accent">
+                        {value.toFixed(5)}
+                        <span className="text-[13px] font-normal opacity-70">°</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Apa yang dihitung ── */}
+            <p className="px-5 pt-3.5 text-[10.5px] leading-[1.6] text-text-muted">
+              <span className="font-medium text-text-secondary">
+                {isEn ? 'Computes:' : 'Dihitung:'}
+              </span>{' '}
+              {isEn ? PARAMETERS.en : PARAMETERS.id}
+            </p>
+
+            {/* ── Aksi ── */}
+            <div className={cn('mt-4 flex items-center gap-2 border-t px-5 py-3.5', hairline)}>
+              <button
+                type="button"
+                onClick={cancelPendingAudit}
+                className={cn(
+                  'flex min-h-[44px] items-center justify-center rounded-xl px-4 text-xs font-semibold text-text-secondary transition-all hover:text-text-primary active:scale-[0.98]',
+                  isLight
+                    ? 'border border-[rgba(91,67,48,0.14)] bg-[rgba(91,67,48,0.045)] hover:bg-[rgba(91,67,48,0.08)]'
+                    : 'border border-white/12 bg-white/[0.04] hover:bg-white/10',
                 )}
               >
                 {isEn ? 'Cancel' : 'Batal'}
+                <kbd
+                  className={cn(
+                    'ml-2 hidden rounded px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase leading-none tracking-wider text-text-muted sm:inline-block',
+                    isLight ? 'bg-[rgba(91,67,48,0.08)]' : 'bg-white/[0.07]',
+                  )}
+                >
+                  Esc
+                </kbd>
               </button>
+
               <button
                 type="button"
+                ref={confirmButtonRef}
                 onClick={confirmPendingAudit}
                 className={cn(
-                  'flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[#d4956a] bg-[#d4956a] px-5 py-2 text-xs font-bold shadow-[0_0_20px_rgba(212,149,106,0.35)] transition-all hover:bg-[#e4a87e] hover:shadow-[0_0_25px_rgba(212,149,106,0.55)] active:scale-95 cursor-pointer max-[639px]:w-full',
-                  theme === 'light' ? 'text-[#30241d] hover:text-[#30241d]' : 'text-bg hover:text-bg',
+                  'flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-accent bg-accent px-5 text-xs font-bold shadow-[0_6px_24px_-6px_rgba(212,149,106,0.7)] transition-all hover:bg-accent-hover hover:shadow-[0_8px_28px_-6px_rgba(212,149,106,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98]',
+                  isLight ? 'text-[#30241d]' : 'text-bg',
                 )}
               >
-                <Zap className={cn('h-3.5 w-3.5', theme === 'light' ? 'fill-[#30241d] text-[#30241d]' : 'fill-bg text-bg')} />
-                <span>{isEn ? 'Audit This Location' : 'Audit Lokasi Sekarang'}</span>
+                {isEn ? 'Start audit' : 'Mulai audit'}
+                <kbd className="hidden rounded bg-black/[0.14] px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none sm:inline-block">
+                  &#8629;
+                </kbd>
               </button>
             </div>
           </motion.div>

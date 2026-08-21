@@ -27,6 +27,21 @@ const baseMapStyleForTheme = (theme) => {
   return theme === 'light' ? 'alidade' : 'alidade-dark';
 };
 
+/**
+ * Slot yang akan terisi bila pengguna mengklik peta sekarang.
+ *
+ * Satu sumber kebenaran untuk reticle, banner peta, dan dialog konfirmasi.
+ * Sebelumnya ketiganya menyalin logika ini masing-masing dan mulai berbeda
+ * begitu aturannya berubah. Mengembalikan `null` bila tidak ada slot yang
+ * jelas jadi sasaran.
+ */
+export function targetSlotFor({ mode, propertyA, propertyB, armedSlot }) {
+  if (mode !== 'battle') return null;
+  if (!propertyA) return 'A';
+  if (armedSlot) return armedSlot;
+  return propertyB ? null : 'B';
+}
+
 export const useAppStore = create(
   persist(
     (set, get) => ({
@@ -143,11 +158,15 @@ export const useAppStore = create(
       // pertama di mode bandingkan jatuh ke propertyB sementara propertyA tetap
       // null — panel kiri lalu terkunci di EmptyState selamanya.
       resolveSlot: (explicitBattlePin = false) => {
-        const { mode, propertyA, armedSlot } = get();
+        const { mode, propertyA, propertyB, armedSlot } = get();
         if (mode !== 'battle') return 'A';
         if (!propertyA) return 'A';
         if (explicitBattlePin || armedSlot === 'B') return 'B';
-        return 'A';
+        if (armedSlot === 'A') return 'A';
+        // Tanpa slot yang di-arm, klik peta berikutnya mengisi slot yang masih
+        // kosong. Dulu selalu jatuh ke A, sehingga klik kedua di mode
+        // bandingkan diam-diam menimpa lokasi yang baru saja diaudit.
+        return propertyB ? 'A' : 'B';
       },
       setPendingAudit: (pendingAudit) => set({ pendingAudit }),
       confirmPendingAudit: () => {

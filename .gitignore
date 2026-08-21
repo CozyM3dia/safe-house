@@ -81,3 +81,5 @@ frontend-old/
 # Vendored third-party projects and downloaded agent skills
 freellmapi/
 scratch/
+
+.vercel

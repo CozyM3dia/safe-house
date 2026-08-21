@@ -16,27 +16,32 @@ function computeScore(p) {
 }
 
 // SVG arc gauge
-function ArcGauge({ score, hex, size = 140 }) {
-  const strokeW = 8;
-  const r = (size - strokeW) / 2;
+function ArcGauge({ score, hex, size = 120 }) {
+  const strokeW = 7;
   const cx = size / 2;
   const cy = size / 2;
+  // Radius with margin for stroke width and glow filter
+  const r = (size - strokeW) / 2 - 8;
 
-  // Arc spans 240 degrees (from 150deg to 390deg)
-  const startAngle = 150;
+  // Arc spans 240 degrees (from -120deg / 8 o'clock to +120deg / 4 o'clock, opening at bottom)
+  const startAngle = -120;
   const totalArc = 240;
-  const endAngle = startAngle + (totalArc * score) / 100;
+  const endAngle = startAngle + (totalArc * Math.min(100, Math.max(0, score))) / 100;
 
+  // 0 deg is top (12 o'clock), 90 deg is 3 o'clock, clockwise
   const polarToCartesian = (angle) => {
-    const rad = ((angle - 90) * Math.PI) / 180;
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    const rad = (angle * Math.PI) / 180;
+    return {
+      x: cx + r * Math.sin(rad),
+      y: cy - r * Math.cos(rad),
+    };
   };
 
   const describeArc = (start, end) => {
     const s = polarToCartesian(start);
     const e = polarToCartesian(end);
     const largeArc = end - start > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${largeArc} 1 ${e.x} ${e.y}`;
+    return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
   };
 
   const bgPath = describeArc(startAngle, startAngle + totalArc);
@@ -46,24 +51,29 @@ function ArcGauge({ score, hex, size = 140 }) {
   const ticks = [0, 25, 50, 75, 100];
   const tickMarks = ticks.map((val) => {
     const angle = startAngle + (totalArc * val) / 100;
-    const inner = polarToCartesian(angle);
-    const outerR = r + 6;
-    const rad = ((angle - 90) * Math.PI) / 180;
-    const outer = { x: cx + outerR * Math.cos(rad), y: cy + outerR * Math.sin(rad) };
-    return { val, x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y };
+    const rad = (angle * Math.PI) / 180;
+    const innerR = r + 4;
+    const outerR = r + 8;
+    return {
+      val,
+      x1: cx + innerR * Math.sin(rad),
+      y1: cy - innerR * Math.cos(rad),
+      x2: cx + outerR * Math.sin(rad),
+      y2: cy - outerR * Math.cos(rad),
+    };
   });
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="drop-shadow-lg">
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="drop-shadow-lg overflow-visible">
       <defs>
-        <filter id="glow-arc">
+        <filter id="glow-arc" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="3" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <linearGradient id="arc-grad" x1="0%" y1="100%" x2="100%" y2="0%">
           <stop offset="0%" stopColor={hex} stopOpacity="0.6" />
           <stop offset="100%" stopColor={hex} stopOpacity="1" />
         </linearGradient>
@@ -73,7 +83,7 @@ function ArcGauge({ score, hex, size = 140 }) {
       <path
         d={bgPath}
         fill="none"
-        stroke="rgba(255,210,170,0.06)"
+        stroke="rgba(255,210,170,0.08)"
         strokeWidth={strokeW}
         strokeLinecap="round"
       />
@@ -83,7 +93,7 @@ function ArcGauge({ score, hex, size = 140 }) {
         <line
           key={t.val}
           x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2}
-          stroke="rgba(255,210,170,0.15)"
+          stroke="rgba(255,210,170,0.18)"
           strokeWidth={1}
         />
       ))}
@@ -136,7 +146,7 @@ export function SafeScoreCard({ property }) {
     <div className="bezel-outer">
     <motion.div
       whileHover={{ y: -1 }}
-      className="bezel-inner relative overflow-hidden p-5"
+      className="bezel-inner relative overflow-hidden p-4 sm:p-5"
     >
       {/* Ambient glow */}
       <div
@@ -148,29 +158,29 @@ export function SafeScoreCard({ property }) {
         style={{ background: hex }}
       />
 
-      <div className="relative flex items-center gap-4">
+      <div className="relative flex items-center gap-3 sm:gap-4">
         {/* Arc gauge */}
-        <div className="relative shrink-0">
+        <div className="relative shrink-0 flex items-center justify-center" style={{ width: 120, height: 120 }}>
           <ArcGauge score={score} hex={hex} size={120} />
           {/* Score text centered in gauge */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingTop: '8px' }}>
-            <span className="data-num text-[32px] leading-none text-text-primary font-bold">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-1">
+            <span className="data-num text-[30px] font-bold leading-none text-text-primary">
               {hasScore ? animatedScore : 'N/A'}
             </span>
-            <span className="data-num text-[11px] text-text-muted mt-0.5">{hasScore ? '/100' : ''}</span>
+            <span className="data-num mt-1 text-[11px] text-text-muted">{hasScore ? '/100' : ''}</span>
           </div>
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            <ShieldCheck className="h-3.5 w-3.5" style={{ color: hex }} />
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0" style={{ color: hex }} />
             <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: hex }}>
               {t('card.safeScore')}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-wrap items-center gap-1.5 mb-2">
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
               style={{
@@ -183,7 +193,7 @@ export function SafeScoreCard({ property }) {
               {label}
             </span>
             {isProvisional && (
-              <span className="rounded-md border border-amber-400/25 bg-amber-400/8 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300">
+              <span className="rounded-md border border-amber-400/25 bg-amber-400/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300">
                 {t('card.provisional')}
               </span>
             )}
@@ -208,7 +218,7 @@ function MiniBar({ label, value }) {
   const hex = value >= 70 ? '#ef4444' : value >= 40 ? '#f59e0b' : '#10b981';
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[9px] font-semibold tracking-wider text-text-muted uppercase w-12 shrink-0">{label}</span>
+      <span className="text-[9px] font-semibold tracking-wider text-text-muted uppercase w-[68px] shrink-0 truncate">{label}</span>
       <div className="flex-1 h-1 rounded-full bg-white/6 overflow-hidden">
         <motion.div
           className="h-full rounded-full"
@@ -218,7 +228,7 @@ function MiniBar({ label, value }) {
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
         />
       </div>
-      <span className="data-num text-[8px] w-5 text-right" style={{ color: hex }}>{value}</span>
+      <span className="data-num text-[8px] w-5 text-right font-mono tabular-nums" style={{ color: hex }}>{value}</span>
     </div>
   );
 }

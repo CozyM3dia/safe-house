@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Waves } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle } from '../ui/card';
+import { useT } from '../../hooks/useTranslation';
 
 /**
  * Generate a pseudo-realistic seismograph waveform.
@@ -31,6 +32,7 @@ function buildPath(points) {
 }
 
 export function SeismicWaveform({ property }) {
+  const t = useT();
   if (!property) return null;
   const fault = property?.geotech?.nearest_fault;
   const pga = property?.geotech?.pga ?? 0.3;
@@ -43,7 +45,7 @@ export function SeismicWaveform({ property }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <Waves className="h-3 w-3" style={{ color }} />
-          Seismic Signature
+          {t('card.seismic')}
         </CardTitle>
         <span className="text-[10px] font-mono" style={{ color }}>
           PGA {pga.toFixed(2)}g
@@ -105,7 +107,7 @@ export function SeismicWaveform({ property }) {
       </div>
 
       <div className="mt-2 flex items-center justify-between text-[10px] font-mono tracking-wider text-text-muted">
-        <span>Fault: {fault?.name ?? '—'}</span>
+        <span>{t('card.faultPrefix')} {fault?.name ?? '—'}</span>
         <span>{fault?.distance_km != null ? `${Number(fault.distance_km).toFixed(0)} km` : ''}</span>
       </div>
     </Card>

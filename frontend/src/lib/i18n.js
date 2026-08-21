@@ -17,7 +17,7 @@ const translations = {
   'status.ready': { id: 'Siap', en: 'Ready' },
   'status.active': { id: 'Aktif', en: 'Active' },
   'status.analyzing': { id: 'Menganalisis', en: 'Analyzing' },
-  'status.aiProcessing': { id: 'AI Memproses', en: 'AI Processing' },
+  'status.aiProcessing': { id: 'Menyusun laporan', en: 'Writing report' },
 
   // ─── Accessibility / Map Controls ─────────────────────────────
   'accessibility.togglePanel': { id: 'Buka atau tutup panel audit', en: 'Toggle audit panel' },
@@ -124,8 +124,8 @@ const translations = {
     en: 'Nearest active fault (PuSGeN 2024)',
   },
   'empty.aidesc': {
-    id: 'Ringkasan risiko & rekomendasi berbasis AI',
-    en: 'AI-grounded risk summary & recommendations',
+    id: 'Ringkasan risiko & rekomendasi mitigasi',
+    en: 'Risk summary & mitigation recommendations',
   },
   'empty.briefing': {
     id: 'Satu titik di peta menjadi briefing risiko yang bisa Anda pahami dalam hitungan menit.',
@@ -139,6 +139,11 @@ const translations = {
   'empty.decision': { id: 'keputusan', en: 'decision' },
   'empty.sampleLocations': { id: 'Coba lokasi contoh', en: 'Try a sample location' },
   'empty.whatYouGet': { id: 'Yang Anda dapat', en: 'What you get' },
+  'empty.flowSelect': { id: 'Pilih titik', en: 'Pick a point' },
+  'empty.flowRead': { id: 'Baca hasil', en: 'Read the result' },
+  'empty.flowDecide': { id: 'Ambil keputusan', en: 'Decide' },
+  'empty.sources': { id: 'Sumber data', en: 'Data sources' },
+  'empty.duration': { id: 'Hasil dalam ±20 detik', en: 'Result in ~20 seconds' },
   'empty.disclaimer': {
     id: 'Screening awal berbasis data, bukan pengganti penyelidikan geoteknik profesional.',
     en: 'Data-based screening, not a replacement for a professional geotechnical investigation.',
@@ -149,8 +154,8 @@ const translations = {
   'empty.capabilityLiquefactionDesc': { id: 'FS dan bahaya InaRISK BNPB', en: 'FS and InaRISK BNPB hazards' },
   'empty.capabilityFault': { id: 'Sesar aktif terdekat', en: 'Nearest active fault' },
   'empty.capabilityFaultDesc': { id: 'Geometri PuSGeN 2024', en: 'PuSGeN 2024 geometry' },
-  'empty.capabilityAi': { id: 'Penjelasan AI', en: 'AI explanation' },
-  'empty.capabilityAiDesc': { id: 'Ditulis dari angka audit, bukan dikarang', en: 'Grounded in audit values, not invented' },
+  'empty.capabilityAi': { id: 'Rekomendasi pondasi', en: 'Foundation guidance' },
+  'empty.capabilityAiDesc': { id: 'Disusun dari angka audit', en: 'Derived from the audit values' },
 
   // ─── Left Panel — Populated State ──────────────────────────────
   'panel.siteAnalysis': { id: 'Analisis Situs', en: 'Site Analysis' },
@@ -160,15 +165,19 @@ const translations = {
   'panel.location': { id: 'Lokasi', en: 'Location' },
   'panel.comparison': { id: 'Perbandingan', en: 'Comparison' },
   'panel.viewReport': {
-    id: 'Lihat Laporan Audit AI',
-    en: 'View Full AI Audit Report',
+    id: 'Lihat laporan lengkap',
+    en: 'View full report',
   },
   'panel.reportLoading': {
-    id: 'Laporan AI Memuat…',
-    en: 'AI Report Loading…',
+    id: 'Menyusun laporan…',
+    en: 'Writing report…',
   },
   'panel.battleMode': { id: 'Mode Bandingkan', en: 'Compare Mode' },
   'panel.headToHead': { id: 'Lokasi A vs Lokasi B', en: 'Site A vs Site B' },
+  'panel.compareIntro': {
+    id: 'Dua titik, parameter SNI yang sama, selisih yang bisa dipertanggungjawabkan.',
+    en: 'Two points, the same SNI parameters, a difference you can defend.',
+  },
   'panel.riskProfile': {
     id: 'Profil Risiko',
     en: 'Risk Profile',
@@ -196,7 +205,8 @@ const translations = {
   'card.pga': { id: 'PGA', en: 'PGA' },
   'card.liquefactionFs': { id: 'FS Likuefaksi', en: 'Liquefaction FS' },
   'card.riskRadar': { id: 'Radar Risiko (5-axis)', en: 'Risk Radar (5-axis)' },
-  'card.seismic': { id: 'Tanda Tangan Seismik', en: 'Seismic Signature' },
+  'card.seismic': { id: 'Profil Guncangan', en: 'Shaking profile' },
+  'card.faultPrefix': { id: 'Sesar:', en: 'Fault:' },
   'card.probability': {
     id: 'Distribusi Probabilitas',
     en: 'Probability Distribution',
@@ -369,6 +379,14 @@ const translations = {
   'drawer.low': { id: 'Rendah', en: 'Low' },
   'drawer.high': { id: 'Tinggi', en: 'High' },
   'drawer.veryHigh': { id: 'Sangat Tinggi', en: 'Very High' },
+  'drawer.safeScore': { id: 'Skor S.A.F.E', en: 'S.A.F.E Score' },
+  'drawer.evidence': { id: 'Bukti Terukur', en: 'Measured Evidence' },
+  'drawer.analysis': { id: 'Analisis Naratif', en: 'Narrative Analysis' },
+  'drawer.detail': { id: 'Rincian', en: 'Detail' },
+  'drawer.aqiFair': { id: 'CUKUP', en: 'FAIR' },
+  'drawer.aqiPoor': { id: 'BURUK', en: 'POOR' },
+  'drawer.sectionExpand': { id: 'Buka bagian', en: 'Expand section' },
+  'drawer.sectionCollapse': { id: 'Tutup bagian', en: 'Collapse section' },
 
   // ─── Command Palette ───────────────────────────────────────────
   'cmd.searchPlaceholder': {
@@ -404,16 +422,16 @@ const translations = {
     en: 'S.A.F.E House Geotechnical Command Center',
   },
   'tour.welcome.desc': {
-    id: 'Selamat datang! S.A.F.E House mengintegrasikan data resmi BNPB InaRISK, sesar PuSGeN 2024, standar SNI 1726/8460, dan AI ter-grounding untuk menganalisis risiko lahan di seluruh Indonesia.',
-    en: 'Welcome! S.A.F.E House integrates official BNPB InaRISK data, PuSGeN 2024 faults, SNI 1726/8460 standards, and grounded AI to analyze land safety across Indonesia.',
+    id: 'Data resmi BNPB InaRISK, sesar PuSGeN 2024, dan standar SNI 1726/8460 dihitung jadi satu skor risiko lahan untuk titik mana pun di Indonesia.',
+    en: 'Official BNPB InaRISK data, PuSGeN 2024 faults, and SNI 1726/8460 standards computed into one land risk score for any point in Indonesia.',
   },
   'tour.cursor.title': {
     id: 'Kursor Presisi & Konfirmasi Audit',
     en: 'Precision Reticle & Audit Confirmation',
   },
   'tour.cursor.desc': {
-    id: 'Jelajahi peta dengan kursor hitam presisi tinggi dan pembaca koordinat real-time. Klik titik mana pun untuk membuka dialog konfirmasi audit yang aman.',
-    en: 'Explore the map with high-precision black crosshairs and live coordinate readouts. Click any point to open a safe location audit confirmation dialog.',
+    id: 'Kursor menampilkan koordinat langsung. Klik titik mana pun untuk mengonfirmasi lokasi sebelum audit dijalankan.',
+    en: 'The reticle shows live coordinates. Click any point to confirm the location before the audit runs.',
   },
   'tour.search.title': {
     id: 'Pencarian Lokasi Cerdas (⌘K / Ctrl+K)',
@@ -424,12 +442,12 @@ const translations = {
     en: 'Press ⌘K or click search to look up addresses, streets, districts, or precise coordinates anywhere in Indonesia.',
   },
   'tour.mode.title': {
-    id: 'Mode Audit vs Battle',
-    en: 'Audit vs Battle Mode',
+    id: 'Mode Audit & Bandingkan',
+    en: 'Audit & Compare modes',
   },
   'tour.mode.desc': {
-    id: 'Pilih Mode Audit untuk evaluasi komprehensif satu lokasi, atau Mode Battle untuk membandingkan 2 properti secara head-to-head.',
-    en: 'Choose Audit Mode for comprehensive single-site evaluation, or Battle Mode to compare 2 candidate properties head-to-head.',
+    id: 'Mode Audit menilai satu lokasi. Mode Bandingkan menempatkan dua lokasi berdampingan pada parameter yang sama.',
+    en: 'Audit mode assesses one site. Compare mode places two sites side by side on the same parameters.',
   },
   'tour.panel.title': {
     id: 'Dashboard Geoteknik & Laporan SNI (PDF)',
@@ -448,20 +466,20 @@ const translations = {
     en: 'Open layer controls to toggle official InaRISK hazard overlays (Flood, Landslide, Seismic) and PuSGeN 2024 dashed active fault lines.',
   },
   'tour.chatbot.title': {
-    id: 'Konsultan S.A.F.E AI Chatbot',
-    en: 'S.A.F.E AI Geotechnical Consultant',
+    id: 'Tanya jawab audit',
+    en: 'Ask about the audit',
   },
   'tour.chatbot.desc': {
-    id: 'Tanyakan rekomendasi pondasi, mitigasi tanah lunak, dan aturan SNI langsung kepada AI yang memiliki konteks audit lokasi secara utuh.',
-    en: 'Ask foundation recommendations, soft soil mitigation, and SNI building codes directly to an AI consultant with full audit context.',
+    id: 'Tanyakan rekomendasi pondasi, mitigasi tanah lunak, atau pasal SNI terkait. Jawaban memakai angka audit lokasi yang sedang terbuka.',
+    en: 'Ask about foundations, soft-soil mitigation, or the relevant SNI clauses. Answers use the numbers from the open audit.',
   },
   'tour.finish.title': {
-    id: 'Siap Memulai Audit',
-    en: 'Ready to Audit',
+    id: 'Mulai audit',
+    en: 'Run an audit',
   },
   'tour.finish.desc': {
-    id: 'Klik titik mana saja di peta atau gunakan bilah pencarian untuk menjalankan audit kelayakan tanah dan mitigasi bencana pertama Anda!',
-    en: 'Click any location on the map or search an address to run your first geotechnical land safety and hazard audit!',
+    id: 'Klik titik mana saja di peta atau cari alamat untuk menjalankan audit pertama.',
+    en: 'Click any point on the map or search an address to run your first audit.',
   },
   'tour.stepOf': { id: 'dari', en: 'of' },
   'tour.getStarted': { id: 'Mulai Sekarang', en: 'Get Started' },

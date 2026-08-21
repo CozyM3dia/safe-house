@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { GitCompareArrows, MousePointerClick, X } from 'lucide-react';
 
-import { useAppStore } from '../../store/useAppStore';
+import { useAppStore, targetSlotFor } from '../../store/useAppStore';
 
 /**
  * Penanda mode bandingkan di atas peta.
@@ -25,9 +25,7 @@ export function CompareMapBanner() {
   const suppressed = Boolean(pendingAudit) || loading;
   const visible = mode === 'battle' && !suppressed;
 
-  // Slot yang akan terisi bila pengguna mengklik peta sekarang. Cerminan
-  // resolveSlot() di store: tanpa Lokasi A, klik selalu mengisi A.
-  const targetSlot = !propertyA ? 'A' : armedSlot;
+  const targetSlot = targetSlotFor({ mode, propertyA, propertyB, armedSlot });
   const bothReady = Boolean(propertyA && propertyB);
 
   return (

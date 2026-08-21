@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAppStore } from '../../store/useAppStore';
+import { useAppStore, targetSlotFor } from '../../store/useAppStore';
 
 export function MapCursor() {
   const map = useMap();
@@ -14,12 +14,12 @@ export function MapCursor() {
   const mode = useAppStore((s) => s.mode);
   const armedSlot = useAppStore((s) => s.armedSlot);
   const propertyA = useAppStore((s) => s.propertyA);
+  const propertyB = useAppStore((s) => s.propertyB);
   const animRef = useRef(null);
 
-  // Slot yang akan terisi bila pengguna mengklik sekarang — cerminan
-  // resolveSlot() di store. Ditempelkan ke reticle supaya niat klik terbaca di
-  // titik perhatian pengguna, bukan cuma di panel kiri.
-  const targetSlot = mode === 'battle' ? (!propertyA ? 'A' : armedSlot) : null;
+  // Ditempelkan ke reticle supaya niat klik terbaca di titik perhatian
+  // pengguna, bukan cuma di panel kiri.
+  const targetSlot = targetSlotFor({ mode, propertyA, propertyB, armedSlot });
 
   useEffect(() => {
     if (!map) return;

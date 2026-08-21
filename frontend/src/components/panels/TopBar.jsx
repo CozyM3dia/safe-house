@@ -32,11 +32,13 @@ export function TopBar() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [mobileMenuOpen]);
 
+  // Tanpa lokasi terpilih tidak ada status yang layak dilaporkan; badge
+  // "Siap" hanya mengisi ruang tanpa memberi informasi baru.
   const status =
     loading ? { label: t('status.analyzing'), variant: 'moderate' }
     : aiLoading ? { label: t('status.aiProcessing'), variant: 'accent' }
     : propertyA ? { label: t('status.active'), variant: 'safe' }
-    : { label: t('status.ready'), variant: 'safe' };
+    : null;
 
   return (
     <motion.div
@@ -137,15 +139,17 @@ export function TopBar() {
           </button>
         </div>
 
-        <Badge data-tour="topbar-status" variant={status.variant} aria-label={status.label} className="hidden min-h-8 px-2 xl:flex xl:px-2.5" aria-live="polite">
-          <span className={cn(
-            'pulse-dot mr-0 sm:mr-1',
-            status.variant === 'safe' ? 'text-risk-safe'
-            : status.variant === 'moderate' ? 'text-risk-moderate'
-            : 'text-accent'
-          )} />
-          <span className="hidden sm:inline">{status.label}</span>
-        </Badge>
+        {status && (
+          <Badge data-tour="topbar-status" variant={status.variant} aria-label={status.label} className="hidden min-h-8 px-2 xl:flex xl:px-2.5" aria-live="polite">
+            <span className={cn(
+              'pulse-dot mr-0 sm:mr-1',
+              status.variant === 'safe' ? 'text-risk-safe'
+              : status.variant === 'moderate' ? 'text-risk-moderate'
+              : 'text-accent'
+            )} />
+            <span className="hidden sm:inline">{status.label}</span>
+          </Badge>
+        )}
 
         <button
           type="button"
@@ -170,10 +174,12 @@ export function TopBar() {
               <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
                 {lang === 'en' ? 'Display' : 'Tampilan'}
               </span>
-              <Badge variant={status.variant} aria-label={status.label} className="min-h-7 px-2" aria-live="polite">
-                <span className={cn('pulse-dot mr-1', status.variant === 'safe' ? 'text-risk-safe' : status.variant === 'moderate' ? 'text-risk-moderate' : 'text-accent')} />
-                {status.label}
-              </Badge>
+              {status && (
+                <Badge variant={status.variant} aria-label={status.label} className="min-h-7 px-2" aria-live="polite">
+                  <span className={cn('pulse-dot mr-1', status.variant === 'safe' ? 'text-risk-safe' : status.variant === 'moderate' ? 'text-risk-moderate' : 'text-accent')} />
+                  {status.label}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center justify-between gap-3">
               <LanguageSelector />

@@ -234,7 +234,9 @@ export function parseBuildingCodes(content) {
     }
 
     // Clean up description if any leading/trailing colons or dashes remained
-    description = description.replace(/^[:\-–\s]+/, '').trim();
+    // Em dash (U+2014) sebelumnya lolos dari daftar pemisah, jadi deskripsi
+    // standar tampil sebagai "— Tata cara perencanaan…" di kartu.
+    description = description.replace(/^[:\-–—\s]+/, '').trim();
 
     if (code) {
       const docMeta = resolveStandardDoc(code);

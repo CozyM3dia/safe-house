@@ -8,6 +8,8 @@
  * Bentuk bidang mengikuti backend/models.py (snake_case).
  */
 
+import { hazardBand } from './utils';
+
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
 /**
@@ -81,7 +83,14 @@ export const COMPARE_ROWS = [
     read: (p) =>
       p?.hazard?.flood_known === false ? null : num(p?.hazard?.flood_risk),
     display: (v) => (v === null ? '—' : String(v)),
-    note: (p) => (p?.hazard?.flood_known === false ? null : p?.hazard?.flood_label ?? null),
+    // Sufiks provenance dari backend terlalu panjang untuk kolom catatan;
+    // bandnya dipertahankan dan penandanya dipadatkan jadi "est.".
+    note: (p) => {
+      if (p?.hazard?.flood_known === false) return null;
+      const { band, provisional } = hazardBand(p?.hazard?.flood_label);
+      if (!band) return null;
+      return provisional ? `${band} (est.)` : band;
+    },
     unit: '',
   },
 ];

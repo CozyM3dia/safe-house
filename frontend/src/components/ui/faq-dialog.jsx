@@ -45,7 +45,7 @@ export function FaqDialog() {
                       <strong>Apa itu S.A.F.E House?</strong>
                     </p>
                     <p>
-                      S.A.F.E House adalah platform audit lokasi berbasis AI yang membantu Anda menilai potensi risiko bencana (seperti gempa dan banjir) serta kondisi lingkungan di sekitar suatu properti atau lokasi.
+                      S.A.F.E House menilai potensi risiko bencana (gempa, banjir, longsor) dan kondisi lingkungan di sekitar satu titik properti.
                     </p>
                   </div>
                   <div className="space-y-1">
@@ -53,7 +53,7 @@ export function FaqDialog() {
                       <strong>Bagaimana AI menghasilkan laporan audit?</strong>
                     </p>
                     <p>
-                      Sistem kami mengumpulkan data geospasial dari berbagai sumber terbuka, lalu menggunakan model Kecerdasan Buatan (AI) canggih untuk menganalisis dan merangkum informasi tersebut menjadi laporan yang mudah dipahami.
+                      Sistem kami mengumpulkan data geospasial dari berbagai sumber terbuka, lalu merangkumnya menjadi laporan yang bisa dibaca tanpa latar belakang geoteknik.
                     </p>
                   </div>
                   <div className="space-y-1">

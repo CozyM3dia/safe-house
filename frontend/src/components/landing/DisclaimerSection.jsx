@@ -101,7 +101,7 @@ export default function DisclaimerSection({ t }) {
                   {t('disclaimerProfessional', 'DISCLAIMER PROFESIONAL')}
                 </h4>
                 <p className="mt-3.5 text-xs md:text-sm text-muted-foreground leading-relaxed font-body">
-                  {t('disclaimerText', 'Analisis kami menggunakan data publik dari BNPB InaRISK, BMKG, PVMBG, USGS, dan OpenStreetMap. Laporan diagnostik awal berbasis AI ini TIDAK menggantikan uji tanah laboratorium atau survei geoteknik profesional langsung di lapangan. Konsultasikan dengan ahli struktur berlisensi sebelum mengambil keputusan finansial final.')}
+                  {t('disclaimerText', 'Analisis kami menggunakan data publik dari BNPB InaRISK, BMKG, PVMBG, USGS, dan OpenStreetMap. Laporan screening awal ini TIDAK menggantikan uji tanah laboratorium atau survei geoteknik profesional langsung di lapangan. Konsultasikan dengan ahli struktur berlisensi sebelum mengambil keputusan finansial final.')}
                 </p>
               </div>
             </div>

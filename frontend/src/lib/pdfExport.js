@@ -3,22 +3,49 @@ import { adaptAuditResult } from '../services/auditAdapter.js';
 import { ensureLogo, drawLogo } from './brandLogo.js';
 import { generateProceduralNarrative } from './proceduralNarrative.js';
 
-// ── Color tokens ──────────────────────────────────────────────
+/**
+ * Laporan audit S.A.F.E House (PDF).
+ *
+ * Dokumen ini dilampirkan ke berkas perizinan dan difotokopi, jadi halaman
+ * isinya dicetak di atas "kertas" hangat, bukan latar gelap seperti aplikasi:
+ * halaman gelap penuh menghabiskan toner, membentuk banding, dan hilang
+ * terbaca begitu difotokopi. Warna merek tetap hadir lewat pita sampul gelap
+ * dan aksen mocha pada garis, label, dan angka.
+ *
+ * Semua angka berasal dari AuditResult backend. Modul ini hanya menata;
+ * tidak ada satu pun nilai yang dihitung ulang di sini.
+ */
+
+// ── Token warna ───────────────────────────────────────────────
 const C = {
-  bg: [15, 11, 8],
-  bgCard: [22, 17, 12],
-  accent: [212, 149, 106],
-  textPri: [240, 228, 204],
-  textSec: [196, 168, 126],
-  textMuted: [125, 98, 69],
-  safe: [16, 185, 129],
-  moderate: [245, 158, 11],
-  danger: [239, 68, 68],
-  blue: [59, 130, 246],
-  violet: [168, 85, 247],
+  // Kertas
+  paper: [251, 247, 241],
+  paperAlt: [244, 238, 229],
+  panel: [247, 242, 234],
+  // Tinta
+  ink: [36, 26, 18],
+  inkBody: [74, 58, 44],
+  inkMuted: [138, 117, 99],
+  rule: [226, 214, 198],
+  ruleSoft: [237, 229, 217],
+  // Merek
+  accent: [178, 107, 52],
+  accentSoft: [242, 228, 213],
+  band: [23, 17, 12],
+  bandInk: [240, 228, 204],
+  // Semantik
+  safe: [30, 122, 84],
+  moderate: [180, 116, 26],
+  danger: [192, 57, 43],
+  info: [43, 90, 138],
+  violet: [110, 74, 140],
   white: [255, 255, 255],
 };
 
+const PAGE = { W: 210, H: 297, M: 16 };
+const CONTENT_W = PAGE.W - PAGE.M * 2;
+const BODY_TOP = 32;
+const BODY_BOTTOM = PAGE.H - 22;
 
 function riskHex(score) {
   if (score >= 70) return C.safe;
@@ -26,7 +53,12 @@ function riskHex(score) {
   return C.danger;
 }
 
-function riskLabel(score) {
+function riskLabel(score, lang = 'id') {
+  if (lang === 'en') {
+    if (score >= 70) return 'SAFE';
+    if (score >= 40) return 'MODERATE';
+    return 'CAUTION';
+  }
   if (score >= 70) return 'AMAN';
   if (score >= 40) return 'SEDANG';
   return 'WASPADA';
@@ -40,9 +72,9 @@ function clampRiskScore(value) {
 /**
  * Keep PDF generation on the same contract as the live audit API.
  *
- * The dashboard now stores AuditResult (snake_case), while the legacy PDF
- * renderer uses a compact camelCase view. Normalize at this boundary so the
- * renderer cannot silently recalculate a different score or lose provenance.
+ * The dashboard stores AuditResult (snake_case), while this renderer uses a
+ * compact camelCase view. Normalize at this boundary so the renderer cannot
+ * silently recalculate a different score or lose provenance.
  */
 export function normalizePdfProperty(property) {
   if (!property) return null;
@@ -60,7 +92,6 @@ export function normalizePdfProperty(property) {
     normalized.aiReport = property.narrative;
   }
 
-  // If detailedReport is not present but property is valid, synthesize procedural narrative
   if (!normalized.aiReport?.detailedReport && Number.isFinite(normalized.safeScore)) {
     normalized.aiReport = generateProceduralNarrative(property);
   }
@@ -163,1448 +194,1662 @@ export function getPdfAuditEvidence(property) {
   };
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-function setColor(pdf, rgb) {
+// ── Primitif gambar ───────────────────────────────────────────
+
+function ink(pdf, rgb) {
   pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
 }
 
-function drawRoundedRect(pdf, x, y, w, h, r, fillColor) {
-  pdf.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
-  pdf.roundedRect(x, y, w, h, r, r, 'F');
+function fill(pdf, rgb) {
+  pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
 }
 
-function drawBar(pdf, x, y, w, h, val, maxVal, barColor, bgColor) {
-  drawRoundedRect(pdf, x, y, w, h, 1.5, bgColor);
-  const filled = (clampRiskScore(val) / maxVal) * w;
-  if (filled > 0) {
-    pdf.setFillColor(barColor[0], barColor[1], barColor[2]);
-    pdf.roundedRect(x, y, Math.max(filled, 3), h, 1.5, 1.5, 'F');
+function stroke(pdf, rgb, width = 0.25) {
+  pdf.setDrawColor(rgb[0], rgb[1], rgb[2]);
+  pdf.setLineWidth(width);
+}
+
+function box(pdf, x, y, w, h, { fillColor, borderColor, radius = 2, borderWidth = 0.25 } = {}) {
+  if (fillColor) {
+    fill(pdf, fillColor);
+    pdf.roundedRect(x, y, w, h, radius, radius, 'F');
+  }
+  if (borderColor) {
+    stroke(pdf, borderColor, borderWidth);
+    pdf.roundedRect(x, y, w, h, radius, radius, 'S');
   }
 }
 
-// ── Page: Cover ───────────────────────────────────────────────
-function drawCoverPage(pdf, property, score, lang) {
-  const W = pdf.internal.pageSize.getWidth();
-  const H = pdf.internal.pageSize.getHeight();
+function hairline(pdf, x, y, w, color = C.rule, width = 0.25) {
+  stroke(pdf, color, width);
+  pdf.line(x, y, x + w, y);
+}
 
-  // Full dark background
-  pdf.setFillColor(...C.bg);
-  pdf.rect(0, 0, W, H, 'F');
-
-  // Concentric circular seismic wave graphics in background
-  pdf.setDrawColor(32, 24, 18);
-  pdf.setLineWidth(0.15);
-  const cx = W / 2;
-  const cy = 135;
-  for (let r = 40; r <= 160; r += 16) {
-    pdf.circle(cx, cy, r, 'S');
-  }
-
-  // Accent line at top
-  pdf.setFillColor(...C.accent);
-  pdf.rect(0, 0, W, 3, 'F');
-
-  // Official Document Badge
-  drawRoundedRect(pdf, W / 2 - 25, 16, 50, 6, 1, [30, 18, 12]);
-  pdf.setFontSize(6.5);
+/** Label kecil berspasi lebar — penanda bagian, bukan judul. */
+function eyebrow(pdf, text, x, y, { color = C.inkMuted, size = 6.6, align = 'left' } = {}) {
   pdf.setFont('helvetica', 'bold');
-  setColor(pdf, C.accent);
-  pdf.text(lang === 'en' ? 'OFFICIAL RISK AUDIT' : 'LAPORAN AUDIT RESMI', W / 2, 20.2, { align: 'center' });
+  pdf.setFontSize(size);
+  pdf.setCharSpace(0.5);
+  ink(pdf, color);
+  pdf.text(String(text).toUpperCase(), x, y, { align });
+  pdf.setCharSpace(0);
+}
 
-  // Logo resmi (jatuh ke wordmark teks bila gambar gagal dimuat)
-  if (drawLogo(pdf, W / 2, 30, 62) === null) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    setColor(pdf, C.accent);
-    pdf.text('S.A.F.E HOUSE', W / 2, 40, { align: 'center' });
-
-    pdf.setFontSize(7);
-    setColor(pdf, C.textMuted);
-    pdf.text('GEOPHYSICS CORE', W / 2, 47, { align: 'center' });
+/** Busur proporsional — pengganti lingkaran penuh yang dulu selalu utuh. */
+function arc(pdf, cx, cy, r, startDeg, sweepDeg, color, width) {
+  if (sweepDeg <= 0) return;
+  stroke(pdf, color, width);
+  pdf.setLineCap('round');
+  const steps = Math.max(2, Math.ceil(Math.abs(sweepDeg) / 3));
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  let prevX = cx + r * Math.cos(toRad(startDeg));
+  let prevY = cy + r * Math.sin(toRad(startDeg));
+  for (let i = 1; i <= steps; i += 1) {
+    const deg = startDeg + (sweepDeg * i) / steps;
+    const x = cx + r * Math.cos(toRad(deg));
+    const y = cy + r * Math.sin(toRad(deg));
+    pdf.line(prevX, prevY, x, y);
+    prevX = x;
+    prevY = y;
   }
+  pdf.setLineCap('butt');
+}
 
-  // Separator
-  pdf.setDrawColor(...C.accent);
-  pdf.setLineWidth(0.3);
-  pdf.line(W / 2 - 25, 54, W / 2 + 25, 54);
+/**
+ * Gauge skor: busur 270° dibuka di bawah, terisi sebanding nilainya.
+ * Versi lama menggambar lingkaran penuh dua kali sehingga cincinnya selalu
+ * terlihat 100% berapa pun skornya — pembacaan yang menyesatkan.
+ */
+function scoreGauge(pdf, cx, cy, r, score, lang) {
+  const start = 135;
+  const total = 270;
+  const color = riskHex(score);
 
-  // Title
-  pdf.setFontSize(28);
-  setColor(pdf, C.textPri);
-  pdf.text(lang === 'en' ? 'Property Risk' : 'Audit Risiko', W / 2, 80, { align: 'center' });
-  pdf.setFontSize(28);
-  setColor(pdf, C.accent);
-  pdf.text(lang === 'en' ? 'Audit Report' : 'Properti', W / 2, 92, { align: 'center' });
+  arc(pdf, cx, cy, r, start, total, C.rule, 3.4);
+  arc(pdf, cx, cy, r, start, (total * clampRiskScore(score)) / 100, color, 3.4);
 
-  // Score circle
-  const radius = 28;
-
-  // Outer ring bg
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(5);
-  pdf.circle(cx, cy, radius, 'S');
-
-  // Score ring
-  const scoreColor = riskHex(score);
-  pdf.setDrawColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-  pdf.setLineWidth(5);
-  // Draw arc approximation — full circle for simplicity, color indicates risk
-  pdf.circle(cx, cy, radius, 'S');
-
-  // Score number
-  pdf.setFontSize(36);
   pdf.setFont('helvetica', 'bold');
-  setColor(pdf, C.textPri);
+  pdf.setFontSize(34);
+  ink(pdf, C.ink);
   pdf.text(String(score), cx, cy + 4, { align: 'center' });
 
-  // Label
-  pdf.setFontSize(9);
-  setColor(pdf, scoreColor);
-  pdf.text(riskLabel(score), cx, cy + 14, { align: 'center' });
-
-  // S.A.F.E Score label
+  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7);
-  setColor(pdf, C.textMuted);
-  pdf.text('S.A.F.E SCORE', cx, cy - radius - 8, { align: 'center' });
+  ink(pdf, C.inkMuted);
+  pdf.text('/100', cx, cy + 10.5, { align: 'center' });
 
-  // Address
-  const addr = property.address || 'Unknown Location';
-  pdf.setFontSize(10);
-  setColor(pdf, C.textSec);
-  const addrLines = pdf.splitTextToSize(addr, W - 50);
-  pdf.text(addrLines, cx, 185, { align: 'center' });
+  eyebrow(pdf, riskLabel(score, lang), cx, cy + r - 1, { color, size: 7.4, align: 'center' });
+}
 
-  // Coordinates
-  pdf.setFontSize(8);
-  pdf.setFont('courier', 'normal');
-  setColor(pdf, C.textMuted);
-  pdf.text(
-    `${property.coords.lat.toFixed(6)}, ${property.coords.lon.toFixed(6)}`,
-    cx, 200, { align: 'center' }
+/** Batang skala 0–100 dengan tiga zona dan penanda posisi. */
+function bandScale(pdf, x, y, w, score, lang) {
+  const h = 4;
+  const zones = [
+    { width: 0.4, color: C.danger, label: lang === 'en' ? 'Caution' : 'Waspada', range: '0-39' },
+    { width: 0.3, color: C.moderate, label: lang === 'en' ? 'Moderate' : 'Sedang', range: '40-69' },
+    { width: 0.3, color: C.safe, label: lang === 'en' ? 'Safe' : 'Aman', range: '70-100' },
+  ];
+
+  let cursor = x;
+  zones.forEach((zone) => {
+    const zw = w * zone.width;
+    fill(pdf, zone.color);
+    pdf.rect(cursor, y, zw, h, 'F');
+    cursor += zw;
+  });
+
+  // Penanda
+  const markerX = x + (w * clampRiskScore(score)) / 100;
+  fill(pdf, C.ink);
+  pdf.triangle(markerX, y - 1.2, markerX - 1.8, y - 4.2, markerX + 1.8, y - 4.2, 'F');
+  fill(pdf, C.paper);
+  pdf.rect(markerX - 0.35, y, 0.7, h, 'F');
+
+  cursor = x;
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6);
+  zones.forEach((zone) => {
+    const zw = w * zone.width;
+    ink(pdf, C.inkMuted);
+    pdf.text(`${zone.range}  ${zone.label}`, cursor + zw / 2, y + h + 4, { align: 'center' });
+    cursor += zw;
+  });
+}
+
+/** Kartu angka kunci: label kecil, nilai besar, satu baris arti. */
+function kpiTile(pdf, x, y, w, h, { label, value, unit, note, color = C.ink }) {
+  box(pdf, x, y, w, h, { fillColor: C.panel, borderColor: C.ruleSoft, radius: 2 });
+  fill(pdf, color);
+  pdf.rect(x, y + 1.5, 1.4, h - 3, 'F');
+
+  eyebrow(pdf, label, x + 5, y + 6);
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(15);
+  ink(pdf, color);
+  const valueText = String(value);
+  pdf.text(valueText, x + 5, y + 15);
+
+  if (unit) {
+    const valueWidth = pdf.getTextWidth(valueText);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    ink(pdf, C.inkMuted);
+    pdf.text(unit, x + 5 + valueWidth + 1.5, y + 15);
+  }
+
+  if (note) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(6.8);
+    ink(pdf, C.inkBody);
+    pdf.text(pdf.splitTextToSize(String(note), w - 10).slice(0, 2), x + 5, y + 20.5);
+  }
+}
+
+/** Baris meter horizontal untuk sumbu risiko. */
+function meterRow(pdf, x, y, w, { label, value, color, hint }) {
+  const barW = w * 0.52;
+  const barX = x + w - barW;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8.4);
+  ink(pdf, C.inkBody);
+  pdf.text(label, x, y + 2.6);
+
+  if (hint) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(6.2);
+    ink(pdf, C.inkMuted);
+    pdf.text(hint, x, y + 6.4);
+  }
+
+  fill(pdf, C.paperAlt);
+  pdf.roundedRect(barX, y, barW - 14, 3.6, 1.8, 1.8, 'F');
+
+  const filled = ((barW - 14) * clampRiskScore(value)) / 100;
+  if (filled > 0.8) {
+    fill(pdf, color);
+    pdf.roundedRect(barX, y, filled, 3.6, 1.8, 1.8, 'F');
+  }
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8.4);
+  ink(pdf, color);
+  pdf.text(String(clampRiskScore(value)), x + w, y + 3.2, { align: 'right' });
+}
+
+/**
+ * Tabel dua kolom label/nilai dengan zebra halus.
+ * Menerima `flow` supaya barisnya bisa menyeberang halaman alih-alih
+ * tercetak menembus kaki halaman.
+ */
+function definitionTable(pdf, flow, x, w, rows, { rowH = 8.2, labelW = 0.42 } = {}) {
+  rows.forEach(([label, value], index) => {
+    flow.need(rowH + 2);
+    const rowY = flow.y;
+    if (index % 2 === 0) {
+      fill(pdf, C.panel);
+      pdf.rect(x, rowY, w, rowH, 'F');
+    }
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.6);
+    ink(pdf, C.inkMuted);
+    pdf.text(String(label), x + 3, rowY + rowH / 2 + 1);
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    ink(pdf, C.ink);
+    const valueText = pdf.splitTextToSize(String(value), w - w * labelW - 6)[0] || '-';
+    pdf.text(valueText, x + w - 3, rowY + rowH / 2 + 1, { align: 'right' });
+    flow.y = rowY + rowH;
+  });
+  hairline(pdf, x, flow.y, w, C.ruleSoft);
+}
+
+/** Kotak catatan bernada (netral / peringatan). */
+function callout(pdf, x, y, w, text, { tone = 'neutral', title } = {}) {
+  const toneColor = tone === 'warn' ? C.moderate : tone === 'danger' ? C.danger : C.accent;
+  const toneFill = tone === 'neutral' ? C.accentSoft : C.panel;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.4);
+  const lines = pdf.splitTextToSize(text, w - 12);
+  const h = (title ? 6 : 0) + lines.length * 3.9 + 7;
+
+  box(pdf, x, y, w, h, { fillColor: toneFill, borderColor: C.ruleSoft, radius: 2 });
+  fill(pdf, toneColor);
+  pdf.rect(x, y + 1.5, 1.4, h - 3, 'F');
+
+  let cursor = y + 5.6;
+  if (title) {
+    eyebrow(pdf, title, x + 6, cursor, { color: toneColor });
+    cursor += 5.4;
+  }
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.4);
+  ink(pdf, C.inkBody);
+  pdf.text(lines, x + 6, cursor);
+  return y + h;
+}
+
+// ── Kerangka halaman ──────────────────────────────────────────
+
+function paintPage(pdf) {
+  fill(pdf, C.paper);
+  pdf.rect(0, 0, PAGE.W, PAGE.H, 'F');
+}
+
+function pageHeader(pdf, title) {
+  const logoH = drawLogo(pdf, PAGE.M + 11, 11, 22, 'light');
+  if (logoH === null) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    ink(pdf, C.accent);
+    pdf.text('S.A.F.E House', PAGE.M, 16);
+  }
+  eyebrow(pdf, title, PAGE.W - PAGE.M, 16, { align: 'right' });
+  hairline(pdf, PAGE.M, 21, CONTENT_W, C.rule);
+}
+
+/** Halaman baru berkerangka lengkap; mengembalikan posisi y awal isi. */
+function newContentPage(pdf, title) {
+  pdf.addPage();
+  paintPage(pdf);
+  pageHeader(pdf, title);
+  return BODY_TOP;
+}
+
+/**
+ * Nomor halaman ditempel di akhir supaya totalnya benar. Versi lama menulis
+ * "Page 2" secara manual di tiap fungsi dan gampang meleset begitu isi
+ * laporan tumbuh menjadi beberapa halaman.
+ */
+function stampFooters(pdf, lang, docRef) {
+  const total = pdf.getNumberOfPages();
+  const isEn = lang === 'en';
+  for (let page = 2; page <= total; page += 1) {
+    pdf.setPage(page);
+    hairline(pdf, PAGE.M, PAGE.H - 16, CONTENT_W, C.ruleSoft);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(6.6);
+    ink(pdf, C.inkMuted);
+    pdf.text(
+      `S.A.F.E House  ${docRef ? `·  ${docRef}` : ''}`.trim(),
+      PAGE.M,
+      PAGE.H - 11,
+    );
+    pdf.text(
+      isEn ? `Page ${page} of ${total}` : `Halaman ${page} dari ${total}`,
+      PAGE.W - PAGE.M,
+      PAGE.H - 11,
+      { align: 'right' },
+    );
+  }
+}
+
+// ── Turunan deterministik untuk bahasa manusia ────────────────
+
+const RISK_AXES = [
+  { key: 'flood', id: 'Banjir', en: 'Flood', color: C.info },
+  { key: 'soil', id: 'Likuefaksi tanah', en: 'Soil liquefaction', color: C.moderate },
+  { key: 'seismic', id: 'Guncangan gempa', en: 'Seismic shaking', color: C.danger },
+  { key: 'landslide', id: 'Longsor', en: 'Landslide', color: C.violet },
+  { key: 'subsidence', id: 'Penurunan lahan', en: 'Land subsidence', color: C.accent },
+];
+
+function verdictSentence(score, lang) {
+  const isEn = lang === 'en';
+  if (score >= 70) {
+    return isEn
+      ? 'Screening finds no dominant hazard at this point. Standard foundation design should suffice, subject to a soil investigation.'
+      : 'Screening tidak menemukan bahaya dominan di titik ini. Desain pondasi standar umumnya memadai, dengan catatan tetap dilakukan penyelidikan tanah.';
+  }
+  if (score >= 40) {
+    return isEn
+      ? 'One or more hazards need attention. Plan a soil investigation and size the foundation against the parameters listed below.'
+      : 'Ada satu atau lebih bahaya yang perlu ditangani. Rencanakan penyelidikan tanah dan sesuaikan pondasi terhadap parameter di bawah ini.';
+  }
+  return isEn
+    ? 'Hazard levels at this point are high. Do not finalise the design before a site-specific geotechnical investigation.'
+    : 'Tingkat bahaya di titik ini tinggi. Jangan finalkan desain sebelum ada penyelidikan geoteknik spesifik lokasi.';
+}
+
+function topRiskDrivers(radar, lang) {
+  return RISK_AXES
+    .map((axis) => ({ ...axis, value: clampRiskScore(radar?.[axis.key]) }))
+    .filter((axis) => axis.value >= 40)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3)
+    .map((axis) => ({ label: lang === 'en' ? axis.en : axis.id, value: axis.value, color: axis.color }));
+}
+
+function nextSteps(property, score, lang) {
+  const isEn = lang === 'en';
+  const fs = property?.compressedPayload?.liquefaction_analysis?.fs_score;
+  const steps = [];
+
+  steps.push(
+    isEn
+      ? 'Commission a soil investigation (SPT/CPT) at the exact building footprint.'
+      : 'Lakukan penyelidikan tanah (SPT/CPT) tepat di tapak bangunan.',
   );
 
-  // Date
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textMuted);
-  pdf.text(new Date().toLocaleDateString('id-ID', {
-    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  }), cx, 210, { align: 'center' });
+  if (Number.isFinite(fs) && fs < 1.25) {
+    steps.push(
+      isEn
+        ? `Liquefaction FS is ${fs.toFixed(2)}. Evaluate ground improvement or a deep foundation.`
+        : `FS likuefaksi ${fs.toFixed(2)}. Evaluasi perbaikan tanah atau pondasi dalam.`,
+    );
+  }
 
-  // Footer
-  pdf.setFontSize(7);
-  setColor(pdf, C.textMuted);
-  pdf.text('Generated by S.A.F.E House — Geophysics Property Risk Analysis Platform', cx, H - 18, { align: 'center' });
-  pdf.text('Data: InaRISK BNPB | USGS | Open-Meteo | Google Gemini AI', cx, H - 12, { align: 'center' });
+  if (Number.isFinite(property?.seismic?.pgaSurface)) {
+    steps.push(
+      isEn
+        ? `Use surface PGA ${property.seismic.pgaSurface.toFixed(3)}g and site class ${property.siteClass ?? '-'} as the SNI 1726:2019 design basis.`
+        : `Pakai PGA permukaan ${property.seismic.pgaSurface.toFixed(3)}g dan kelas situs ${property.siteClass ?? '-'} sebagai dasar desain SNI 1726:2019.`,
+    );
+  }
 
-  // Bottom accent line
-  pdf.setFillColor(...C.accent);
-  pdf.rect(0, H - 3, W, 3, 'F');
+  if (score < 40) {
+    steps.push(
+      isEn
+        ? 'Compare against an alternative site before committing to the purchase.'
+        : 'Bandingkan dengan lokasi alternatif sebelum memutuskan pembelian.',
+    );
+  }
+
+  return steps.slice(0, 4);
 }
 
-// ── Page: Risk Dashboard ──────────────────────────────────────
-function drawDashboardPage(pdf, property, score, lang) {
-  const W = pdf.internal.pageSize.getWidth();
-  const H = pdf.internal.pageSize.getHeight();
-  const M = 18; // margin
+function documentRef(property) {
+  const lat = property?.coords?.lat ?? 0;
+  const lon = property?.coords?.lon ?? 0;
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  return `SH-${stamp}-${Math.abs(Math.round(lat * 1000))}${Math.abs(Math.round(lon * 1000))}`;
+}
 
-  // Background
-  pdf.setFillColor(...C.bg);
-  pdf.rect(0, 0, W, H, 'F');
+function formatDate(lang) {
+  return new Date().toLocaleString(lang === 'en' ? 'en-GB' : 'id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
-  // Header
-  drawPageHeader(pdf, W, lang === 'en' ? 'Risk Analysis Dashboard' : 'Dashboard Analisis Risiko');
+// ── Halaman 1: Sampul ─────────────────────────────────────────
 
-  let y = 36;
+function drawCoverPage(pdf, property, score, lang, docRef) {
+  const isEn = lang === 'en';
+  paintPage(pdf);
 
-  // ── Radar Data Bars ─────────────────────────────────────────
-  const radar = property.radarData || {};
-  const bars = [
-    { label: lang === 'en' ? 'Flood Risk' : 'Risiko Banjir', val: clampRiskScore(radar.flood), icon: '🌊', color: C.blue },
-    { label: lang === 'en' ? 'Soil / Liquefaction' : 'Likuefaksi Tanah', val: clampRiskScore(radar.soil), icon: '🧱', color: C.moderate },
-    { label: lang === 'en' ? 'Seismic Risk' : 'Risiko Seismik', val: clampRiskScore(radar.seismic), icon: '🌋', color: C.danger },
-    { label: lang === 'en' ? 'Landslide Risk' : 'Risiko Longsor', val: clampRiskScore(radar.landslide), icon: '🏔️', color: C.violet },
-    { label: lang === 'en' ? 'Land Subsidence' : 'Penurunan Lahan', val: clampRiskScore(radar.subsidence), icon: '🧭', color: C.accent },
-  ];
+  // Pita merek gelap — cukup untuk menegaskan identitas tanpa membanjiri
+  // halaman dengan tinta.
+  const bandH = 54;
+  fill(pdf, C.band);
+  pdf.rect(0, 0, PAGE.W, bandH, 'F');
+  fill(pdf, C.accent);
+  pdf.rect(0, bandH, PAGE.W, 1.2, 'F');
 
-  // Section title
+  const logoH = drawLogo(pdf, PAGE.M + 22, 16, 44, 'dark');
+  if (logoH === null) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(13);
+    ink(pdf, C.bandInk);
+    pdf.text('S.A.F.E HOUSE', PAGE.M, 28);
+  }
+
+  eyebrow(pdf, isEn ? 'Property risk audit' : 'Audit risiko properti', PAGE.W - PAGE.M, 24, {
+    color: C.accent,
+    align: 'right',
+    size: 7,
+  });
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.4);
+  ink(pdf, [150, 128, 104]);
+  pdf.text(docRef, PAGE.W - PAGE.M, 30, { align: 'right' });
+  pdf.text(formatDate(lang), PAGE.W - PAGE.M, 35.5, { align: 'right' });
+
+  // ── Judul ──
+  let y = bandH + 26;
+  eyebrow(pdf, isEn ? 'Screening report' : 'Laporan screening', PAGE.M, y, { color: C.accent });
+  y += 12;
+
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(11);
-  setColor(pdf, C.textPri);
-  pdf.text(lang === 'en' ? 'Risk Breakdown' : 'Rincian Risiko', M, y);
-  y += 10;
+  pdf.setFontSize(30);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Property Risk' : 'Audit Risiko', PAGE.M, y);
+  y += 12.5;
+  ink(pdf, C.accent);
+  pdf.text(isEn ? 'Audit' : 'Properti', PAGE.M, y);
 
-  bars.forEach((b) => {
-    // Label + value
+  // ── Alamat ──
+  y += 16;
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(11);
+  ink(pdf, C.inkBody);
+  const addressLines = pdf.splitTextToSize(property.address || (isEn ? 'Unknown location' : 'Lokasi tidak diketahui'), CONTENT_W * 0.58);
+  pdf.text(addressLines.slice(0, 3), PAGE.M, y);
+  y += addressLines.slice(0, 3).length * 5.6 + 2;
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(8.5);
+  ink(pdf, C.inkMuted);
+  pdf.text(
+    `${property.coords.lat.toFixed(6)}, ${property.coords.lon.toFixed(6)}`,
+    PAGE.M,
+    y,
+  );
+
+  // ── Gauge di kolom kanan ──
+  scoreGauge(pdf, PAGE.W - PAGE.M - 32, bandH + 58, 28, score, lang);
+  eyebrow(pdf, 'S.A.F.E Score', PAGE.W - PAGE.M - 32, bandH + 20, { align: 'center' });
+
+  // ── Bahaya utama: isi yang dulu berupa ruang kosong di tengah sampul ──
+  y = 158;
+  hairline(pdf, PAGE.M, y - 10, CONTENT_W, C.rule);
+  const drivers = topRiskDrivers(property.radarData || {}, lang);
+  eyebrow(pdf, isEn ? 'Leading hazards' : 'Bahaya utama', PAGE.M, y);
+  y += 7;
+
+  if (drivers.length === 0) {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
-    setColor(pdf, C.textSec);
-    pdf.text(`${b.label}`, M, y);
+    ink(pdf, C.inkBody);
+    pdf.text(
+      isEn
+        ? 'No hazard axis exceeds the moderate threshold (40 of 100).'
+        : 'Tidak ada sumbu bahaya yang melewati ambang sedang (40 dari 100).',
+      PAGE.M,
+      y + 2,
+    );
+    y += 10;
+  } else {
+    drivers.forEach((driver, index) => {
+      meterRow(pdf, PAGE.M, y + index * 11, CONTENT_W, {
+        label: driver.label,
+        value: driver.value,
+        color: driver.color,
+      });
+    });
+    y += drivers.length * 11 + 2;
+  }
 
-    pdf.setFont('helvetica', 'bold');
-    setColor(pdf, C.textPri);
-    pdf.text(`${b.val}/100`, W - M, y, { align: 'right' });
-
-    y += 4;
-
-    // Bar
-    drawBar(pdf, M, y, W - M * 2, 5, b.val, 100, b.color, [35, 28, 20]);
-
-    // Risk label
-    const riskLbl = b.val >= 70 ? 'HIGH' : b.val >= 40 ? 'MED' : 'LOW';
-    const riskClr = b.val >= 70 ? C.danger : b.val >= 40 ? C.moderate : C.safe;
-    pdf.setFontSize(6);
-    pdf.setFont('helvetica', 'bold');
-    setColor(pdf, riskClr);
-    const barEnd = M + (b.val / 100) * (W - M * 2);
-    if (b.val > 15) {
-      pdf.text(riskLbl, Math.min(barEnd - 2, W - M - 10), y + 3.5, { align: 'right' });
+  // ── Strip metadata ──
+  y += 16;
+  hairline(pdf, PAGE.M, y - 8, CONTENT_W, C.rule);
+  const meta = [
+    [isEn ? 'Audit status' : 'Status audit', String(property.auditStatus || '-').toUpperCase()],
+    [isEn ? 'Site class' : 'Kelas situs', String(property.siteClass || '-')],
+    [isEn ? 'Score version' : 'Versi skor', String(property.scoreVersion || '-')],
+    [isEn ? 'Reference' : 'Acuan', 'SNI 1726:2019'],
+  ];
+  const colW = CONTENT_W / meta.length;
+  meta.forEach(([label, value], index) => {
+    const x = PAGE.M + index * colW;
+    if (index > 0) {
+      stroke(pdf, C.ruleSoft, 0.25);
+      pdf.line(x - 3, y - 4, x - 3, y + 12);
     }
-
-    y += 12;
+    eyebrow(pdf, label, x, y);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8.6);
+    ink(pdf, C.ink);
+    // Strip sampul hanya punya satu baris per kolom; nilai panjang seperti
+    // versi skor dipangkas di sini dan tampil utuh di halaman Dasar data.
+    pdf.text(pdf.splitTextToSize(shortText(value, 24), colW - 6)[0] || '-', x, y + 7.5);
   });
 
+  // ── Kaki sampul ──
+  hairline(pdf, PAGE.M, PAGE.H - 26, CONTENT_W, C.rule);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6.8);
+  ink(pdf, C.inkMuted);
+  pdf.text(
+    isEn
+      ? 'Data-based preliminary screening. Not a substitute for a site-specific geotechnical investigation.'
+      : 'Screening awal berbasis data. Bukan pengganti penyelidikan geoteknik spesifik lokasi.',
+    PAGE.M,
+    PAGE.H - 20,
+  );
+  pdf.text('InaRISK BNPB  ·  PuSGeN 2024  ·  USGS  ·  Open-Meteo', PAGE.M, PAGE.H - 15.5);
+
+  fill(pdf, C.accent);
+  pdf.rect(0, PAGE.H - 3, PAGE.W, 3, 'F');
+}
+
+// ── Halaman 2: Ringkasan ──────────────────────────────────────
+
+function drawSummaryPage(pdf, property, score, lang) {
+  const isEn = lang === 'en';
+  const title = isEn ? 'Summary' : 'Ringkasan';
+  newContentPage(pdf, title);
+  const flow = createFlow(pdf, title);
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(17);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'What you need to know' : 'Yang perlu Anda ketahui', PAGE.M, flow.y);
+  flow.y += 8;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(9.4);
+  ink(pdf, C.inkBody);
+  const verdictLines = pdf.splitTextToSize(verdictSentence(score, lang), CONTENT_W);
+  pdf.text(verdictLines, PAGE.M, flow.y);
+  flow.y += verdictLines.length * 5 + 8;
+
+  let y = flow.y;
+
+  // ── Skala band ──
+  box(pdf, PAGE.M, y, CONTENT_W, 34, { fillColor: C.panel, borderColor: C.ruleSoft });
+  eyebrow(pdf, isEn ? 'Score band' : 'Posisi skor', PAGE.M + 6, y + 7);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  ink(pdf, riskHex(score));
+  pdf.text(`${score} · ${riskLabel(score, lang)}`, PAGE.W - PAGE.M - 6, y + 7.4, { align: 'right' });
+  bandScale(pdf, PAGE.M + 6, y + 17, CONTENT_W - 12, score, lang);
+  y += 42;
+
+  // ── Angka kunci ──
+  eyebrow(pdf, isEn ? 'Key figures' : 'Angka kunci', PAGE.M, y);
   y += 5;
 
-  // ── Technical Data Grid (Expanded to 10 parameters) ─────────────────
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(11);
-  setColor(pdf, C.textPri);
-  pdf.text(lang === 'en' ? 'Technical Parameters' : 'Parameter Teknis', M, y);
-  y += 8;
+  const payload = property.compressedPayload ?? {};
+  const fs = payload.liquefaction_analysis?.fs_score;
+  const radar = property.radarData || {};
+  const floodValue = clampRiskScore(radar.flood);
 
-  // Extract detailed variables from compressedPayload
-  const p = property.compressedPayload ?? {};
-  const volcano = p.seismotectonic?.nearest_volcano?.name ?? '-';
-  const volcanoDist = p.seismotectonic?.nearest_volcano?.dist_km ?? '-';
-  const coastDist = p.tsunami_analysis?.dist_to_coast_km ?? '-';
-  const tsunamiRisk = p.tsunami_analysis?.risk_level ?? '-';
-  const aqi = p.env_extras?.aqi ?? '-';
-  const pm25 = p.env_extras?.pm25 ?? '-';
-  const floodLevel = radar.flood >= 70 ? (lang === 'en' ? 'HIGH' : 'TINGGI') : radar.flood >= 40 ? (lang === 'en' ? 'MEDIUM' : 'SEDANG') : (lang === 'en' ? 'LOW' : 'RENDAH');
-  const landslideLevel = radar.landslide >= 70 ? (lang === 'en' ? 'HIGH' : 'TINGGI') : radar.landslide >= 40 ? (lang === 'en' ? 'MEDIUM' : 'SEDANG') : (lang === 'en' ? 'LOW' : 'RENDAH');
-
-  const metrics = [
-    [lang === 'en' ? 'Elevation' : 'Elevasi', `${property.elevasi ?? '-'} mdpl`],
-    ['Vs30', `${property.vs30 ?? '-'} m/s (${property.siteClass ?? '-'})`],
-    ['PGA Base', `${property.seismic?.pgaBase ?? '-'}g`],
-    ['PGA Surface', `${property.seismic?.pgaSurface?.toFixed(3) ?? '-'}g`],
-    [lang === 'en' ? 'Nearest Fault' : 'Sesar Terdekat', `${property.seismic?.faultName ?? '-'} (${property.seismic?.faultDist ?? '-'} km)`],
-    [lang === 'en' ? 'Volcano Proximity' : 'Gunung Api Terdekat', `${volcano} (${volcanoDist} km)`],
-    [lang === 'en' ? 'Tsunami Risk' : 'Risiko Tsunami', `${tsunamiRisk} (${coastDist} km)`],
-    [lang === 'en' ? 'Flood Risk (InaRISK)' : 'Risiko Banjir (InaRISK)', `${floodLevel} (${radar.flood ?? 0}/100)`],
-    [lang === 'en' ? 'Landslide Risk' : 'Risiko Longsor', `${landslideLevel} (${radar.landslide ?? 0}/100)`],
-    [lang === 'en' ? 'Air Quality (AQI)' : 'Kualitas Udara (AQI)', `${aqi} (PM2.5: ${pm25})`],
+  const tiles = [
+    {
+      label: 'Vs30',
+      value: property.vs30 ?? '-',
+      unit: 'm/s',
+      note: isEn
+        ? `Site class ${property.siteClass ?? '-'} under SNI 1726:2019.`
+        : `Kelas situs ${property.siteClass ?? '-'} menurut SNI 1726:2019.`,
+      color: C.accent,
+    },
+    {
+      label: isEn ? 'Surface PGA' : 'PGA permukaan',
+      value: Number.isFinite(property.seismic?.pgaSurface) ? property.seismic.pgaSurface.toFixed(3) : '-',
+      unit: 'g',
+      note: isEn
+        ? 'Design ground acceleration after site amplification.'
+        : 'Percepatan tanah desain setelah amplifikasi situs.',
+      color: C.danger,
+    },
+    {
+      label: isEn ? 'Liquefaction FS' : 'FS likuefaksi',
+      value: Number.isFinite(fs) ? fs.toFixed(2) : '-',
+      unit: '',
+      note: Number.isFinite(fs)
+        ? fs < 1
+          ? isEn ? 'Below 1.00 - liquefaction is plausible.' : 'Di bawah 1,00 - likuefaksi mungkin terjadi.'
+          : isEn ? 'At or above 1.00 - no liquefaction indicated.' : 'Di atas 1,00 - tidak ada indikasi likuefaksi.'
+        : isEn ? 'Not computed for this point.' : 'Belum dihitung untuk titik ini.',
+      color: Number.isFinite(fs) && fs < 1 ? C.danger : C.safe,
+    },
+    {
+      label: isEn ? 'Flood hazard' : 'Bahaya banjir',
+      value: floodValue,
+      unit: '/100',
+      note: isEn ? 'InaRISK BNPB national hazard index.' : 'Indeks bahaya nasional InaRISK BNPB.',
+      color: floodValue >= 70 ? C.danger : floodValue >= 40 ? C.moderate : C.safe,
+    },
   ];
 
-  const colW = (W - M * 2) / 2;
-  metrics.forEach((row, i) => {
-    const col = i % 2;
-    const rowY = y + Math.floor(i / 2) * 13;
-    const x = M + col * colW;
+  const tileW = (CONTENT_W - 6) / 2;
+  tiles.forEach((tile, index) => {
+    const x = PAGE.M + (index % 2) * (tileW + 6);
+    const ty = y + Math.floor(index / 2) * 32;
+    kpiTile(pdf, x, ty, tileW, 28, tile);
+  });
+  y += 70;
 
-    // Card background
-    drawRoundedRect(pdf, x, rowY - 3, colW - 4, 11, 2.5, C.bgCard);
+  flow.y = y;
 
-    // Label
+  // ── Langkah berikutnya ──
+  flow.need(14);
+  eyebrow(pdf, isEn ? 'Next steps' : 'Langkah berikutnya', PAGE.M, flow.y);
+  flow.y += 7;
+
+  nextSteps(property, score, lang).forEach((step, index) => {
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(6.5);
-    setColor(pdf, C.textMuted);
-    pdf.text(row[0], x + 4, rowY + 0.5);
+    pdf.setFontSize(8.6);
+    const lines = pdf.splitTextToSize(step, CONTENT_W - 12);
+    flow.need(lines.length * 4.6 + 6);
 
-    // Value
+    fill(pdf, C.accentSoft);
+    pdf.circle(PAGE.M + 3, flow.y + 1.4, 2.7, 'F');
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8.5);
-    setColor(pdf, C.textPri);
-    pdf.text(row[1], x + 4, rowY + 6.5);
+    pdf.setFontSize(6.6);
+    ink(pdf, C.accent);
+    pdf.text(String(index + 1), PAGE.M + 3, flow.y + 2.5, { align: 'center' });
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8.6);
+    ink(pdf, C.inkBody);
+    pdf.text(lines, PAGE.M + 9, flow.y + 2.6);
+    flow.y += lines.length * 4.6 + 4.6;
   });
 
-  y += Math.ceil(metrics.length / 2) * 13 + 5;
+  flow.y += 6;
+  flow.need(28);
+  callout(
+    pdf,
+    PAGE.M,
+    flow.y,
+    CONTENT_W,
+    isEn
+      ? 'The S.A.F.E Score summarises hazard exposure at one coordinate. It does not measure soil bearing capacity, building condition, or legal status, and it never replaces a site-specific investigation.'
+      : 'S.A.F.E Score merangkum paparan bahaya pada satu koordinat. Skor ini tidak mengukur daya dukung tanah, kondisi bangunan, atau status legalitas, dan tidak menggantikan penyelidikan spesifik lokasi.',
+    { title: isEn ? 'What the score does not cover' : 'Yang tidak dicakup skor' },
+  );
+}
 
-  // ── Seismotectonic & Historical Context ──────────────────────────
-  const seismotectonic = p.seismotectonic || {};
-  const historical = p.historical_earthquakes || [];
-  const megaVal = seismotectonic.megathrust ? `${seismotectonic.megathrust.name} (${seismotectonic.megathrust.dist_km} km)` : '-';
+// ── Halaman 3: Rincian teknis ─────────────────────────────────
 
-  // Draw Context Card
-  drawRoundedRect(pdf, M, y, W - M * 2, 24, 3, C.bgCard);
+function drawDetailPage(pdf, property, lang) {
+  const isEn = lang === 'en';
+  const title = isEn ? 'Technical detail' : 'Rincian teknis';
+  newContentPage(pdf, title);
+  const flow = createFlow(pdf, title);
+  let y = flow.y;
 
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8.5);
-  setColor(pdf, C.accent);
-  pdf.text(lang === 'en' ? 'Seismotectonic & Geological Context' : 'Konteks Seismotektonik & Geologi', M + 5, y + 5);
+  pdf.setFontSize(17);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Hazard breakdown' : 'Rincian bahaya', PAGE.M, y);
+  y += 6;
+
+  // Arah skala sumbu bahaya berlawanan dengan S.A.F.E Score; tanpa keterangan
+  // ini pembaca menyangka angka besar selalu berarti baik.
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.4);
+  ink(pdf, C.inkMuted);
+  pdf.text(
+    isEn
+      ? 'On this scale 0 means low hazard and 100 means high hazard - the opposite direction to the S.A.F.E Score.'
+      : 'Pada skala ini 0 berarti bahaya rendah dan 100 berarti bahaya tinggi - arahnya kebalikan dari S.A.F.E Score.',
+    PAGE.M,
+    y + 4,
+  );
+  y += 14;
+
+  const radar = property.radarData || {};
+  RISK_AXES.forEach((axis, index) => {
+    meterRow(pdf, PAGE.M, y + index * 12.5, CONTENT_W, {
+      label: lang === 'en' ? axis.en : axis.id,
+      value: radar[axis.key],
+      color: axis.color,
+    });
+  });
+  y += RISK_AXES.length * 12.5 + 6;
+
+  // ── Parameter ──
+  hairline(pdf, PAGE.M, y, CONTENT_W, C.rule);
+  y += 8;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(12);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Parameters' : 'Parameter', PAGE.M, y);
+  y += 5;
 
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(7.5);
-  setColor(pdf, C.textSec);
-  pdf.text(lang === 'en' ? `Megathrust Zone: ${megaVal}` : `Zona Megathrust: ${megaVal}`, M + 5, y + 11);
-  pdf.text(lang === 'en' ? `Soil Class Amplification: ${property.siteClass} (${p.liquefaction_analysis?.amplification_fa ?? '1.0'}x)` : `Amplifikasi Kelas Situs: ${property.siteClass} (${p.liquefaction_analysis?.amplification_fa ?? '1.0'}x)`, M + 5, y + 17);
+  pdf.setFontSize(7.4);
+  ink(pdf, C.inkMuted);
+  const readingNote = pdf.splitTextToSize(
+    isEn
+      ? 'Vs30 sets the site class, which amplifies bedrock PGA into the surface PGA used for design. A liquefaction FS below 1.00 means the saturated layer can lose strength during shaking.'
+      : 'Vs30 menentukan kelas situs, yang mengamplifikasi PGA batuan dasar menjadi PGA permukaan untuk desain. FS likuefaksi di bawah 1,00 berarti lapisan jenuh air bisa kehilangan kekuatan saat guncangan.',
+    CONTENT_W,
+  );
+  pdf.text(readingNote, PAGE.M, y + 3.4);
+  y += readingNote.length * 3.8 + 6;
 
-  // Historical EQ right column
-  let eqText = lang === 'en' ? 'No recent major earthquakes (>M4.5) within 100km.' : 'Tidak ada gempa signifikan (>M4.5) dalam 100km.';
-  if (historical && historical.length > 0) {
-    const eq = historical[0];
-    eqText = `M${eq.magnitude} - ${eq.place} (${eq.date ? eq.date.split(',')[0] : ''})`;
-  }
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(lang === 'en' ? 'USGS Historical Catalog:' : 'Riwayat Gempa Terakhir (USGS):', M + colW + 2, y + 11);
-  pdf.setFont('helvetica', 'italic');
-  setColor(pdf, C.textMuted);
-  pdf.text(eqText, M + colW + 2, y + 17);
+  const payload = property.compressedPayload ?? {};
+  const seismotectonic = payload.seismotectonic || {};
+  const tsunami = payload.tsunami_analysis || {};
+  const env = payload.env_extras || {};
+  const fs = payload.liquefaction_analysis?.fs_score;
 
-  y += 30;
+  const rows = [
+    [isEn ? 'Elevation' : 'Elevasi', `${property.elevasi ?? '-'} mdpl`],
+    ['Vs30', `${property.vs30 ?? '-'} m/s  (${property.siteClass ?? '-'})`],
+    [isEn ? 'Bedrock PGA' : 'PGA batuan dasar', `${property.seismic?.pgaBase ?? '-'} g`],
+    [isEn ? 'Surface PGA' : 'PGA permukaan', `${property.seismic?.pgaSurface?.toFixed(3) ?? '-'} g`],
+    [
+      isEn ? 'Site amplification (Fa)' : 'Amplifikasi situs (Fa)',
+      `${payload.liquefaction_analysis?.amplification_fa ?? '-'} x`,
+    ],
+    [isEn ? 'Liquefaction FS' : 'FS likuefaksi', Number.isFinite(fs) ? fs.toFixed(2) : '-'],
+    [
+      isEn ? 'Nearest active fault' : 'Sesar aktif terdekat',
+      `${property.seismic?.faultName ?? '-'}  (${property.seismic?.faultDist ?? '-'} km)`,
+    ],
+    [
+      isEn ? 'Megathrust zone' : 'Zona megathrust',
+      seismotectonic.megathrust
+        ? `${seismotectonic.megathrust.name} (${seismotectonic.megathrust.dist_km} km)`
+        : '-',
+    ],
+    [
+      isEn ? 'Nearest volcano' : 'Gunung api terdekat',
+      seismotectonic.nearest_volcano
+        ? `${seismotectonic.nearest_volcano.name} (${seismotectonic.nearest_volcano.dist_km} km)`
+        : '-',
+    ],
+    [
+      isEn ? 'Tsunami exposure' : 'Paparan tsunami',
+      `${tsunami.risk_level ?? '-'}  (${tsunami.dist_to_coast_km ?? '-'} km ${isEn ? 'to coast' : 'ke pantai'})`,
+    ],
+    [isEn ? 'Air quality (AQI)' : 'Kualitas udara (AQI)', `${env.aqi ?? '-'}  (PM2.5 ${env.pm25 ?? '-'})`],
+  ];
 
-  // ── Disclaimer ──────────────────────────────────────────────
-  drawRoundedRect(pdf, M, y, W - M * 2, 14, 3, [40, 35, 25]);
-  pdf.setFont('helvetica', 'italic');
-  pdf.setFontSize(7);
-  setColor(pdf, C.moderate);
-  const disclaimer = lang === 'en'
-    ? 'DISCLAIMER: This report is AI-generated based on publicly available data. Not a substitute for professional geotechnical assessment.'
-    : 'DISCLAIMER: Laporan ini dihasilkan AI berdasarkan data publik. Bukan pengganti survei geoteknik profesional.';
-  const discLines = pdf.splitTextToSize(disclaimer, W - M * 2 - 8);
-  pdf.text(discLines, M + 4, y + 5);
+  flow.y = y;
+  definitionTable(pdf, flow, PAGE.M, CONTENT_W, rows);
+  flow.y += 8;
 
-  drawPageFooter(pdf, W, H, 2);
+  // ── Riwayat gempa ──
+  const historical = payload.historical_earthquakes || [];
+  const historyText = historical.length
+    ? historical
+        .slice(0, 3)
+        .map((eq) => `M${eq.magnitude} · ${eq.place}${eq.date ? ` (${String(eq.date).split(',')[0]})` : ''}`)
+        .join('   ')
+    : isEn
+      ? 'No M4.5+ event recorded within 100 km in the USGS catalogue.'
+      : 'Tidak ada gempa M4,5+ tercatat dalam radius 100 km pada katalog USGS.';
+
+  flow.need(28);
+  callout(pdf, PAGE.M, flow.y, CONTENT_W, historyText, {
+    title: isEn ? 'Recent seismicity (USGS)' : 'Kegempaan terkini (USGS)',
+  });
 }
 
-// ── Page: AI Report Visualizations & Rendering ────────────────────────────────
-function ensureSpace(pdf, heightNeeded, y, pageNum, W, H, maxY, setPageNum, headerTitle) {
-  if (y + heightNeeded > maxY) {
-    drawPageFooter(pdf, W, H, pageNum);
-    const newPageNum = pageNum + 1;
-    setPageNum(newPageNum);
-    pdf.addPage();
-    pdf.setFillColor(...C.bg);
-    pdf.rect(0, 0, W, H, 'F');
-    drawPageHeader(pdf, W, headerTitle);
-    return 36;
-  }
-  return y;
-}
-
-function pdfShortText(value, maxLength = 74) {
-  const text = String(value ?? '—').replace(/\s+/g, ' ').trim();
-  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
-}
+// ── Halaman 4: Dasar data ─────────────────────────────────────
 
 function evidenceStatusLabel(status, lang) {
   const labels = lang === 'en'
     ? { official: 'OFFICIAL', model: 'MODEL', reference: 'REFERENCE', open_data: 'OPEN DATA', unavailable: 'UNAVAILABLE' }
     : { official: 'RESMI', model: 'MODEL', reference: 'REFERENSI', open_data: 'OPEN DATA', unavailable: 'BELUM TERSEDIA' };
-  return labels[status] || String(status || '—').toUpperCase();
+  return labels[status] || String(status || '-').toUpperCase();
 }
 
 function evidenceStatusColor(status) {
   if (status === 'official') return C.safe;
   if (status === 'model') return C.moderate;
-  if (status === 'unavailable') return C.textMuted;
-  return C.blue;
+  if (status === 'unavailable') return C.inkMuted;
+  return C.info;
 }
 
-/** Page: Audit evidence and provenance */
-function drawAuditEvidencePage(pdf, property, lang) {
-  const W = pdf.internal.pageSize.getWidth();
-  const H = pdf.internal.pageSize.getHeight();
-  const M = 18;
-  const evidence = getPdfAuditEvidence(property);
+function shortText(value, maxLength = 74) {
+  const text = String(value ?? '-').replace(/\s+/g, ' ').trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+}
+
+function drawEvidencePage(pdf, property, lang) {
   const isEn = lang === 'en';
-
-  pdf.addPage();
-  pdf.setFillColor(...C.bg);
-  pdf.rect(0, 0, W, H, 'F');
-  drawPageHeader(pdf, W, isEn ? 'AI Audit Evidence' : 'Dasar Audit AI');
-
-  let y = 36;
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(13);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'Audit evidence & data quality' : 'Bukti audit & kualitas data', M, y);
-  y += 6;
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textSec);
-  pdf.text(
-    isEn
-      ? 'The deterministic audit is the source of truth; AI explains it and cannot change the score.'
-      : 'Audit deterministik adalah sumber angka; AI hanya menjelaskan dan tidak dapat mengubah skor.',
-    M,
-    y,
-  );
-  y += 10;
-
-  const cards = [
-    ['STATUS', evidence.status.toUpperCase(), evidence.status === 'valid' ? C.safe : C.moderate],
-    [isEn ? 'SCORE VERSION' : 'VERSI SKOR', pdfShortText(evidence.scoreVersion, 25), C.blue],
-    [isEn ? 'DATA MODE' : 'MODE DATA', pdfShortText(evidence.mode, 25), C.violet],
-  ];
-  const cardW = (W - M * 2 - 6) / 3;
-  cards.forEach(([label, value, color], index) => {
-    const x = M + index * (cardW + 3);
-    drawRoundedRect(pdf, x, y, cardW, 21, 2.5, C.bgCard);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6);
-    setColor(pdf, C.textMuted);
-    pdf.text(label, x + 4, y + 6);
-    pdf.setFontSize(value.length > 19 ? 6.5 : 9);
-    setColor(pdf, color);
-    pdf.text(value, x + 4, y + 15);
-  });
-  y += 29;
+  const evidence = getPdfAuditEvidence(property);
+  const title = isEn ? 'Data basis' : 'Dasar data';
+  newContentPage(pdf, title);
+  const flow = createFlow(pdf, title);
+  let y = flow.y;
 
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'Field provenance' : 'Provenance setiap field', M, y);
+  pdf.setFontSize(17);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Where the numbers come from' : 'Dari mana angkanya berasal', PAGE.M, y);
   y += 7;
 
-  const entries = evidence.entries.slice(0, 18);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8.2);
+  ink(pdf, C.inkBody);
+  pdf.text(
+    pdf.splitTextToSize(
+      isEn
+        ? 'Every field below is traced to its source. The deterministic engine produces the score; the written report only explains it and cannot change any value.'
+        : 'Setiap field di bawah ini dilacak sampai ke sumbernya. Mesin deterministik yang menghasilkan skor; laporan naratif hanya menjelaskan dan tidak dapat mengubah nilai apa pun.',
+      CONTENT_W,
+    ),
+    PAGE.M,
+    y + 4,
+  );
+  y += 13;
+
+  // Peringatan ini dulu berupa kotak di akhir halaman dan selalu terdorong
+  // sendirian ke halaman berikutnya. Sebagai catatan ringkas di kepala
+  // halaman, isinya justru terbaca sebelum tabelnya.
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7.4);
+  ink(pdf, C.moderate);
+  const caveat = pdf.splitTextToSize(
+    isEn
+      ? 'Model and proxy fields are screening indicators, not official hazard-map observations. A field survey remains necessary for final engineering or permitting decisions.'
+      : 'Field model dan proxy adalah indikator screening, bukan observasi peta bahaya resmi. Survei lapangan tetap diperlukan untuk keputusan teknik atau perizinan akhir.',
+    CONTENT_W - 6,
+  );
+  fill(pdf, C.moderate);
+  pdf.rect(PAGE.M, y - 2.6, 1.2, caveat.length * 3.9 + 1.4, 'F');
+  pdf.text(caveat, PAGE.M + 4, y);
+  y += caveat.length * 3.9 + 7;
+
+  // ── Ringkasan cakupan ──
+  const summary = [
+    [isEn ? 'Official' : 'Resmi', evidence.officialCount, C.safe],
+    [isEn ? 'Model / proxy' : 'Model / proxy', evidence.estimatedCount, C.moderate],
+    [isEn ? 'Reference' : 'Referensi', evidence.referenceCount, C.info],
+    [isEn ? 'Unavailable' : 'Belum tersedia', evidence.unavailableCount, C.inkMuted],
+  ];
+  const cardW = (CONTENT_W - 9) / 4;
+  summary.forEach(([label, value, color], index) => {
+    const x = PAGE.M + index * (cardW + 3);
+    box(pdf, x, y, cardW, 17, { fillColor: C.panel, borderColor: C.ruleSoft });
+    fill(pdf, color);
+    pdf.rect(x, y + 1.5, 1.4, 14, 'F');
+    eyebrow(pdf, label, x + 5, y + 6.4);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(13);
+    ink(pdf, color);
+    pdf.text(String(value), x + 5, y + 14);
+  });
+  y += 24;
+
+  flow.y = y;
+
+  // ── Metadata audit ──
+  // Blok pendek ini sengaja mendahului tabel provenance yang panjang: kalau
+  // urutannya dibalik, sisa satu-dua baris metadata terdorong ke halaman
+  // berikutnya dan menghasilkan halaman nyaris kosong.
+  const metaRows = [
+    [isEn ? 'Audit status' : 'Status audit', String(evidence.status).toUpperCase()],
+    [isEn ? 'Score version' : 'Versi skor', shortText(evidence.scoreVersion, 34)],
+    [isEn ? 'Data mode' : 'Mode data', shortText(evidence.mode, 34)],
+    [isEn ? 'Scored axes' : 'Sumbu yang dinilai', String(evidence.scoreAxes.length || '-')],
+    [
+      isEn ? 'Not scored' : 'Tidak dinilai',
+      shortText(evidence.notScored.join(', ') || '-', 44),
+    ],
+    [
+      isEn ? 'Missing fields' : 'Field belum tersedia',
+      shortText([...evidence.criticalMissing, ...evidence.optionalMissing].join(', ') || '-', 44),
+    ],
+    [isEn ? 'Narrative engine' : 'Mesin naratif', shortText(evidence.aiModel, 34)],
+  ];
+  flow.need(14);
+  eyebrow(pdf, isEn ? 'Audit metadata' : 'Metadata audit', PAGE.M, flow.y);
+  flow.y += 5;
+  definitionTable(pdf, flow, PAGE.M, CONTENT_W, metaRows, { rowH: 6.9 });
+  flow.y += 8;
+
+  // ── Tabel provenance ──
+  const colField = PAGE.M + 2;
+  const colStatus = PAGE.M + 46;
+  const colSource = PAGE.M + 82;
+  // Tinggi baris menyesuaikan sisa halaman: kalau tabelnya hanya meleset
+  // satu-dua baris, memampatkannya sedikit jauh lebih terbaca daripada
+  // membuang sisanya ke halaman yang nyaris kosong.
+  const rowCount = evidence.entries.length || 1;
+  let rowH = 6.6;
+
+  const drawTableHead = (withTitle) => {
+    if (withTitle) {
+      eyebrow(pdf, isEn ? 'Field provenance' : 'Provenance per field', PAGE.M, flow.y);
+      flow.y += 5;
+    }
+    fill(pdf, C.paperAlt);
+    pdf.rect(PAGE.M, flow.y, CONTENT_W, 6.5, 'F');
+    eyebrow(pdf, 'Field', colField, flow.y + 4.3, { size: 6 });
+    eyebrow(pdf, 'Status', colStatus, flow.y + 4.3, { size: 6 });
+    eyebrow(pdf, isEn ? 'Source' : 'Sumber', colSource, flow.y + 4.3, { size: 6 });
+    flow.y += 6.5;
+  };
+
+  flow.need(24);
+  drawTableHead(true);
+  rowH = Math.max(5.6, Math.min(6.6, (BODY_BOTTOM - flow.y - 0.8) / rowCount));
+
+  const entries = evidence.entries;
   if (entries.length === 0) {
     pdf.setFont('helvetica', 'italic');
     pdf.setFontSize(8);
-    setColor(pdf, C.textMuted);
-    pdf.text(isEn ? 'No field-level provenance is available.' : 'Provenance per field belum tersedia.', M, y);
-    y += 10;
-  } else {
-    entries.forEach((entry, index) => {
-      const rowH = 8.5;
-      const rowBg = index % 2 === 0 ? C.bgCard : C.bg;
-      pdf.setFillColor(...rowBg);
-      pdf.rect(M, y - 4, W - M * 2, rowH, 'F');
-
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(7.2);
-      setColor(pdf, C.textPri);
-      pdf.text(pdfShortText(entry.label, 22), M + 3, y + 1);
-
-      const statusColor = evidenceStatusColor(entry.status);
-      pdf.setFontSize(6.2);
-      setColor(pdf, statusColor);
-      pdf.text(evidenceStatusLabel(entry.status, lang), M + 43, y + 1);
-
-      pdf.setFont('helvetica', 'normal');
-      setColor(pdf, C.textSec);
-      pdf.text(pdfShortText(entry.source, 86), M + 77, y + 1);
-      y += rowH;
-    });
-    if (evidence.entries.length > entries.length) {
-      pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(6.5);
-      setColor(pdf, C.textMuted);
-      pdf.text(`+ ${evidence.entries.length - entries.length} field lainnya`, M, y + 2);
-      y += 6;
-    }
+    ink(pdf, C.inkMuted);
+    pdf.text(
+      isEn ? 'No field-level provenance is available.' : 'Provenance per field belum tersedia.',
+      colField,
+      flow.y + 5,
+    );
+    return;
   }
 
-  y += 6;
-  const colW = (W - M * 2 - 6) / 2;
-  drawRoundedRect(pdf, M, y, colW, 37, 2.5, C.bgCard);
-  drawRoundedRect(pdf, M + colW + 6, y, colW, 37, 2.5, C.bgCard);
+  entries.forEach((entry, index) => {
+    const pagesBefore = pdf.getNumberOfPages();
+    flow.need(rowH);
+    // Tabel yang menyeberang halaman tanpa kepala kolom jadi tak terbaca.
+    if (pdf.getNumberOfPages() !== pagesBefore) drawTableHead(false);
 
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.accent);
-  pdf.text(isEn ? 'Derived screening indicators' : 'Indikator turunan screening', M + 4, y + 7);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(7);
-  setColor(pdf, C.textSec);
-  const derivedLines = [
-    `${isEn ? 'Official fields' : 'Field resmi'}: ${evidence.officialCount}`,
-    `${isEn ? 'Model/proxy fields' : 'Field model/proxy'}: ${evidence.estimatedCount}`,
-    `${isEn ? 'Reference/open data' : 'Referensi/open data'}: ${evidence.referenceCount}`,
-    `${isEn ? 'Unavailable fields' : 'Field belum tersedia'}: ${evidence.unavailableCount}`,
-    `${isEn ? 'Scored axes' : 'Sumbu yang dinilai'}: ${evidence.scoreAxes.length || '—'}`,
-  ];
-  derivedLines.forEach((line, index) => pdf.text(pdfShortText(line, 48), M + 4, y + 14 + index * 4.5));
+    const rowY = flow.y;
+    if (index % 2 === 1) {
+      fill(pdf, C.panel);
+      pdf.rect(PAGE.M, rowY, CONTENT_W, rowH, 'F');
+    }
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7.4);
+    ink(pdf, C.ink);
+    const baseline = rowY + rowH / 2 + 1.4;
+    pdf.text(shortText(entry.label, 24), colField, baseline);
 
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.accent);
-  pdf.text(isEn ? 'AI delivery & limits' : 'Delivery AI & batasan', M + colW + 10, y + 7);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(7);
-  setColor(pdf, C.textSec);
-  const aiLines = [
-    `Model: ${pdfShortText(evidence.aiModel, 38)}`,
-    `Delivery: ${String(evidence.aiDeliveryMode).toUpperCase()}`,
-    `${isEn ? 'Sources' : 'Sumber'}: ${pdfShortText(evidence.aiSources.join(', ') || '—', 38)}`,
-    `${isEn ? 'Not scored' : 'Tidak dinilai'}: ${pdfShortText(evidence.notScored.join(', ') || '—', 38)}`,
-    `${isEn ? 'Missing' : 'Belum tersedia'}: ${pdfShortText([...evidence.criticalMissing, ...evidence.optionalMissing].join(', ') || '—', 38)}`,
-  ];
-  aiLines.forEach((line, index) => pdf.text(line, M + colW + 10, y + 14 + index * 4.5));
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6.2);
+    ink(pdf, evidenceStatusColor(entry.status));
+    pdf.text(evidenceStatusLabel(entry.status, lang), colStatus, baseline);
 
-  y += 45;
-  drawRoundedRect(pdf, M, y, W - M * 2, 19, 2.5, [40, 35, 25]);
-  pdf.setFont('helvetica', 'italic');
-  pdf.setFontSize(7);
-  setColor(pdf, C.moderate);
-  const caveat = isEn
-    ? 'Model/proxy fields are screening indicators, not official hazard-map observations. A field survey remains necessary for final engineering or permitting decisions.'
-    : 'Field model/proxy adalah indikator screening, bukan observasi peta bahaya resmi. Survei lapangan tetap diperlukan untuk keputusan teknik atau perizinan akhir.';
-  pdf.text(pdf.splitTextToSize(caveat, W - M * 2 - 8), M + 4, y + 7);
-
-  drawPageFooter(pdf, W, H, 3);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    ink(pdf, C.inkBody);
+    pdf.text(shortText(entry.source, 62), colSource, baseline);
+    flow.y = rowY + rowH;
+  });
+  hairline(pdf, PAGE.M, flow.y, CONTENT_W, C.rule);
 }
 
-function drawSoilVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, setPageNum) {
-  const M = 18;
-  const vs30 = property?.vs30 ?? 180;
-  const siteClass = property?.siteClass ?? 'SD';
-  const fs = property?.compressedPayload?.liquefaction_analysis?.fs_score ?? 1.2;
+// ── Visual sisipan dalam laporan naratif ──────────────────────
+
+/** Strip skala kelas situs SNI 1726:2019 dengan penanda posisi Vs30. */
+function drawSiteClassStrip(pdf, property, flow, lang) {
   const isEn = lang === 'en';
+  const vs30 = Number(property?.vs30);
+  if (!Number.isFinite(vs30)) return;
 
-  const titleText = isEn ? 'GEOTECHNICAL VISUALIZATION' : 'VISUALISASI GEOTEKNIK';
-  y = ensureSpace(pdf, 42, y, pageNum, W, H, maxY, setPageNum, titleText);
+  flow.need(34);
+  const y = flow.y;
+  const w = CONTENT_W;
 
-  // Outer Box
-  pdf.setFillColor(...C.bgCard);
-  pdf.roundedRect(M, y, W - M * 2, 36, 3, 3, 'F');
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(0.3);
-  pdf.roundedRect(M, y, W - M * 2, 36, 3, 3, 'S');
-
-  // Subtitle / Vs30 Label
+  box(pdf, PAGE.M, y, w, 30, { fillColor: C.panel, borderColor: C.ruleSoft });
+  eyebrow(pdf, isEn ? 'Site class scale (SNI 1726:2019)' : 'Skala kelas situs (SNI 1726:2019)', PAGE.M + 5, y + 6);
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'SOIL CLASS STIFFNESS (Vs30)' : 'KEKERASAN TANAH (Vs30)', M + 5, y + 6);
+  pdf.setFontSize(8.5);
+  ink(pdf, C.accent);
+  pdf.text(`${vs30} m/s · ${property.siteClass ?? '-'}`, PAGE.W - PAGE.M - 5, y + 6.4, { align: 'right' });
 
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.accent);
-  pdf.text(`${vs30} m/s (${isEn ? 'Class' : 'Kelas'} ${siteClass})`, W - M - 5, y + 6, { align: 'right' });
-
-  // Draw Vs30 classes boxes
   const classes = [
     { name: 'SE', label: isEn ? 'Soft' : 'Lunak', range: '<180', color: C.danger },
     { name: 'SD', label: isEn ? 'Medium' : 'Sedang', range: '180-360', color: C.moderate },
-    { name: 'SC', label: isEn ? 'Hard' : 'Keras', range: '360-760', color: C.safe },
-    { name: 'SB/SA', label: isEn ? 'Rock' : 'Batuan', range: '>760', color: [6, 182, 212] }
+    { name: 'SC', label: isEn ? 'Dense' : 'Keras', range: '360-760', color: C.safe },
+    { name: 'SB/SA', label: isEn ? 'Rock' : 'Batuan', range: '>760', color: C.info },
   ];
-
   let activeIdx = 0;
   if (vs30 >= 760) activeIdx = 3;
   else if (vs30 >= 360) activeIdx = 2;
   else if (vs30 >= 180) activeIdx = 1;
 
-  const boxW = (W - M * 2 - 20) / 4;
-  classes.forEach((c, idx) => {
-    const boxX = M + 4 + idx * (boxW + 4);
-    const boxY = y + 9;
-    const isActive = idx === activeIdx;
-
-    if (isActive) {
-      // Highlighted box
-      pdf.setFillColor(30, 22, 16);
-      pdf.roundedRect(boxX, boxY, boxW, 11, 2, 2, 'F');
-      pdf.setDrawColor(C.accent[0], C.accent[1], C.accent[2]);
-      pdf.setLineWidth(0.4);
-      pdf.roundedRect(boxX, boxY, boxW, 11, 2, 2, 'S');
-    } else {
-      // Dull box
-      pdf.setFillColor(25, 20, 15);
-      pdf.roundedRect(boxX, boxY, boxW, 11, 2, 2, 'F');
-      pdf.setDrawColor(40, 30, 22);
-      pdf.setLineWidth(0.2);
-      pdf.roundedRect(boxX, boxY, boxW, 11, 2, 2, 'S');
-    }
-
+  const cellW = (w - 10 - 9) / 4;
+  classes.forEach((cls, index) => {
+    const x = PAGE.M + 5 + index * (cellW + 3);
+    const active = index === activeIdx;
+    box(pdf, x, y + 11, cellW, 14, {
+      fillColor: active ? C.white : C.paperAlt,
+      borderColor: active ? cls.color : C.ruleSoft,
+      borderWidth: active ? 0.6 : 0.2,
+    });
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(7.5);
-    const textClr = isActive ? C.accent : c.color;
-    pdf.setTextColor(textClr[0], textClr[1], textClr[2]);
-    pdf.text(c.name, boxX + boxW / 2, boxY + 4.2, { align: 'center' });
+    pdf.setFontSize(8);
+    ink(pdf, active ? cls.color : C.inkMuted);
+    pdf.text(cls.name, x + cellW / 2, y + 16, { align: 'center' });
 
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(5.5);
-    setColor(pdf, C.textSec);
-    pdf.text(c.label, boxX + boxW / 2, boxY + 7.2, { align: 'center' });
-
-    pdf.setFont('courier', 'normal');
-    pdf.setFontSize(5);
-    setColor(pdf, C.textMuted);
-    pdf.text(c.range, boxX + boxW / 2, boxY + 10.2, { align: 'center' });
+    pdf.setFontSize(6);
+    ink(pdf, C.inkMuted);
+    pdf.text(`${cls.label}  ${cls.range}`, x + cellW / 2, y + 21.5, { align: 'center' });
   });
 
-  // Draw Liquefaction FS bar
-  const fsY = y + 24.5;
+  flow.y = y + 36;
+}
+
+/** Skala FS likuefaksi: ambang 1,00 ditandai eksplisit. */
+function drawLiquefactionStrip(pdf, property, flow, lang) {
+  const isEn = lang === 'en';
+  const fs = Number(property?.compressedPayload?.liquefaction_analysis?.fs_score);
+  if (!Number.isFinite(fs)) return;
+
+  flow.need(30);
+  const y = flow.y;
+  const w = CONTENT_W;
+
+  box(pdf, PAGE.M, y, w, 26, { fillColor: C.panel, borderColor: C.ruleSoft });
+  eyebrow(pdf, isEn ? 'Liquefaction factor of safety' : 'Faktor keamanan likuefaksi', PAGE.M + 5, y + 6);
+
+  const safeSide = fs >= 1;
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'LIQUEFACTION FACTOR OF SAFETY (FS)' : 'FAKTOR KEAMANAN LIKUEFAKSI (FS)', M + 5, fsY);
+  pdf.setFontSize(8.5);
+  ink(pdf, safeSide ? C.safe : C.danger);
+  pdf.text(
+    `FS ${fs.toFixed(2)} · ${safeSide ? (isEn ? 'ABOVE THRESHOLD' : 'DI ATAS AMBANG') : (isEn ? 'BELOW THRESHOLD' : 'DI BAWAH AMBANG')}`,
+    PAGE.W - PAGE.M - 5,
+    y + 6.4,
+    { align: 'right' },
+  );
 
-  const fsText = `FS = ${fs.toFixed(2)} (${fs < 1.0 ? (isEn ? 'CRITICAL' : 'RAWAN') : (isEn ? 'SAFE' : 'AMAN')})`;
-  const fsClr = fs < 1.0 ? C.danger : C.safe;
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  pdf.setTextColor(fsClr[0], fsClr[1], fsClr[2]);
-  pdf.text(fsText, W - M - 5, fsY, { align: 'right' });
+  const barX = PAGE.M + 5;
+  const barY = y + 13;
+  const barW = w - 10;
+  const barH = 3.4;
 
-  // FS Bar graph
-  const barX = M + 5;
-  const barY = y + 26.5;
-  const barW = W - M * 2 - 10;
-  const barH = 3;
-
-  // Draw background bar with red and green halves
-  pdf.setFillColor(30, 22, 16);
-  pdf.roundedRect(barX, barY, barW, barH, 1, 1, 'F');
-  
-  // Left half (red/orange)
-  pdf.setFillColor(C.danger[0], C.danger[1], C.danger[2]);
+  fill(pdf, C.danger);
   pdf.rect(barX, barY, barW / 2, barH, 'F');
-  
-  // Right half (green)
-  pdf.setFillColor(C.safe[0], C.safe[1], C.safe[2]);
+  fill(pdf, C.safe);
   pdf.rect(barX + barW / 2, barY, barW / 2, barH, 'F');
 
-  // Draw marker at current FS position
-  const markerPos = Math.max(0, Math.min(1, fs / 2)) * barW;
-  pdf.setFillColor(255, 255, 255);
-  pdf.rect(barX + markerPos - 0.5, barY - 1, 1, barH + 2, 'F');
+  // Ambang FS = 1,00 berada tepat di tengah skala 0-2.
+  fill(pdf, C.ink);
+  pdf.rect(barX + barW / 2 - 0.25, barY - 1.6, 0.5, barH + 3.2, 'F');
 
-  // Labels below FS bar
+  // Dijaga tetap di dalam batang: FS >= 2 kalau tidak akan menaruh penanda
+  // menggantung di luar skala.
+  const markerX = barX + Math.max(0.012, Math.min(0.988, fs / 2)) * barW;
+  fill(pdf, C.ink);
+  pdf.triangle(markerX, barY - 1.4, markerX - 1.7, barY - 4.4, markerX + 1.7, barY - 4.4, 'F');
+
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(5.5);
-  setColor(pdf, C.textMuted);
-  pdf.text('0.0 (Unsafe)', barX, barY + 6.2);
-  pdf.text('1.0 (Critical)', barX + barW / 2, barY + 6.2, { align: 'center' });
-  pdf.text('2.0+ (Safe)', barX + barW, barY + 6.2, { align: 'right' });
+  pdf.setFontSize(6);
+  ink(pdf, C.inkMuted);
+  pdf.text('0.00', barX, barY + 7);
+  pdf.text(isEn ? '1.00  threshold' : '1,00  ambang', barX + barW / 2, barY + 7, { align: 'center' });
+  pdf.text('2.00+', barX + barW, barY + 7, { align: 'right' });
 
-  return y + 42;
+  flow.y = y + 32;
 }
 
-function drawSeismicVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, setPageNum) {
-  const M = 18;
-  const pga = property?.seismic?.pgaSurface ?? 0.35;
-  const faultName = property?.seismic?.faultName ?? 'N/A';
-  const faultDist = property?.seismic?.faultDist ?? 999;
+/** Skala PGA permukaan dengan konteks sesar terdekat. */
+function drawSeismicStrip(pdf, property, flow, lang) {
   const isEn = lang === 'en';
+  const pga = Number(property?.seismic?.pgaSurface);
+  if (!Number.isFinite(pga)) return;
 
-  const titleText = isEn ? 'SEISMIC HAZARD VISUALIZATION' : 'VISUALISASI BAHAYA GEMPA';
-  y = ensureSpace(pdf, 42, y, pageNum, W, H, maxY, setPageNum, titleText);
+  flow.need(30);
+  const y = flow.y;
+  const w = CONTENT_W;
 
-  // Outer Box
-  pdf.setFillColor(...C.bgCard);
-  pdf.roundedRect(M, y, W - M * 2, 36, 3, 3, 'F');
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(0.3);
-  pdf.roundedRect(M, y, W - M * 2, 36, 3, 3, 'S');
+  box(pdf, PAGE.M, y, w, 26, { fillColor: C.panel, borderColor: C.ruleSoft });
+  eyebrow(pdf, isEn ? 'Design ground acceleration' : 'Percepatan tanah desain', PAGE.M + 5, y + 6);
 
-  // PGA Label
+  const pgaColor = pga >= 0.5 ? C.danger : pga >= 0.3 ? C.moderate : C.safe;
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'PEAK GROUND ACCELERATION (PGA SURFACE)' : 'PERCEPATAN TANAH MAKSIMUM (PGA SURFACE)', M + 5, y + 6);
+  pdf.setFontSize(8.5);
+  ink(pdf, pgaColor);
+  pdf.text(`${pga.toFixed(3)} g`, PAGE.W - PAGE.M - 5, y + 6.4, { align: 'right' });
 
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.accent);
-  pdf.text(`${pga.toFixed(3)}g`, W - M - 5, y + 6, { align: 'right' });
+  const barX = PAGE.M + 5;
+  const barY = y + 13;
+  const barW = w - 10;
 
-  // PGA intensity bar
-  const barX = M + 5;
-  const barY = y + 9;
-  const barW = W - M * 2 - 10;
-  const barH = 3;
+  fill(pdf, C.paperAlt);
+  pdf.roundedRect(barX, barY, barW, 3.4, 1.7, 1.7, 'F');
+  const filled = Math.max(0, Math.min(1, pga / 0.8)) * barW;
+  if (filled > 1) {
+    fill(pdf, pgaColor);
+    pdf.roundedRect(barX, barY, filled, 3.4, 1.7, 1.7, 'F');
+  }
 
-  const blockW = barW / 3;
-  pdf.setFillColor(C.safe[0], C.safe[1], C.safe[2]);
-  pdf.rect(barX, barY, blockW, barH, 'F');
-  pdf.setFillColor(C.moderate[0], C.moderate[1], C.moderate[2]);
-  pdf.rect(barX + blockW, barY, blockW, barH, 'F');
-  pdf.setFillColor(C.danger[0], C.danger[1], C.danger[2]);
-  pdf.rect(barX + blockW * 2, barY, blockW, barH, 'F');
-
-  // Draw marker at current PGA position (PGA goes from 0.0 to 1.0)
-  const markerPos = Math.max(0, Math.min(1, pga / 1.0)) * barW;
-  pdf.setFillColor(255, 255, 255);
-  pdf.rect(barX + markerPos - 0.5, barY - 1, 1, barH + 2, 'F');
-
-  // Labels below PGA bar
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(5.5);
-  setColor(pdf, C.textMuted);
-  pdf.text('0.1g (Low)', barX, barY + 6.2);
-  pdf.text('0.4g (Moderate)', barX + barW / 2, barY + 6.2, { align: 'center' });
-  pdf.text('0.8g+ (High)', barX + barW, barY + 6.2, { align: 'right' });
+  pdf.setFontSize(6);
+  ink(pdf, C.inkMuted);
+  pdf.text('0.0 g', barX, barY + 7);
+  pdf.text(
+    `${property.seismic?.faultName ?? '-'}  ·  ${property.seismic?.faultDist ?? '-'} km`,
+    barX + barW / 2,
+    barY + 7,
+    { align: 'center' },
+  );
+  pdf.text('0.8 g', barX + barW, barY + 7, { align: 'right' });
 
-  // Fault Proximity Line Diagram
-  const faultY = y + 24.5;
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? `FAULT PROXIMITY (${faultName})` : `KEDEKATAN SESAR AKTIF (${faultName})`, M + 5, faultY);
-
-  const faultClr = faultDist < 10 ? C.danger : faultDist < 30 ? C.moderate : C.safe;
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  pdf.setTextColor(faultClr[0], faultClr[1], faultClr[2]);
-  pdf.text(`${faultDist.toFixed(1)} km`, W - M - 5, faultY, { align: 'right' });
-
-  // Draw line diagram
-  const lineX = M + 15;
-  const lineW = W - M * 2 - 30;
-  const lineY = y + 28.5;
-
-  // Draw FAULT line label
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(6.5);
-  pdf.setTextColor(C.danger[0], C.danger[1], C.danger[2]);
-  pdf.text(isEn ? 'FAULT' : 'SESAR', M + 5, lineY + 1);
-
-  // Draw line segment
-  pdf.setDrawColor(80, 60, 45);
-  pdf.setLineWidth(0.5);
-  pdf.line(lineX, lineY, lineX + lineW, lineY);
-
-  // Proximity zones on line
-  pdf.setFillColor(C.danger[0], C.danger[1], C.danger[2]);
-  pdf.circle(lineX, lineY, 1, 'F');
-  
-  // House marker position (faultDist goes from 0 to 50 km)
-  const housePos = Math.max(0, Math.min(1, faultDist / 50)) * lineW;
-  
-  // Draw marker circle
-  pdf.setFillColor(C.accent[0], C.accent[1], C.accent[2]);
-  pdf.circle(lineX + housePos, lineY, 1.8, 'F');
-  pdf.setDrawColor(0, 0, 0);
-  pdf.setLineWidth(0.3);
-  pdf.circle(lineX + housePos, lineY, 1.8, 'S');
-
-  // Draw SAFE label on right
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(6.5);
-  setColor(pdf, C.textMuted);
-  pdf.text(isEn ? 'SAFE' : 'AMAN', lineX + lineW + 2, lineY + 1);
-
-  // Labels below Fault diagram
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(5.5);
-  setColor(pdf, C.textMuted);
-  pdf.text(isEn ? 'Unsafe (<10km)' : 'Bahaya (<10km)', lineX, lineY + 5.2);
-  pdf.text(isEn ? 'Warning (10-30km)' : 'Waspada (10-30km)', lineX + lineW * 0.4, lineY + 5.2, { align: 'center' });
-  pdf.text(isEn ? 'Safe (>50km)' : 'Aman (>50km)', lineX + lineW, lineY + 5.2, { align: 'right' });
-
-  return y + 42;
+  flow.y = y + 32;
 }
 
-function drawEnvironmentVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, setPageNum) {
-  const M = 18;
-  const elevasi = property?.elevasi ?? 0;
-  const aqi = property?.compressedPayload?.env_extras?.aqi ?? 20;
+// ── Laporan naratif ───────────────────────────────────────────
+
+function createFlow(pdf, title) {
+  const flow = {
+    y: BODY_TOP,
+    title,
+    need(height) {
+      if (this.y + height > BODY_BOTTOM) {
+        this.y = newContentPage(pdf, this.title);
+      }
+      return this.y;
+    },
+  };
+  return flow;
+}
+
+function cleanInline(text) {
+  return String(text)
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/→/g, '->');
+}
+
+function parseBlocks(report) {
+  const blocks = [];
+  let table = null;
+  report.split('\n').forEach((line) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('|')) {
+      if (!table) table = [];
+      table.push(trimmed);
+      return;
+    }
+    if (table) {
+      blocks.push({ type: 'table', rows: table });
+      table = null;
+    }
+    blocks.push({ type: 'line', text: trimmed });
+  });
+  if (table) blocks.push({ type: 'table', rows: table });
+  return blocks;
+}
+
+function renderTable(pdf, rows, flow) {
+  const parsed = rows
+    .map((row) =>
+      row
+        .split('|')
+        .map((cell) => cell.trim())
+        .filter((_, index, arr) => index > 0 && index < arr.length - 1),
+    )
+    .filter(
+      (row) =>
+        row.length > 0 &&
+        !row.every((cell) => cell.split('').every((ch) => ch === '-' || ch === ':' || ch === ' ')),
+    );
+
+  if (parsed.length === 0) return;
+  const cols = parsed[0].length;
+  if (cols === 0) return;
+
+  const colW = CONTENT_W / cols;
+
+  parsed.forEach((row, rowIndex) => {
+    const isHeader = rowIndex === 0;
+    const cellLines = row.map((cell) =>
+      pdf.splitTextToSize(cleanInline(cell), colW - 5).slice(0, 4),
+    );
+    const rowH = Math.max(7, Math.max(...cellLines.map((l) => l.length)) * 4 + 3.4);
+
+    flow.need(rowH + 2);
+    const y = flow.y;
+
+    fill(pdf, isHeader ? C.band : rowIndex % 2 === 0 ? C.panel : C.paper);
+    pdf.rect(PAGE.M, y, CONTENT_W, rowH, 'F');
+
+    stroke(pdf, C.rule, 0.2);
+    pdf.rect(PAGE.M, y, CONTENT_W, rowH, 'S');
+
+    row.forEach((_, colIndex) => {
+      const cellX = PAGE.M + colIndex * colW;
+      if (colIndex > 0) {
+        stroke(pdf, isHeader ? [60, 46, 34] : C.ruleSoft, 0.2);
+        pdf.line(cellX, y, cellX, y + rowH);
+      }
+      pdf.setFont('helvetica', isHeader ? 'bold' : 'normal');
+      pdf.setFontSize(isHeader ? 7.4 : 7.6);
+      ink(pdf, isHeader ? C.bandInk : C.inkBody);
+      pdf.text(cellLines[colIndex], cellX + 2.5, y + 4.8);
+    });
+
+    flow.y = y + rowH;
+  });
+  flow.y += 5;
+}
+
+function detectSection(headingText) {
+  const text = headingText.toLowerCase();
+  if (/geoteknik|geotechnical|tanah|soil|likuefaksi|liquefaction/.test(text)) return 'soil';
+  if (/gempa|seismic|tektonik|earthquake|sesar|fault/.test(text)) return 'seismic';
+  if (/banjir|flood|lingkungan|environment/.test(text)) return 'environment';
+  return null;
+}
+
+function drawReportPages(pdf, property, lang) {
   const isEn = lang === 'en';
-
-  const titleText = isEn ? 'FLOOD & ENVIRONMENTAL VISUALIZATION' : 'VISUALISASI BANJIR & LINGKUNGAN';
-  y = ensureSpace(pdf, 42, y, pageNum, W, H, maxY, setPageNum, titleText);
-
-  // Outer Box
-  pdf.setFillColor(...C.bgCard);
-  pdf.roundedRect(M, y, W - M * 2, 36, 3, 3, 'F');
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(0.3);
-  pdf.roundedRect(M, y, W - M * 2, 36, 3, 3, 'S');
-
-  // Elevation Label
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'ELEVATION VS SEA LEVEL / ROB FLOOD' : 'KETINGGIAN VS LEVEL BANJIR ROB', M + 5, y + 6);
+  const title = isEn ? 'Full report' : 'Laporan lengkap';
+  newContentPage(pdf, title);
+  const flow = createFlow(pdf, title);
 
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.accent);
-  pdf.text(`${elevasi} mdpl`, W - M - 5, y + 6, { align: 'right' });
+  pdf.setFontSize(17);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Full assessment' : 'Penilaian lengkap', PAGE.M, flow.y);
+  flow.y += 12;
 
-  // Elevation steps diagram
-  const stepY = y + 8;
-  const stepW = (W - M * 2 - 16) / 4;
-  const stepH = 8;
-
-  // Sea (Blue block)
-  pdf.setFillColor(C.blue[0], C.blue[1], C.blue[2]);
-  pdf.rect(M + 4, stepY + stepH - 2, stepW, 2, 'F');
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(5);
-  pdf.setTextColor(255, 255, 255);
-  pdf.text(isEn ? 'SEA' : 'LAUT', M + 4 + stepW / 2, stepY + stepH - 0.2, { align: 'center' });
-
-  // Coastal Flat 0-10m
-  pdf.setFillColor(35, 28, 20);
-  pdf.rect(M + 4 + stepW + 2, stepY + stepH - 4, stepW, 4, 'F');
-  setColor(pdf, C.textMuted);
-  pdf.text('0-10m', M + 4 + stepW + 2 + stepW / 2, stepY + stepH - 1, { align: 'center' });
-
-  // Hills 10-50m
-  pdf.setFillColor(35, 28, 20);
-  pdf.rect(M + 4 + stepW * 2 + 4, stepY + stepH - 6, stepW, 6, 'F');
-  setColor(pdf, C.textMuted);
-  pdf.text('10-50m', M + 4 + stepW * 2 + 4 + stepW / 2, stepY + stepH - 2, { align: 'center' });
-
-  // Highlands >50m
-  pdf.setFillColor(35, 28, 20);
-  pdf.rect(M + 4 + stepW * 3 + 6, stepY + stepH - 8, stepW, 8, 'F');
-  setColor(pdf, C.textMuted);
-  pdf.text('>50m', M + 4 + stepW * 3 + 6 + stepW / 2, stepY + stepH - 3, { align: 'center' });
-
-  // House marker at correct elevation index
-  const activeIdx = elevasi < 10 ? 1 : elevasi < 50 ? 2 : 3;
-  const houseX = M + 4 + activeIdx * (stepW + 2) + stepW / 2;
-  const houseY = stepY + stepH - (activeIdx === 1 ? 4 : activeIdx === 2 ? 6 : 8);
-
-  pdf.setFillColor(C.accent[0], C.accent[1], C.accent[2]);
-  pdf.triangle(houseX, houseY - 2.5, houseX - 2.5, houseY - 0.5, houseX + 2.5, houseY - 0.5, 'F');
-  pdf.rect(houseX - 1.8, houseY - 0.5, 3.6, 2, 'F');
-
-  // Labels below steps
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(5);
-  setColor(pdf, C.textMuted);
-  pdf.text(isEn ? 'Tidal Flood Risk' : 'Rawan Banjir Rob', M + 4 + stepW + 2 + stepW / 2, stepY + stepH + 3.5, { align: 'center' });
-  pdf.text(isEn ? 'Local Flood Potential' : 'Potensi Banjir Lokal', M + 4 + stepW * 2 + 4 + stepW / 2, stepY + stepH + 3.5, { align: 'center' });
-  pdf.text(isEn ? 'Safe Zone' : 'Zona Aman Banjir', M + 4 + stepW * 3 + 6 + stepW / 2, stepY + stepH + 3.5, { align: 'center' });
-
-
-  // Air Quality (AQI) Label
-  const aqiY = y + 24.5;
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textPri);
-  pdf.text(isEn ? 'AIR QUALITY INDEX (EUROPEAN AQI)' : 'INDEKS KUALITAS UDARA (EUROPEAN AQI)', M + 5, aqiY);
-
-  const aqiClr = aqi >= 100 ? C.danger : aqi >= 50 ? C.moderate : C.safe;
-  const aqiText = `AQI = ${aqi} (${aqi >= 100 ? (isEn ? 'VERY POOR' : 'SANGAT BURUK') : aqi >= 50 ? (isEn ? 'MODERATE' : 'SEDANG') : (isEn ? 'HEALTHY' : 'SEHAT')})`;
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  pdf.setTextColor(aqiClr[0], aqiClr[1], aqiClr[2]);
-  pdf.text(aqiText, W - M - 5, aqiY, { align: 'right' });
-
-  // AQI Bar graph
-  const aqiBarX = M + 5;
-  const aqiBarY = y + 26.5;
-  const aqiBarW = W - M * 2 - 10;
-  const aqiBarH = 3;
-
-  const aqiBlockW = aqiBarW / 3;
-  pdf.setFillColor(C.safe[0], C.safe[1], C.safe[2]);
-  pdf.rect(aqiBarX, aqiBarY, aqiBlockW, aqiBarH, 'F');
-  pdf.setFillColor(C.moderate[0], C.moderate[1], C.moderate[2]);
-  pdf.rect(aqiBarX + aqiBlockW, aqiBarY, aqiBlockW, aqiBarH, 'F');
-  pdf.setFillColor(C.danger[0], C.danger[1], C.danger[2]);
-  pdf.rect(aqiBarX + aqiBlockW * 2, aqiBarY, aqiBlockW, aqiBarH, 'F');
-
-  // Draw marker at current AQI position (AQI goes from 0 to 150)
-  const aqiMarkerPos = Math.max(0, Math.min(1, aqi / 150)) * aqiBarW;
-  pdf.setFillColor(255, 255, 255);
-  pdf.rect(aqiBarX + aqiMarkerPos - 0.5, aqiBarY - 1, 1, aqiBarH + 2, 'F');
-
-  // Labels below AQI bar
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(5.5);
-  setColor(pdf, C.textMuted);
-  pdf.text(isEn ? '0 (Healthy)' : '0 (Sehat)', aqiBarX, aqiBarY + 6.2);
-  pdf.text(isEn ? '50 (Moderate)' : '50 (Sedang)', aqiBarX + aqiBarW / 2, aqiBarY + 6.2, { align: 'center' });
-  pdf.text(isEn ? '100+ (Poor)' : '100+ (Buruk)', aqiBarX + aqiBarW, aqiBarY + 6.2, { align: 'right' });
-
-  return y + 42;
-}
-
-function drawReportPages(pdf, property, lang, firstPageNum = 4) {
-  const W = pdf.internal.pageSize.getWidth();
-  const H = pdf.internal.pageSize.getHeight();
-  const M = 18;
-  const maxY = H - 22;
-  let pageNum = firstPageNum;
-
-  pdf.addPage();
-  pdf.setFillColor(...C.bg);
-  pdf.rect(0, 0, W, H, 'F');
-  drawPageHeader(pdf, W, lang === 'en' ? 'AI Audit Report' : 'Laporan Audit AI');
-
-  let y = 36;
-
-  // Track geohazard section visualization states
-  let soilDrawn = false;
-  let seismicDrawn = false;
-  let envDrawn = false;
-  let currentSection = null;
-
-  // Get the report text
   const report = property.aiReport?.detailedReport || '';
-  if (!report) {
+  if (!report.trim()) {
     pdf.setFont('helvetica', 'italic');
-    pdf.setFontSize(10);
-    setColor(pdf, C.textMuted);
-    pdf.text(lang === 'en' ? 'AI report not yet generated.' : 'Laporan AI belum dibuat.', M, y);
-    drawPageFooter(pdf, W, H, pageNum);
+    pdf.setFontSize(9);
+    ink(pdf, C.inkMuted);
+    pdf.text(isEn ? 'The narrative report is not available.' : 'Laporan naratif belum tersedia.', PAGE.M, flow.y);
     return;
   }
 
-  // Pre-parse table lines
-  const rawLines = report.split('\n');
-  const blocks = [];
-  let currentTable = null;
+  const drawn = { soil: false, seismic: false, environment: false };
+  let section = null;
 
-  rawLines.forEach((line) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('|')) {
-      if (!currentTable) {
-        currentTable = [];
-      }
-      currentTable.push(trimmed);
-    } else {
-      if (currentTable) {
-        blocks.push({ type: 'table', rows: currentTable });
-        currentTable = null;
-      }
-      blocks.push({ type: 'line', text: line });
+  const flushSectionVisual = () => {
+    if (!property?.coords || !section || drawn[section]) return;
+    if (section === 'soil') {
+      drawSiteClassStrip(pdf, property, flow, lang);
+      drawLiquefactionStrip(pdf, property, flow, lang);
+    } else if (section === 'seismic') {
+      drawSeismicStrip(pdf, property, flow, lang);
     }
-  });
-  if (currentTable) {
-    blocks.push({ type: 'table', rows: currentTable });
-  }
+    drawn[section] = true;
+  };
 
-  blocks.forEach((block) => {
-    // Check if we need a new page
-    if (y > maxY) {
-      drawPageFooter(pdf, W, H, pageNum);
-      pageNum++;
-      pdf.addPage();
-      pdf.setFillColor(...C.bg);
-      pdf.rect(0, 0, W, H, 'F');
-      drawPageHeader(pdf, W, lang === 'en' ? 'AI Audit Report (cont.)' : 'Laporan Audit AI (lanj.)');
-      y = 36;
-    }
-
+  parseBlocks(report).forEach((block) => {
     if (block.type === 'table') {
-      const rowsData = block.rows.map(row => 
-        row.split('|')
-           .map(cell => cell.trim())
-           .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
-      );
-      
-      const cleanRows = rowsData.filter(row => 
-        row.length > 0 && 
-        !row.every(cell => cell.split('').every(ch => ch === '-' || ch === ':' || ch === ' ' || ch === '|'))
-      );
-      
-      if (cleanRows.length === 0) return;
-      
-      const numCols = cleanRows[0].length;
-      if (numCols === 0) return;
-      
-      const tableW = W - M * 2;
-      const colW = tableW / numCols;
-      
-      cleanRows.forEach((row, rowIndex) => {
-        const rowH = 7;
-        if (y + rowH > maxY) {
-          drawPageFooter(pdf, W, H, pageNum);
-          pageNum++;
-          pdf.addPage();
-          pdf.setFillColor(...C.bg);
-          pdf.rect(0, 0, W, H, 'F');
-          drawPageHeader(pdf, W, lang === 'en' ? 'AI Audit Report (cont.)' : 'Laporan Audit AI (lanj.)');
-          y = 36;
-        }
-        
-        const isHeader = rowIndex === 0;
-        const rowBg = isHeader ? [30, 22, 16] : (rowIndex % 2 === 0 ? C.bgCard : C.bg);
-        pdf.setFillColor(rowBg[0], rowBg[1], rowBg[2]);
-        pdf.rect(M, y - 4, tableW, rowH, 'F');
-        
-        pdf.setDrawColor(45, 35, 25);
-        pdf.setLineWidth(0.2);
-        pdf.rect(M, y - 4, tableW, rowH, 'S');
-        
-        row.forEach((cell, colIndex) => {
-          const cellX = M + colIndex * colW;
-          pdf.line(cellX, y - 4, cellX, y - 4 + rowH);
-          
-          pdf.setFont('helvetica', isHeader ? 'bold' : 'normal');
-          pdf.setFontSize(isHeader ? 8 : 7.5);
-          setColor(pdf, isHeader ? C.accent : C.textPri);
-          
-          // Clean markdown formatting inside table cells
-          const cleanCell = cell.replace(/\*\*(.*?)\*\*/g, '$1');
-          const cellText = pdf.splitTextToSize(cleanCell, colW - 4);
-          pdf.text(cellText[0] || '', cellX + 2, y + 0.5);
-        });
-        
-        y += rowH;
-      });
-      y += 4;
+      renderTable(pdf, block.rows, flow);
       return;
     }
 
-    // Normal line processing
-    const line = block.text;
-    const trimmed = line.trim();
-    if (!trimmed) {
-      y += 4;
+    // Penanda inline dibersihkan sebelum pencocokan pola: "**1. Judul**"
+    // jatuh ke paragraf biasa kalau bintangnya masih menempel di awal baris.
+    const line = cleanInline(block.text).trim();
+    if (!line) {
+      flow.y += 3;
       return;
     }
 
-    // Heading transition and detection
-    if (trimmed.startsWith('# ') || trimmed.startsWith('## ') || trimmed.startsWith('### ')) {
-      // Draw previous geohazard section visual if we are moving to a new section/heading
-      if (property?.coords) {
-        if (currentSection === 'geotechnical' && !soilDrawn) {
-          y = drawSoilVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, (p) => { pageNum = p; });
-          soilDrawn = true;
-        } else if (currentSection === 'seismic' && !seismicDrawn) {
-          y = drawSeismicVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, (p) => { pageNum = p; });
-          seismicDrawn = true;
-        } else if (currentSection === 'environment' && !envDrawn) {
-          y = drawEnvironmentVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, (p) => { pageNum = p; });
-          envDrawn = true;
-        }
-      }
-    }
+    if (/^#{1,3}\s/.test(line)) flushSectionVisual();
 
-    if (trimmed.startsWith('# ')) {
-      currentSection = null;
-      y += 4;
+    if (line.startsWith('# ')) {
+      section = null;
+      flow.need(18);
+      flow.y += 5;
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(14);
-      setColor(pdf, C.textPri);
-      pdf.text(trimmed.replace(/^#+\s*/, ''), M, y);
-      y += 3;
-      // Underline
-      pdf.setDrawColor(...C.accent);
-      pdf.setLineWidth(0.4);
-      pdf.line(M, y, W - M, y);
-      y += 7;
-    } else if (trimmed.startsWith('## ')) {
-      currentSection = null;
-      y += 3;
+      pdf.setFontSize(13.5);
+      ink(pdf, C.ink);
+      pdf.text(cleanInline(line.replace(/^#+\s*/, '')), PAGE.M, flow.y);
+      flow.y += 3;
+      hairline(pdf, PAGE.M, flow.y, CONTENT_W, C.accent, 0.5);
+      flow.y += 8;
+      return;
+    }
+
+    if (line.startsWith('## ')) {
+      const heading = line.replace(/^#+\s*/, '');
+      // Laporan yang dihasilkan backend memakai `##` untuk bagian utama;
+      // membatasi deteksi ke `###` membuat strip visualnya tidak pernah muncul.
+      section = detectSection(heading);
+      flow.need(15);
+      flow.y += 4;
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(11);
-      setColor(pdf, C.accent);
-      pdf.text(trimmed.replace(/^#+\s*/, ''), M, y);
-      y += 7;
-    } else if (trimmed.startsWith('### ')) {
-      const headingText = trimmed.replace(/^###\s*/, '').toLowerCase();
-      if (headingText.includes('geoteknik') || headingText.includes('geotechnical') || headingText.includes('tanah') || headingText.includes('soil')) {
-        currentSection = 'geotechnical';
-      } else if (headingText.includes('gempa') || headingText.includes('seismic') || headingText.includes('tektonik') || headingText.includes('earthquake')) {
-        currentSection = 'seismic';
-      } else if (headingText.includes('banjir') || headingText.includes('flood') || headingText.includes('lingkungan') || headingText.includes('environmental')) {
-        currentSection = 'environment';
-      } else {
-        currentSection = null;
-      }
-
-      y += 2;
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(10);
-      setColor(pdf, [224, 168, 122]); // lighter accent
-      pdf.text(trimmed.replace(/^#+\s*/, ''), M, y);
-      y += 6;
-    } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-      // Bullet
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8.5);
-      setColor(pdf, C.textSec);
-
-      const bulletText = trimmed.replace(/^[-*]\s*/, '');
-      const clean = bulletText.replace(/\*\*(.*?)\*\*/g, '$1');
-      const wrapped = pdf.splitTextToSize(clean, W - M * 2 - 10);
-
-      wrapped.forEach((wLine, wi) => {
-        if (y > maxY) {
-          drawPageFooter(pdf, W, H, pageNum);
-          pageNum++;
-          pdf.addPage();
-          pdf.setFillColor(...C.bg);
-          pdf.rect(0, 0, W, H, 'F');
-          drawPageHeader(pdf, W, lang === 'en' ? 'AI Audit Report (cont.)' : 'Laporan Audit AI (lanj.)');
-          y = 36;
-        }
-        if (wi === 0) {
-          pdf.setFillColor(C.accent[0], C.accent[1], C.accent[2]);
-          pdf.circle(M + 3.5, y - 1.2, 0.8, 'F');
-        }
-        setColor(pdf, C.textSec);
-        pdf.text(wLine, M + 8, y);
-        y += 4.5;
-      });
-    } else if (trimmed.startsWith('>')) {
-      // Blockquote
-      drawRoundedRect(pdf, M, y - 3, W - M * 2, 10, 2, [35, 28, 20]);
-      pdf.setFillColor(...C.accent);
-      pdf.rect(M, y - 3, 2, 10, 'F');
-      pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(8);
-      setColor(pdf, [154, 124, 90]);
-      pdf.text(trimmed.replace(/^>\s*/, ''), M + 6, y + 3);
-      y += 12;
-    } else {
-      // Regular paragraph
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8.5);
-      setColor(pdf, C.textSec);
-
-      const clean = trimmed.replace(/\*\*(.*?)\*\*/g, '$1');
-      const wrapped = pdf.splitTextToSize(clean, W - M * 2);
-
-      wrapped.forEach((wLine) => {
-        if (y > maxY) {
-          drawPageFooter(pdf, W, H, pageNum);
-          pageNum++;
-          pdf.addPage();
-          pdf.setFillColor(...C.bg);
-          pdf.rect(0, 0, W, H, 'F');
-          drawPageHeader(pdf, W, lang === 'en' ? 'AI Audit Report (cont.)' : 'Laporan Audit AI (lanj.)');
-          y = 36;
-        }
-        pdf.text(wLine, M, y);
-        y += 4.5;
-      });
-      y += 2;
+      ink(pdf, C.accent);
+      pdf.text(cleanInline(heading), PAGE.M, flow.y);
+      flow.y += 7;
+      return;
     }
+
+    if (line.startsWith('### ')) {
+      const heading = line.replace(/^#+\s*/, '');
+      section = detectSection(heading);
+      flow.need(13);
+      flow.y += 3;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9.5);
+      ink(pdf, C.ink);
+      pdf.text(cleanInline(heading), PAGE.M, flow.y);
+      flow.y += 6;
+      return;
+    }
+
+    if (line.startsWith('>')) {
+      flow.need(16);
+      flow.y = callout(pdf, PAGE.M, flow.y, CONTENT_W, cleanInline(line.replace(/^>\s*/, '')));
+      flow.y += 5;
+      return;
+    }
+
+    // Daftar bernomor menandai langkah mitigasi berurutan; dulu jatuh ke
+    // paragraf biasa sehingga urutannya hilang secara visual.
+    const ordered = line.match(/^(\d+)\.\s+(.*)$/);
+    if (ordered) {
+      const text = cleanInline(ordered[2]);
+      const wrapped = pdf.splitTextToSize(text, CONTENT_W - 10);
+      flow.need(wrapped.length * 4.8 + 6);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      ink(pdf, C.accent);
+      pdf.text(`${ordered[1]}.`, PAGE.M, flow.y);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      ink(pdf, C.ink);
+      pdf.text(wrapped, PAGE.M + 6, flow.y);
+      flow.y += wrapped.length * 4.8 + 2.4;
+      return;
+    }
+
+    if (/^[-*]\s/.test(line)) {
+      const text = cleanInline(line.replace(/^[-*]\s*/, ''));
+      const wrapped = pdf.splitTextToSize(text, CONTENT_W - 8);
+      wrapped.forEach((wrappedLine, index) => {
+        flow.need(6);
+        if (index === 0) {
+          fill(pdf, C.accent);
+          pdf.circle(PAGE.M + 1.6, flow.y - 1.1, 0.7, 'F');
+        }
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.6);
+        ink(pdf, C.inkBody);
+        pdf.text(wrappedLine, PAGE.M + 5.5, flow.y);
+        flow.y += 4.6;
+      });
+      flow.y += 1.4;
+      return;
+    }
+
+    const wrapped = pdf.splitTextToSize(cleanInline(line), CONTENT_W);
+    wrapped.forEach((wrappedLine) => {
+      flow.need(6);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8.8);
+      ink(pdf, C.inkBody);
+      pdf.text(wrappedLine, PAGE.M, flow.y);
+      flow.y += 4.8;
+    });
+    flow.y += 2.2;
   });
 
-  // Draw any remaining unsaved geohazard visual after the blocks loop ends
-  if (property?.coords) {
-    if (currentSection === 'geotechnical' && !soilDrawn) {
-      y = drawSoilVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, (p) => { pageNum = p; });
-      soilDrawn = true;
-    } else if (currentSection === 'seismic' && !seismicDrawn) {
-      y = drawSeismicVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, (p) => { pageNum = p; });
-      seismicDrawn = true;
-    } else if (currentSection === 'environment' && !envDrawn) {
-      y = drawEnvironmentVisualInPdf(pdf, property, y, lang, pageNum, W, H, maxY, (p) => { pageNum = p; });
-      envDrawn = true;
-    }
-  }
-
-  drawPageFooter(pdf, W, H, pageNum);
+  flushSectionVisual();
 }
 
-// ── Shared Header/Footer ──────────────────────────────────────
-function drawPageHeader(pdf, W, title) {
-  pdf.setFillColor(...C.accent);
-  pdf.rect(0, 0, W, 2, 'F');
+// ── Ekspor utama ──────────────────────────────────────────────
 
-  // Kiri: logo resmi, dengan wordmark teks sebagai cadangan
-  if (drawLogo(pdf, 18 + 14, 8, 28) === null) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8);
-    setColor(pdf, C.accent);
-    pdf.text('S.A.F.E House', 18, 14);
-  }
-
-  // Right: page title
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textMuted);
-  pdf.text(title, W - 18, 14, { align: 'right' });
-
-  // Separator
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(0.3);
-  pdf.line(18, 19, W - 18, 19);
-}
-
-function drawPageFooter(pdf, W, H, pageNum) {
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(0.3);
-  pdf.line(18, H - 14, W - 18, H - 14);
-
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(7);
-  setColor(pdf, C.textMuted);
-  pdf.text('S.A.F.E House — Geophysics Property Risk Analysis', 18, H - 8);
-  pdf.text(`Page ${pageNum}`, W - 18, H - 8, { align: 'right' });
-}
-
-// ── Main Export Function ──────────────────────────────────────
 /** Build the exact PDF document used by the browser download action. */
 export function createAuditPdf(property, lang = 'id') {
   if (!canExportPdf(property)) {
-    throw new Error('PDF belum tersedia: audit harus valid/provisional dengan laporan AI yang selesai.');
+    throw new Error('PDF belum tersedia: audit harus valid/provisional dengan laporan yang selesai.');
   }
 
   const normalized = normalizePdfProperty(property);
   const score = computeScore(normalized);
+  const docRef = documentRef(normalized);
   const pdf = new jsPDF('p', 'mm', 'a4');
 
-  // Page 1: Cover
-  drawCoverPage(pdf, normalized, score, lang);
+  drawCoverPage(pdf, normalized, score, lang, docRef);
+  drawSummaryPage(pdf, normalized, score, lang);
+  drawDetailPage(pdf, normalized, lang);
+  drawEvidencePage(pdf, normalized, lang);
+  drawReportPages(pdf, normalized, lang);
 
-  // Page 2: Dashboard
-  pdf.addPage();
-  drawDashboardPage(pdf, normalized, score, lang);
-
-  // Page 3: explicit provenance and AI delivery evidence
-  drawAuditEvidencePage(pdf, normalized, lang);
-
-  // Page 4+: AI Report
-  drawReportPages(pdf, normalized, lang, 4);
-
+  stampFooters(pdf, lang, docRef);
   return pdf;
 }
 
 export async function exportPrintReadyPdf(property, lang = 'id') {
-  await ensureLogo();
+  await Promise.all([ensureLogo('dark'), ensureLogo('light')]);
   const pdf = createAuditPdf(property, lang);
   const normalized = normalizePdfProperty(property);
 
-  // Save
   const addr = (normalized.address || 'location').split(',')[0].replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30);
-  pdf.save(`SAFE_Report_${addr}.pdf`);
+  pdf.save(`SAFE_Audit_${addr}.pdf`);
 }
 
-// ── Page: Battle Cover ───────────────────────────────────────────────
-function drawBattleCoverPage(pdf, propA, propB, scoreA, scoreB, lang) {
-  const W = pdf.internal.pageSize.getWidth();
-  const H = pdf.internal.pageSize.getHeight();
+// ── Laporan perbandingan ──────────────────────────────────────
 
-  pdf.setFillColor(...C.bg);
-  pdf.rect(0, 0, W, H, 'F');
-  pdf.setFillColor(...C.accent);
-  pdf.rect(0, 0, W, 3, 'F');
+function drawCompareCoverPage(pdf, propA, propB, scoreA, scoreB, lang, docRef) {
+  const isEn = lang === 'en';
+  paintPage(pdf);
 
-  if (drawLogo(pdf, W / 2, 30, 62) === null) {
+  const bandH = 54;
+  fill(pdf, C.band);
+  pdf.rect(0, 0, PAGE.W, bandH, 'F');
+  fill(pdf, C.accent);
+  pdf.rect(0, bandH, PAGE.W, 1.2, 'F');
+
+  if (drawLogo(pdf, PAGE.M + 22, 16, 44, 'dark') === null) {
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    setColor(pdf, C.accent);
-    pdf.text('S.A.F.E HOUSE', W / 2, 40, { align: 'center' });
+    pdf.setFontSize(13);
+    ink(pdf, C.bandInk);
+    pdf.text('S.A.F.E HOUSE', PAGE.M, 28);
   }
 
+  eyebrow(pdf, isEn ? 'Site comparison' : 'Perbandingan lokasi', PAGE.W - PAGE.M, 24, {
+    color: C.accent,
+    align: 'right',
+    size: 7,
+  });
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.4);
+  ink(pdf, [150, 128, 104]);
+  pdf.text(docRef, PAGE.W - PAGE.M, 30, { align: 'right' });
+  pdf.text(formatDate(lang), PAGE.W - PAGE.M, 35.5, { align: 'right' });
+
+  let y = bandH + 26;
+  eyebrow(pdf, isEn ? 'Comparison report' : 'Laporan perbandingan', PAGE.M, y, { color: C.accent });
+  y += 12;
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(7);
-  setColor(pdf, C.textMuted);
-  pdf.text(lang === 'en' ? 'COMPARE MODE' : 'MODE BANDINGKAN', W / 2, 47, { align: 'center' });
-
-  pdf.setDrawColor(...C.accent);
-  pdf.setLineWidth(0.3);
-  pdf.line(W / 2 - 25, 54, W / 2 + 25, 54);
-
-  pdf.setFontSize(28);
-  setColor(pdf, C.textPri);
-  pdf.text(lang === 'en' ? 'Property Risk' : 'Risiko Properti', W / 2, 80, { align: 'center' });
-  pdf.setFontSize(28);
-  setColor(pdf, C.accent);
-  pdf.text(lang === 'en' ? 'Comparison Report' : 'Laporan Perbandingan', W / 2, 92, { align: 'center' });
-
-  const radius = 24;
-  const cy = 145;
-  const cxA = W / 4 + 5;
-  const cxB = (3 * W) / 4 - 5;
-
-  // VS text
-  pdf.setFontSize(20);
-  setColor(pdf, C.textMuted);
-  pdf.text('VS', W / 2, cy + 4, { align: 'center' });
-
-  // Prop A Circle
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(4);
-  pdf.circle(cxA, cy, radius, 'S');
-  const scColorA = riskHex(scoreA);
-  pdf.setDrawColor(scColorA[0], scColorA[1], scColorA[2]);
-  pdf.circle(cxA, cy, radius, 'S');
-
   pdf.setFontSize(30);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Site A vs Site B' : 'Lokasi A vs Lokasi B', PAGE.M, y);
+
+  // ── Dua gauge ──
+  const cy = 152;
+  const cxA = PAGE.M + CONTENT_W * 0.24;
+  const cxB = PAGE.M + CONTENT_W * 0.76;
+
+  scoreGauge(pdf, cxA, cy, 26, scoreA, lang);
+  scoreGauge(pdf, cxB, cy, 26, scoreB, lang);
+  eyebrow(pdf, isEn ? 'Site A' : 'Lokasi A', cxA, cy - 34, { align: 'center' });
+  eyebrow(pdf, isEn ? 'Site B' : 'Lokasi B', cxB, cy - 34, { align: 'center' });
+
   pdf.setFont('helvetica', 'bold');
-  setColor(pdf, C.textPri);
-  pdf.text(String(scoreA), cxA, cy + 4, { align: 'center' });
-
-  pdf.setFontSize(8);
-  setColor(pdf, scColorA);
-  pdf.text(riskLabel(scoreA), cxA, cy + 12, { align: 'center' });
-
-  // Prop B Circle
-  pdf.setDrawColor(40, 30, 22);
-  pdf.setLineWidth(4);
-  pdf.circle(cxB, cy, radius, 'S');
-  const scColorB = riskHex(scoreB);
-  pdf.setDrawColor(scColorB[0], scColorB[1], scColorB[2]);
-  pdf.circle(cxB, cy, radius, 'S');
-
-  pdf.setFontSize(30);
-  pdf.setFont('helvetica', 'bold');
-  setColor(pdf, C.textPri);
-  pdf.text(String(scoreB), cxB, cy + 4, { align: 'center' });
-
-  pdf.setFontSize(8);
-  setColor(pdf, scColorB);
-  pdf.text(riskLabel(scoreB), cxB, cy + 12, { align: 'center' });
-
-  // Addresses
-  pdf.setFontSize(8);
-  setColor(pdf, C.textSec);
-  const addrA = propA.address || 'Location A';
-  const linesA = pdf.splitTextToSize(addrA, (W / 2) - 20);
-  pdf.text(linesA, cxA, cy + 35, { align: 'center' });
-
-  const addrB = propB.address || 'Location B';
-  const linesB = pdf.splitTextToSize(addrB, (W / 2) - 20);
-  pdf.text(linesB, cxB, cy + 35, { align: 'center' });
-
-  // Winner text
-  let winnerText = 'TIE - BOTH EQUAL';
-  if (scoreA > scoreB) winnerText = 'LOCATION A IS SAFER';
-  if (scoreB > scoreA) winnerText = 'LOCATION B IS SAFER';
-  
-  pdf.setFontSize(14);
-  setColor(pdf, C.safe);
-  pdf.text(winnerText, W / 2, 230, { align: 'center' });
+  pdf.setFontSize(13);
+  ink(pdf, C.inkMuted);
+  pdf.text('vs', PAGE.W / 2, cy + 3, { align: 'center' });
 
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(8);
-  setColor(pdf, C.textMuted);
-  pdf.text(new Date().toLocaleDateString('id-ID', {
-    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  }), W / 2, 245, { align: 'center' });
+  pdf.setFontSize(8.4);
+  ink(pdf, C.inkBody);
+  pdf.text(pdf.splitTextToSize(propA.address || 'Location A', CONTENT_W * 0.4).slice(0, 3), cxA, cy + 38, {
+    align: 'center',
+  });
+  pdf.text(pdf.splitTextToSize(propB.address || 'Location B', CONTENT_W * 0.4).slice(0, 3), cxB, cy + 38, {
+    align: 'center',
+  });
 
-  pdf.setFontSize(7);
-  pdf.text('Generated by S.A.F.E House — Geophysics Property Risk Analysis', W / 2, H - 18, { align: 'center' });
-  
-  pdf.setFillColor(...C.accent);
-  pdf.rect(0, H - 3, W, 3, 'F');
+  // ── Putusan ──
+  y = 214;
+  hairline(pdf, PAGE.M, y - 10, CONTENT_W, C.rule);
+  const delta = Math.abs(scoreA - scoreB);
+  const verdict =
+    delta === 0
+      ? isEn ? 'Both sites score the same' : 'Kedua lokasi berskor sama'
+      : isEn
+        ? `Site ${scoreA > scoreB ? 'A' : 'B'} scores ${delta} points higher`
+        : `Lokasi ${scoreA > scoreB ? 'A' : 'B'} unggul ${delta} poin`;
+
+  eyebrow(pdf, isEn ? 'Verdict' : 'Putusan', PAGE.M, y);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(15);
+  ink(pdf, delta === 0 ? C.inkBody : C.safe);
+  pdf.text(verdict, PAGE.M, y + 10);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8.4);
+  ink(pdf, C.inkBody);
+  pdf.text(
+    pdf.splitTextToSize(
+      isEn
+        ? 'A higher S.A.F.E Score means fewer dominant hazards. Both sites still require their own soil investigation.'
+        : 'S.A.F.E Score lebih tinggi berarti bahaya dominannya lebih sedikit. Kedua lokasi tetap memerlukan penyelidikan tanah masing-masing.',
+      CONTENT_W,
+    ),
+    PAGE.M,
+    y + 18,
+  );
+
+  hairline(pdf, PAGE.M, PAGE.H - 26, CONTENT_W, C.rule);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6.8);
+  ink(pdf, C.inkMuted);
+  pdf.text(
+    isEn
+      ? 'Data-based preliminary screening. Not a substitute for a site-specific geotechnical investigation.'
+      : 'Screening awal berbasis data. Bukan pengganti penyelidikan geoteknik spesifik lokasi.',
+    PAGE.M,
+    PAGE.H - 20,
+  );
+
+  fill(pdf, C.accent);
+  pdf.rect(0, PAGE.H - 3, PAGE.W, 3, 'F');
 }
 
-// ── Page: Battle Dashboard ──────────────────────────────────────
-function drawBattleDashboardPage(pdf, propA, propB, scoreA, scoreB, lang) {
-  const W = pdf.internal.pageSize.getWidth();
-  const H = pdf.internal.pageSize.getHeight();
-  const M = 18;
+function drawCompareDetailPage(pdf, propA, propB, lang) {
+  const isEn = lang === 'en';
+  let y = newContentPage(pdf, isEn ? 'Side by side' : 'Berdampingan');
 
-  pdf.setFillColor(...C.bg);
-  pdf.rect(0, 0, W, H, 'F');
-  drawPageHeader(pdf, W, lang === 'en' ? 'Battle Dashboard' : 'Dashboard Battle');
-
-  let y = 36;
-  const colW = (W - M * 2 - 10) / 2;
-
-  // Header Titles
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(11);
-  setColor(pdf, C.textPri);
-  pdf.text('Location A', M, y);
-  pdf.text('Location B', M + colW + 10, y);
-  y += 8;
+  pdf.setFontSize(17);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Hazard, side by side' : 'Bahaya, berdampingan', PAGE.M, y);
+  y += 6;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.4);
+  ink(pdf, C.inkMuted);
+  pdf.text(
+    isEn ? '0 = low hazard, 100 = high hazard.' : '0 = bahaya rendah, 100 = bahaya tinggi.',
+    PAGE.M,
+    y + 4,
+  );
+  y += 14;
+
+  const colW = (CONTENT_W - 8) / 2;
+  eyebrow(pdf, isEn ? 'Site A' : 'Lokasi A', PAGE.M, y);
+  eyebrow(pdf, isEn ? 'Site B' : 'Lokasi B', PAGE.M + colW + 8, y);
+  y += 6;
 
   const radarA = propA.radarData || {};
   const radarB = propB.radarData || {};
 
-  const metricsInfo = [
-    { key: 'flood', label: lang === 'en' ? 'Flood Risk' : 'Risiko Banjir', color: C.blue },
-    { key: 'soil', label: lang === 'en' ? 'Soil / Liq.' : 'Likuefaksi', color: C.moderate },
-    { key: 'seismic', label: lang === 'en' ? 'Seismic' : 'Seismik', color: C.danger },
-    { key: 'landslide', label: lang === 'en' ? 'Landslide' : 'Longsor', color: C.violet },
-    { key: 'subsidence', label: lang === 'en' ? 'Land Subsidence' : 'Penurunan Lahan', color: C.accent },
-  ];
-
-  metricsInfo.forEach((m) => {
-    // Label A
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    setColor(pdf, C.textSec);
-    pdf.text(m.label, M, y);
-
-    const valA = radarA[m.key] || 0;
-    pdf.setFont('helvetica', 'bold');
-    setColor(pdf, C.textPri);
-    pdf.text(`${valA}/100`, M + colW, y, { align: 'right' });
-    drawBar(pdf, M, y + 2, colW, 4, valA, 100, m.color, [35, 28, 20]);
-
-    // Label B
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    setColor(pdf, C.textSec);
-    pdf.text(m.label, M + colW + 10, y);
-
-    const valB = radarB[m.key] || 0;
-    pdf.setFont('helvetica', 'bold');
-    setColor(pdf, C.textPri);
-    pdf.text(`${valB}/100`, M + colW * 2 + 10, y, { align: 'right' });
-    drawBar(pdf, M + colW + 10, y + 2, colW, 4, valB, 100, m.color, [35, 28, 20]);
-
-    y += 12;
+  RISK_AXES.forEach((axis, index) => {
+    const rowY = y + index * 12.5;
+    const label = lang === 'en' ? axis.en : axis.id;
+    meterRow(pdf, PAGE.M, rowY, colW, { label, value: radarA[axis.key], color: axis.color });
+    meterRow(pdf, PAGE.M + colW + 8, rowY, colW, { label, value: radarB[axis.key], color: axis.color });
   });
+  y += RISK_AXES.length * 12.5 + 8;
 
+  hairline(pdf, PAGE.M, y, CONTENT_W, C.rule);
+  y += 8;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(12);
+  ink(pdf, C.ink);
+  pdf.text(isEn ? 'Parameters' : 'Parameter', PAGE.M, y);
   y += 6;
 
-  // Technical Parameters Grid
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(11);
-  setColor(pdf, C.textPri);
-  pdf.text(lang === 'en' ? 'Technical Comparison' : 'Perbandingan Teknis', M, y);
-  y += 8;
+  const fsOf = (p) => {
+    const value = Number(p?.compressedPayload?.liquefaction_analysis?.fs_score);
+    return Number.isFinite(value) ? value.toFixed(2) : '-';
+  };
 
-  const techRows = [
-    [lang === 'en' ? 'Elevation' : 'Elevasi', `${propA.elevasi ?? '-'} mdpl`, `${propB.elevasi ?? '-'} mdpl`],
+  const rows = [
+    [isEn ? 'Elevation' : 'Elevasi', `${propA.elevasi ?? '-'} mdpl`, `${propB.elevasi ?? '-'} mdpl`],
     ['Vs30', `${propA.vs30 ?? '-'} m/s (${propA.siteClass ?? '-'})`, `${propB.vs30 ?? '-'} m/s (${propB.siteClass ?? '-'})`],
-    ['PGA Base', `${propA.seismic?.pgaBase ?? '-'}g`, `${propB.seismic?.pgaBase ?? '-'}g`],
-    ['PGA Surface', `${propA.seismic?.pgaSurface?.toFixed(3) ?? '-'}g`, `${propB.seismic?.pgaSurface?.toFixed(3) ?? '-'}g`],
-    [lang === 'en' ? 'Nearest Fault' : 'Sesar Terdekat', `${propA.seismic?.faultName ?? '-'} (${propA.seismic?.faultDist ?? '-'} km)`, `${propB.seismic?.faultName ?? '-'} (${propB.seismic?.faultDist ?? '-'} km)`],
-    [lang === 'en' ? 'Liquefaction FS' : 'FS Likuefaksi', propA.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-', propB.compressedPayload?.liquefaction_analysis?.fs_score?.toFixed(2) ?? '-'],
-    [lang === 'en' ? 'Tsunami Risk' : 'Risiko Tsunami', `${propA.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propA.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`, `${propB.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propB.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`],
-    [lang === 'en' ? 'Air Quality (AQI)' : 'Kualitas Udara (AQI)', `${propA.compressedPayload?.env_extras?.aqi ?? '-'} (PM2.5: ${propA.compressedPayload?.env_extras?.pm25 ?? '-'})`, `${propB.compressedPayload?.env_extras?.aqi ?? '-'} (PM2.5: ${propB.compressedPayload?.env_extras?.pm25 ?? '-'})`],
+    [isEn ? 'Surface PGA' : 'PGA permukaan', `${propA.seismic?.pgaSurface?.toFixed(3) ?? '-'} g`, `${propB.seismic?.pgaSurface?.toFixed(3) ?? '-'} g`],
+    [isEn ? 'Liquefaction FS' : 'FS likuefaksi', fsOf(propA), fsOf(propB)],
+    [
+      isEn ? 'Nearest fault' : 'Sesar terdekat',
+      `${propA.seismic?.faultName ?? '-'} (${propA.seismic?.faultDist ?? '-'} km)`,
+      `${propB.seismic?.faultName ?? '-'} (${propB.seismic?.faultDist ?? '-'} km)`,
+    ],
+    [
+      isEn ? 'Tsunami exposure' : 'Paparan tsunami',
+      `${propA.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propA.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`,
+      `${propB.compressedPayload?.tsunami_analysis?.risk_level ?? '-'} (${propB.compressedPayload?.tsunami_analysis?.dist_to_coast_km ?? '-'} km)`,
+    ],
+    [
+      isEn ? 'Air quality (AQI)' : 'Kualitas udara (AQI)',
+      `${propA.compressedPayload?.env_extras?.aqi ?? '-'}`,
+      `${propB.compressedPayload?.env_extras?.aqi ?? '-'}`,
+    ],
   ];
 
-  techRows.forEach((row, i) => {
-    const rowY = y + i * 13;
-    drawRoundedRect(pdf, M, rowY - 3, W - M * 2, 11, 2.5, C.bgCard);
+  const labelW = CONTENT_W * 0.3;
+  const valueW = (CONTENT_W - labelW) / 2;
 
+  fill(pdf, C.paperAlt);
+  pdf.rect(PAGE.M, y, CONTENT_W, 6.5, 'F');
+  eyebrow(pdf, isEn ? 'Parameter' : 'Parameter', PAGE.M + 3, y + 4.3, { size: 6 });
+  eyebrow(pdf, isEn ? 'Site A' : 'Lokasi A', PAGE.M + labelW + valueW - 3, y + 4.3, { size: 6, align: 'right' });
+  eyebrow(pdf, isEn ? 'Site B' : 'Lokasi B', PAGE.M + CONTENT_W - 3, y + 4.3, { size: 6, align: 'right' });
+  y += 6.5;
+
+  rows.forEach(([label, valueA, valueB], index) => {
+    const rowH = 8.4;
+    if (index % 2 === 1) {
+      fill(pdf, C.panel);
+      pdf.rect(PAGE.M, y, CONTENT_W, rowH, 'F');
+    }
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7.5);
-    setColor(pdf, C.textMuted);
-    pdf.text(row[0], M + 4, rowY + 4);
+    pdf.setFontSize(7.6);
+    ink(pdf, C.inkMuted);
+    pdf.text(pdf.splitTextToSize(String(label), labelW - 6)[0], PAGE.M + 3, y + 5.4);
 
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8.5);
-    
-    // Value A
-    setColor(pdf, C.textPri);
-    pdf.text(row[1], M + colW, rowY + 4, { align: 'right' });
-
-    // Value B
-    setColor(pdf, C.textPri);
-    pdf.text(row[2], M + colW * 2 + 6, rowY + 4, { align: 'right' });
+    pdf.setFontSize(7.8);
+    ink(pdf, C.ink);
+    pdf.text(pdf.splitTextToSize(String(valueA), valueW - 6)[0] || '-', PAGE.M + labelW + valueW - 3, y + 5.4, {
+      align: 'right',
+    });
+    pdf.text(pdf.splitTextToSize(String(valueB), valueW - 6)[0] || '-', PAGE.M + CONTENT_W - 3, y + 5.4, {
+      align: 'right',
+    });
+    y += rowH;
   });
-
-  drawPageFooter(pdf, W, H, 2);
+  hairline(pdf, PAGE.M, y, CONTENT_W, C.rule);
 }
 
-// ── Battle Export Function ──────────────────────────────────────
-export async function exportBattlePdf(propA, propB, battleReport, lang = 'id') {
-  if (
-    !propA || !propB ||
-    propA.auditStatus !== 'valid' || propB.auditStatus !== 'valid' ||
-    !Number.isFinite(propA.safeScore) || !Number.isFinite(propB.safeScore) ||
-    !battleReport?.trim()
-  ) {
-    throw new Error('PDF battle belum tersedia: kedua audit dan laporan AI harus selesai.');
+/** Build the comparison document without saving it — testable entry point. */
+export function createComparePdf(propA, propB, battleReport, lang = 'id') {
+  const normalizedA = normalizePdfProperty(propA);
+  const normalizedB = normalizePdfProperty(propB);
+  const usable = (p) =>
+    p && (p.auditStatus === 'valid' || p.auditStatus === 'provisional') && Number.isFinite(p.safeScore);
+
+  if (!usable(normalizedA) || !usable(normalizedB) || !battleReport?.trim()) {
+    throw new Error('PDF perbandingan belum tersedia: kedua audit dan laporannya harus selesai.');
   }
 
-  await ensureLogo();
-
-  const scoreA = computeScore(propA);
-  const scoreB = computeScore(propB);
+  const scoreA = computeScore(normalizedA);
+  const scoreB = computeScore(normalizedB);
+  const docRef = documentRef(normalizedA);
   const pdf = new jsPDF('p', 'mm', 'a4');
 
-  // Page 1: Battle Cover
-  drawBattleCoverPage(pdf, propA, propB, scoreA, scoreB, lang);
+  drawCompareCoverPage(pdf, normalizedA, normalizedB, scoreA, scoreB, lang, docRef);
+  drawCompareDetailPage(pdf, normalizedA, normalizedB, lang);
+  drawReportPages(pdf, { aiReport: { detailedReport: battleReport } }, lang);
 
-  // Page 2: Dashboard
-  pdf.addPage();
-  drawBattleDashboardPage(pdf, propA, propB, scoreA, scoreB, lang);
+  stampFooters(pdf, lang, docRef);
 
-  // Page 3+: AI Report
-  const dummyProp = { aiReport: { detailedReport: battleReport } };
-  drawReportPages(pdf, dummyProp, lang);
+  const nameOf = (p, fallback) =>
+    (p.address || fallback).split(',')[0].replace(/[^a-zA-Z0-9]/g, '_').slice(0, 18);
 
-  const pdfName = `SAFE_Battle_${Date.now()}.pdf`;
-  pdf.save(pdfName);
+  return { pdf, filename: `SAFE_Compare_${nameOf(normalizedA, 'A')}_vs_${nameOf(normalizedB, 'B')}.pdf` };
+}
+
+export async function exportBattlePdf(propA, propB, battleReport, lang = 'id') {
+  await Promise.all([ensureLogo('dark'), ensureLogo('light')]);
+  const { pdf, filename } = createComparePdf(propA, propB, battleReport, lang);
+  pdf.save(filename);
 }
 
 /**
- * Legacy export — still used by html2canvas fallback.
+ * Legacy export — still used by the html2canvas fallback.
  */
 export async function exportElementToPdf(element, filename = 'SAFE_Audit_Report.pdf') {
   if (!element) return;
@@ -1624,7 +1869,7 @@ export async function exportElementToPdf(element, filename = 'SAFE_Audit_Report.
       logging: false,
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.92); // JPEG smaller than PNG
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;

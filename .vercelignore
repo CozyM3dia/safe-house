@@ -1,0 +1,27 @@
+.git
+.vercel
+
+# Local dependency trees and generated artifacts
+**/node_modules
+**/.venv
+**/venv
+**/__pycache__
+**/.pytest_cache
+frontend/.vercel
+frontend/dist
+frontend/test-output
+
+# Non-deployment project material
+backend
+Bahan Video Demo
+frontend-old
+freellmapi
+scratch
+motion-graphics
+knowledge
+docs
+.agents
+.claude
+.kiro
+.superpowers
+.pytest_cache

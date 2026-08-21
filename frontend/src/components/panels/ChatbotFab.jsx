@@ -402,9 +402,6 @@ export function ChatbotFab() {
                 <h2 id="safe-ai-chat-title" className="font-display text-sm font-bold tracking-tight text-text-primary">
                   S.A.F.E AI
                 </h2>
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/25 bg-accent/8 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-[0.14em] text-accent">
-                  <StatusDot className="bg-accent" /> AUDIT-GROUNDED
-                </span>
               </div>
               <p className="mt-1 flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.12em] text-text-muted">
                 <Activity className="h-3 w-3 text-accent/80" aria-hidden="true" />

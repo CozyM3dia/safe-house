@@ -1,259 +1,521 @@
-import { useEffect, useRef } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, FileText, AlertTriangle, MapPin, GitCompareArrows, Sparkles, Layers, Droplets, BookOpen, Wrench, TrendingUp, Info, Activity, ChevronDown, FileCheck, Scale, Award, ExternalLink, Download, Loader2 } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  BookOpen,
+  Check,
+  ChevronDown,
+  Copy,
+  Download,
+  Droplets,
+  ExternalLink,
+  FileCheck,
+  FileText,
+  GitCompareArrows,
+  Info,
+  Layers,
+  Loader2,
+  MapPin,
+  Scale,
+  Sparkles,
+  TrendingUp,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useState } from 'react';
 
 import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Skeleton, SkeletonText } from '../ui/skeleton';
-import { locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
+import { hazardBand, locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
 import { siteClass } from '../../lib/formatters';
 import { parseBuildingCodes } from '../../lib/standards';
 import { canExportSniReport, exportPrintReadyPdf } from '../../lib/pdfExport';
 
-// ─── Local Helpers ──────────────────────────────────────────────────
+// ─── Primitif visual ────────────────────────────────────────────────
+//
+// Laporan versi lama memakai sembilan keluarga warna (ungu, cyan, rose,
+// emerald, biru…) untuk membedakan bagian, ukuran font turun sampai 7,5px,
+// dan skala risiko digambar sebagai gradien tiga warna dengan opacity 55%.
+// Hasilnya terbaca sebagai dasbor mainan, bukan dokumen teknis. Di sini
+// paletnya dikunci: satu aksen merek + tiga warna risiko yang punya arti
+// (aman / sedang / bahaya), dengan ambang batas 10px untuk semua teks.
+
+const TONE_HEX = {
+  danger: '#ef4444',
+  moderate: '#f59e0b',
+  safe: '#10b981',
+};
+
+const ZONE_BG = {
+  danger: 'rgba(239, 68, 68, 0.26)',
+  moderate: 'rgba(245, 158, 11, 0.24)',
+  safe: 'rgba(16, 185, 129, 0.24)',
+  neutral: 'rgba(212, 149, 106, 0.14)',
+};
+
+const ACCENT = 'hsl(var(--safe-accent))';
+
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+// Beberapa kunci i18n menyimpan titik dua di akhir ("Tindakan: "); sebagai
+// label kapital-spasi-lebar, tanda itu menggantung tanpa isi.
+const stripColon = (s) => String(s).replace(/\s*:\s*$/, '');
+
 function computeScore(p) {
   if (typeof p?.safe_score === 'number') return p.safe_score;
   return null;
 }
 
-function ReportSkeleton({ label = 'Loading report' }) {
+/** Label sumbu di ujung rel akan terpotong bila selalu dipusatkan. */
+function tickStyle(pct) {
+  if (pct <= 1) return { left: 0 };
+  if (pct >= 99) return { right: 0 };
+  return { left: `${pct}%`, transform: 'translateX(-50%)' };
+}
+
+function Readout({ tone, children }) {
   return (
-    <div className="space-y-5" role="status" aria-live="polite">
-      <span className="sr-only">{label}</span>
-      <div className="space-y-2">
-        <Skeleton className="h-3.5 w-2/5 rounded" />
-        <SkeletonText lines={4} />
+    <span
+      className={`data-num shrink-0 text-[12px] font-semibold ${tone ? '' : 'text-accent'}`}
+      style={tone ? { color: TONE_HEX[tone] } : undefined}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Rel ukur tunggal yang dipakai ulang untuk FS, PGA, jarak sesar, dan AQI.
+ *
+ * Zona diwarnai rata — bukan gradien — supaya batas ambang terlihat sebagai
+ * garis keputusan, bukan sapuan dekoratif. Jarumnya diberi cincin sewarna
+ * panel agar tetap terbaca di atas pita merah maupun hijau.
+ */
+function Meter({ label, value, min, max, zones = [], ticks = [], readout, tone }) {
+  const span = max - min || 1;
+  const pct = (v) => clamp(((v - min) / span) * 100, 0, 100);
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <span className="rpt-eyebrow">{label}</span>
+        <Readout tone={tone}>{readout}</Readout>
       </div>
-      <div className="space-y-2">
-        <Skeleton className="h-3.5 w-1/3 rounded" />
-        <SkeletonText lines={5} />
+
+      <div className="relative h-3.5">
+        <div className="rpt-well absolute inset-x-0 top-1/2 h-[7px] -translate-y-1/2 overflow-hidden rounded-full">
+          {zones.map((z) => (
+            <div
+              key={`z-${z.from}-${z.to}`}
+              className="absolute inset-y-0"
+              style={{
+                left: `${pct(z.from)}%`,
+                width: `${pct(z.to) - pct(z.from)}%`,
+                background: ZONE_BG[z.tone] || ZONE_BG.neutral,
+              }}
+            />
+          ))}
+          {zones.slice(1).map((z) => (
+            <div
+              key={`b-${z.from}`}
+              className="rpt-tick absolute inset-y-0 w-px"
+              style={{ left: `${pct(z.from)}%` }}
+            />
+          ))}
+        </div>
+        <div
+          className="rpt-needle absolute top-0 h-3.5 w-[3px] rounded-full"
+          style={{
+            left: `${pct(value)}%`,
+            transform: 'translateX(-50%)',
+            background: tone ? TONE_HEX[tone] : ACCENT,
+          }}
+        />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Skeleton className="h-16 rounded-xl" />
-        <Skeleton className="h-16 rounded-xl" />
-        <Skeleton className="h-16 rounded-xl" />
+
+      {ticks.length > 0 && (
+        <div className="relative mt-1.5 h-3">
+          {ticks.map((tk) => (
+            <span
+              key={`t-${tk.at}`}
+              className="absolute top-0 whitespace-nowrap font-data text-[10px] leading-none tracking-wide text-text-muted"
+              style={tickStyle(pct(tk.at))}
+            >
+              {tk.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Kelas situs SNI 1726 sebagai satu rel bersambung.
+ *
+ * Empat kotak terpisah versi lama tidak menunjukkan bahwa kelas situs adalah
+ * pembagian dari satu sumbu Vs30 yang sama; nilai 450 m/s terlihat sebagai
+ * "kotak SC menyala", bukan sebagai posisi di dalam rentang 360-760.
+ */
+function ClassStrip({ vs30, label, classLabels }) {
+  const bands = [
+    { key: 'SE', name: 'SE', caption: classLabels.soft, lo: 0, hi: 180 },
+    { key: 'SD', name: 'SD', caption: classLabels.medium, lo: 180, hi: 360 },
+    { key: 'SC', name: 'SC', caption: classLabels.hard, lo: 360, hi: 760 },
+    { key: 'SB', name: 'SB/SA', caption: classLabels.rock, lo: 760, hi: 1500 },
+  ];
+  const idx = vs30 >= 760 ? 3 : vs30 >= 360 ? 2 : vs30 >= 180 ? 1 : 0;
+  const band = bands[idx];
+  const frac = clamp((vs30 - band.lo) / (band.hi - band.lo), 0, 1);
+  const pos = ((idx + frac) / bands.length) * 100;
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <span className="rpt-eyebrow">{label}</span>
+        <Readout>
+          {vs30} m/s · {band.name}
+        </Readout>
+      </div>
+
+      <div className="relative mt-1.5">
+        <div className="rpt-hair grid grid-cols-4 overflow-hidden rounded-lg">
+          {bands.map((b, i) => (
+            <div
+              key={b.key}
+              className={`px-1.5 py-2 text-center transition-colors ${
+                i === idx ? 'bg-accent/[0.16]' : ''
+              }`}
+              style={{
+                background: i === idx ? undefined : 'var(--rpt-fill)',
+                borderLeft: i > 0 ? '1px solid var(--rpt-line)' : undefined,
+                // Isian aksen saja terlalu tipis untuk menandai kelas aktif di
+                // mode terang; cincin dalam memberinya tepi yang jelas.
+                boxShadow: i === idx ? 'inset 0 0 0 1px hsl(var(--safe-accent) / 0.42)' : undefined,
+              }}
+            >
+              <div
+                className={`data-num text-[12px] font-semibold ${
+                  i === idx ? 'text-accent' : 'text-text-secondary'
+                }`}
+              >
+                {b.name}
+              </div>
+              <div className="mt-0.5 truncate text-[10px] text-text-muted">{b.caption}</div>
+            </div>
+          ))}
+        </div>
+        <div
+          className="pointer-events-none absolute inset-y-0 w-[2px]"
+          style={{ left: `${pos}%`, transform: 'translateX(-50%)', background: ACCENT }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-[5px] h-0 w-0"
+          style={{
+            left: `${pos}%`,
+            transform: 'translateX(-50%)',
+            borderLeft: '4px solid transparent',
+            borderRight: '4px solid transparent',
+            borderTop: `5px solid ${ACCENT}`,
+          }}
+        />
+      </div>
+
+      <div className="relative mt-1.5 h-3">
+        {[
+          { at: 25, label: '180' },
+          { at: 50, label: '360' },
+          { at: 75, label: '760' },
+        ].map((tk) => (
+          <span
+            key={tk.label}
+            className="absolute top-0 font-data text-[10px] leading-none text-text-muted"
+            style={{ left: `${tk.at}%`, transform: 'translateX(-50%)' }}
+          >
+            {tk.label}
+          </span>
+        ))}
+        <span className="absolute right-0 top-0 font-data text-[10px] leading-none text-text-muted">
+          m/s
+        </span>
       </div>
     </div>
   );
 }
 
-// ─── Visualizations for Report Sections ──────────────────────────────
+/**
+ * Profil topografi tapak terhadap muka air.
+ *
+ * Menggantikan susunan balok CSS dan emoji rumah — yang terbaca sebagai
+ * clip-art — dengan penampang melintang: laut, dataran pesisir, perbukitan,
+ * dataran tinggi, plus garis putus-putus batas rob.
+ */
+function TerrainProfile({ elevationM, label, readout, captions }) {
+  const idx = elevationM < 10 ? 0 : elevationM < 50 ? 1 : 2;
+  // Bidang gambar sengaja dibuat sangat lebar (400×62) — pada rasio 200×56
+  // penampangnya melar setinggi 200px di kolom laporan dan menenggelamkan
+  // teks di sekitarnya.
+  const marker = [
+    { x: 160, y: 42 },
+    { x: 270, y: 31 },
+    { x: 368, y: 20 },
+  ][idx];
+  const ridge = 'M0 52 H96 L120 42 H208 L232 31 H312 L336 20 H400';
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <span className="rpt-eyebrow">{label}</span>
+        <Readout>{readout}</Readout>
+      </div>
+
+      <div className="rpt-hair rpt-well overflow-hidden rounded-lg">
+        <svg
+          viewBox="0 0 400 62"
+          className="block w-full"
+          role="img"
+          aria-label={`${readout} — ${captions[idx]}`}
+        >
+          <path d={`${ridge} V62 H0 Z`} fill="var(--rpt-fill-2)" />
+          <path d={ridge} fill="none" stroke="var(--rpt-line-strong)" strokeWidth="1.25" />
+          <rect x="0" y="52" width="96" height="10" fill="rgba(56, 148, 214, 0.30)" />
+          <line x1="0" y1="52" x2="96" y2="52" stroke="rgba(96, 178, 235, 0.75)" strokeWidth="1.25" />
+          <line
+            x1="0"
+            y1="45"
+            x2="400"
+            y2="45"
+            stroke="rgba(96, 178, 235, 0.55)"
+            strokeWidth="1"
+            strokeDasharray="5 4"
+          />
+          <line
+            x1={marker.x}
+            y1={marker.y}
+            x2={marker.x}
+            y2={marker.y - 11}
+            stroke={ACCENT}
+            strokeWidth="1.5"
+          />
+          <circle
+            cx={marker.x}
+            cy={marker.y - 13.5}
+            r="4"
+            fill={ACCENT}
+            stroke="var(--rpt-ring)"
+            strokeWidth="1.5"
+          />
+        </svg>
+      </div>
+
+      {/* Kolom keterangan mengikuti lebar pita ketinggiannya, bukan dibagi tiga
+          sama rata, supaya setiap label berdiri di atas zonanya sendiri. */}
+      <div
+        className="mt-1.5 grid gap-2 text-[10px] leading-tight text-text-muted"
+        style={{ gridTemplateColumns: '52fr 26fr 22fr' }}
+      >
+        {captions.map((c, i) => (
+          <span
+            key={c}
+            className={`${i === 1 ? 'text-center' : i === 2 ? 'text-right' : ''} ${
+              i === idx ? 'font-semibold text-text-secondary' : ''
+            }`}
+          >
+            {c}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VisualBlock({ children }) {
+  return (
+    <div className="rpt-surface mt-5 space-y-5 rounded-xl p-4 sm:p-5">{children}</div>
+  );
+}
+
+// ─── Visualisasi per bagian ─────────────────────────────────────────
+//
+// Semua nilai dibaca apa adanya. Versi lama memasang default diam-diam
+// (`?? 180`, `?? 0.35`, `?? 20`) sehingga lokasi tanpa data tetap menampilkan
+// jarum di posisi tertentu — angka karangan yang terlihat seperti pengukuran.
 
 function SoilVisual({ property }) {
   const t = useT();
-  const vs30 = property?.geotech?.vs30 ?? 180;
-  const siteClass = property?.geotech?.site_class ?? 'SD';
-  const fs = property?.geotech?.fs ?? 1.2;
-  
-  const classes = [
-    { name: 'SE', label: t('drawer.soft'), range: '<180', color: '#ef4444' },
-    { name: 'SD', label: t('drawer.medium'), range: '180-360', color: '#f59e0b' },
-    { name: 'SC', label: t('drawer.hard'), range: '360-760', color: '#10b981' },
-    { name: 'SB/SA', label: t('drawer.rock'), range: '>760', color: '#06b6d4' }
-  ];
-  
-  let activeIdx = 0;
-  if (vs30 >= 760) activeIdx = 3;
-  else if (vs30 >= 360) activeIdx = 2;
-  else if (vs30 >= 180) activeIdx = 1;
-  
-  return (
-    <div className="mt-4 p-4.5 rounded-2xl border border-white/6 bg-white/[0.01] space-y-4">
-      {/* Vs30 Scale */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.soilStrength')}</span>
-          <span className="text-[11px] font-mono font-bold text-accent">{vs30} m/s ({t('drawer.siteClass')} {siteClass})</span>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {classes.map((c, idx) => {
-            const isActive = idx === activeIdx;
-            return (
-              <div 
-                key={c.name} 
-                className={`p-2.5 rounded-xl border text-center transition-all ${
-                  isActive 
-                    ? 'border-accent bg-accent/[0.05] shadow-[0_0_12px_rgba(212,149,106,0.1)] scale-[1.02]' 
-                    : 'border-white/8 bg-white/[0.005]'
-                }`}
-              >
-                <div className="text-[11.5px] font-extrabold" style={{ color: isActive ? 'var(--accent)' : c.color }}>{c.name}</div>
-                <div className="text-[8.5px] font-bold text-text-secondary mt-0.5">{c.label}</div>
-                <div className="text-[7.5px] font-mono text-text-muted mt-0.5">{c.range}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+  const geo = property?.geotech || {};
+  const vs30 = num(geo.vs30);
+  const fs = num(geo.fs);
+  if (vs30 == null && fs == null) return null;
 
-      {/* Liquefaction Factor of Safety (FS) scale */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.liquefactionSafety')}</span>
-          <span className="text-[11px] font-mono font-bold" style={{ color: fs < 1.0 ? '#ef4444' : '#10b981' }}>
-            FS = {fs.toFixed(2)} ({fs < 1.0 ? t('drawer.liquefactionRisk') : t('drawer.safe')})
-          </span>
-        </div>
-        <div className="relative h-2.5 rounded-full bg-white/5 overflow-hidden">
-          {/* Red zone (0 to 1.0) and Green zone (1.0 to 2.0) */}
-          <div className="absolute top-0 bottom-0 left-0 w-1/2 bg-gradient-to-r from-red-500 to-orange-500 opacity-55" />
-          <div className="absolute top-0 bottom-0 left-1/2 w-1/2 bg-gradient-to-r from-yellow-500 to-green-500 opacity-55" />
-          {/* Current FS marker */}
-          <div 
-            className="absolute h-full w-1.5 bg-white border border-black shadow-[0_0_6px_rgba(255,255,255,0.9)] rounded-full"
-            style={{ left: `${Math.min(98, (fs / 2) * 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>0.0 ({t('drawer.veryUnsafe')})</span>
-          <span>1.0 ({t('drawer.liquefactionCritical')})</span>
-          <span>2.0+ ({t('drawer.verySafe')})</span>
-        </div>
-      </div>
-    </div>
+  const fsTone = fs == null ? undefined : fs < 1 ? 'danger' : fs < 1.25 ? 'moderate' : 'safe';
+
+  return (
+    <VisualBlock>
+      {vs30 != null && (
+        <ClassStrip
+          vs30={vs30}
+          label={t('drawer.soilStrength')}
+          classLabels={{
+            soft: t('drawer.soft'),
+            medium: t('drawer.medium'),
+            hard: t('drawer.hard'),
+            rock: t('drawer.rock'),
+          }}
+        />
+      )}
+
+      {fs != null && (
+        <Meter
+          label={t('drawer.liquefactionSafety')}
+          value={fs}
+          min={0}
+          max={2.5}
+          tone={fsTone}
+          readout={`FS ${fs.toFixed(2)} · ${fs < 1 ? t('drawer.liquefactionRisk') : t('drawer.safe')}`}
+          zones={[
+            { from: 0, to: 1, tone: 'danger' },
+            { from: 1, to: 1.25, tone: 'moderate' },
+            { from: 1.25, to: 2.5, tone: 'safe' },
+          ]}
+          ticks={[
+            { at: 0, label: '0' },
+            { at: 1, label: `1,0 · ${t('drawer.liquefactionCritical')}` },
+            { at: 2.5, label: '2,5+' },
+          ]}
+        />
+      )}
+    </VisualBlock>
   );
 }
 
 function SeismicVisual({ property }) {
   const t = useT();
-  const pga = property?.geotech?.pga_surface ?? property?.seismic?.pgaSurface ?? 0.35;
-  const faultName = property?.geotech?.nearest_fault?.name ?? 'N/A';
-  const faultDist = property?.geotech?.nearest_fault?.distance_km ?? 999;
-  
-  return (
-    <div className="mt-4 p-4.5 rounded-2xl border border-white/6 bg-white/[0.01] space-y-4">
-      {/* PGA Surface Scale */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.maxGroundAcceleration')}</span>
-          <span className="text-[11px] font-mono font-bold text-accent">{pga.toFixed(3)}g</span>
-        </div>
-        <div className="relative h-2.5 rounded-full bg-white/5 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-55" />
-          {/* Current PGA marker */}
-          <div 
-            className="absolute h-full w-1.5 bg-white border border-black shadow-[0_0_6px_rgba(255,255,255,0.9)] rounded-full"
-            style={{ left: `${Math.min(98, (pga / 1.0) * 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>0.1g ({t('drawer.safe')})</span>
-          <span>0.4g ({t('drawer.medium')})</span>
-          <span>0.8g+ ({t('drawer.veryHigh')})</span>
-        </div>
-      </div>
+  const geo = property?.geotech || {};
+  const pga = num(geo.pga_surface) ?? num(property?.seismic?.pgaSurface);
+  const fault = geo.nearest_fault || {};
+  const dist = num(fault.distance_km);
+  if (pga == null && dist == null) return null;
 
-      {/* Fault Distance Proximity Line */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.activeFaultProximity')} ({faultName})</span>
-          <span className="text-[11px] font-mono font-bold" style={{ color: faultDist < 10 ? '#ef4444' : faultDist < 30 ? '#f59e0b' : '#10b981' }}>
-            {faultDist.toFixed(1)} km
-          </span>
-        </div>
-        <div className="flex items-center gap-2 bg-bg/25 rounded-xl px-3 py-2 border border-white/5">
-          <span className="text-[8.5px] font-extrabold text-red-400 font-mono shrink-0">{t('drawer.fault')}</span>
-          <div className="flex-1 relative h-3 flex items-center">
-            {/* Dotted horizontal line */}
-            <div className="w-full h-px border-t border-dashed border-white/20" />
-            {/* Proximity zones */}
-            <div className="absolute left-0 w-[20%] h-1 bg-red-500/20 border-r border-red-500/30" />
-            <div className="absolute left-[20%] w-[30%] h-1 bg-yellow-500/10 border-r border-yellow-500/30" />
-            {/* House marker icon */}
-            <div 
-              className="absolute flex items-center justify-center h-5.5 w-5.5 rounded-full bg-accent border border-black text-[9px] shadow-[0_0_10px_rgba(212,149,106,0.3)] transition-all duration-300"
-              style={{ left: `${Math.min(94, (faultDist / 50) * 100)}%` }}
-            >
-              🏠
-            </div>
-          </div>
-          <span className="text-[8.5px] font-extrabold text-text-muted font-mono shrink-0">{t('drawer.safe')}</span>
-        </div>
-        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>{t('drawer.veryUnsafe')} (&lt;10km)</span>
-          <span>{t('drawer.caution')} (10-30km)</span>
-          <span>{t('drawer.safe')} (&gt;50km)</span>
-        </div>
-      </div>
-    </div>
+  const pgaTone = pga == null ? undefined : pga >= 0.5 ? 'danger' : pga >= 0.2 ? 'moderate' : 'safe';
+  const distTone = dist == null ? undefined : dist < 10 ? 'danger' : dist < 30 ? 'moderate' : 'safe';
+
+  return (
+    <VisualBlock>
+      {pga != null && (
+        <Meter
+          label={t('drawer.maxGroundAcceleration')}
+          value={pga}
+          min={0}
+          max={1}
+          tone={pgaTone}
+          readout={`${pga.toFixed(3)} g`}
+          zones={[
+            { from: 0, to: 0.2, tone: 'safe' },
+            { from: 0.2, to: 0.5, tone: 'moderate' },
+            { from: 0.5, to: 1, tone: 'danger' },
+          ]}
+          ticks={[
+            { at: 0, label: '0' },
+            { at: 0.2, label: '0,2 g' },
+            { at: 0.5, label: '0,5 g' },
+            { at: 1, label: '1,0 g' },
+          ]}
+        />
+      )}
+
+      {dist != null && (
+        <Meter
+          label={`${t('drawer.activeFaultProximity')}${fault.name ? ` · ${fault.name}` : ''}`}
+          value={dist}
+          min={0}
+          max={60}
+          tone={distTone}
+          readout={`${dist.toFixed(1)} km`}
+          zones={[
+            { from: 0, to: 10, tone: 'danger' },
+            { from: 10, to: 30, tone: 'moderate' },
+            { from: 30, to: 60, tone: 'safe' },
+          ]}
+          ticks={[
+            { at: 0, label: t('drawer.fault') },
+            { at: 10, label: '10 km' },
+            { at: 30, label: '30 km' },
+            { at: 60, label: '60+ km' },
+          ]}
+        />
+      )}
+    </VisualBlock>
   );
 }
 
 function EnvironmentVisual({ property }) {
   const t = useT();
-  const elevasi = property?.elevation ?? property?.geotech?.elevation_m ?? 0;
-  const aqi = property?.environment?.aqi ?? 20;
-  
+  const elevation = num(property?.elevation) ?? num(property?.geotech?.elevation_m);
+  // Sumbernya Open-Meteo `european_aqi`: skala 0-100+, bukan AQI Amerika.
+  // Ambang lama (50 / 100 / 150) memakai skala yang salah, sehingga udara
+  // "buruk" menurut standar Eropa masih tampil hijau.
+  const aqi = num(property?.environment?.aqi);
+  if (elevation == null && aqi == null) return null;
+
+  const aqiTone = aqi == null ? undefined : aqi > 80 ? 'danger' : aqi > 40 ? 'moderate' : 'safe';
+  const aqiWord =
+    aqi == null
+      ? ''
+      : aqi > 80
+        ? t('drawer.veryUnhealthy')
+        : aqi > 60
+          ? t('drawer.aqiPoor')
+          : aqi > 40
+            ? t('drawer.medium')
+            : aqi > 20
+              ? t('drawer.aqiFair')
+              : t('drawer.healthy');
+
   return (
-    <div className="mt-4 p-4.5 rounded-2xl border border-white/6 bg-white/[0.01] space-y-4">
-      {/* Elevation Visual scale */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.coastalFloodLevel')}</span>
-          <span className="text-[11px] font-mono font-bold text-accent">{elevasi} mdpl</span>
-        </div>
-        <div className="flex items-end gap-3 h-10 pb-1.5 relative border-b border-white/10 px-1 bg-bg/15 rounded-xl border border-white/5 pt-2">
-          {/* Sea */}
-          <div className="w-1/4 h-2 bg-blue-500/30 border-t border-blue-400 rounded-l text-center text-[7px] text-blue-300 font-mono font-bold pt-0.5 leading-none">{t('drawer.sea')}</div>
-          {/* Coastal flat */}
-          <div className="w-1/4 h-4 bg-white/5 border-t border-white/10 text-center text-[7px] text-text-muted font-mono font-bold pt-1 leading-none border-r border-dashed border-white/10">0-10m</div>
-          {/* Hills */}
-          <div className="w-1/4 h-7 bg-white/5 border-t border-white/10 text-center text-[7px] text-text-muted font-mono font-bold pt-1 leading-none border-r border-dashed border-white/10">10-50m</div>
-          {/* Highlands */}
-          <div className="w-1/4 h-9 bg-white/5 border-t border-white/10 text-center text-[7px] text-text-muted font-mono font-bold pt-1 leading-none rounded-r">&gt;50m</div>
+    <VisualBlock>
+      {elevation != null && (
+        <TerrainProfile
+          elevationM={elevation}
+          label={t('drawer.coastalFloodLevel')}
+          readout={`${elevation} mdpl`}
+          captions={[t('drawer.coastalSurge'), t('drawer.localFlood'), t('drawer.noFlood')]}
+        />
+      )}
 
-          {/* Current location pin */}
-          <div 
-            className="absolute flex flex-col items-center pointer-events-none transition-all duration-300"
-            style={{ 
-              left: `${elevasi < 10 ? 37 : elevasi < 50 ? 62 : 87}%`,
-              bottom: '5px'
-            }}
-          >
-            <span className="text-[11px] leading-none mb-0.5">🏠</span>
-            <div className="h-4 w-0.5 bg-accent" />
-          </div>
-        </div>
-        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>{t('drawer.coastalSurge')}</span>
-          <span>{t('drawer.localFlood')}</span>
-          <span>{t('drawer.noFlood')}</span>
-        </div>
-      </div>
-
-      {/* Air Quality (AQI) bar */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-text-primary tracking-wider uppercase">{t('drawer.airQuality')}</span>
-          <span className="text-[11px] font-mono font-bold" style={{ color: aqi >= 100 ? '#ef4444' : aqi >= 50 ? '#f59e0b' : '#10b981' }}>
-            AQI = {aqi} ({aqi >= 100 ? t('drawer.veryUnhealthy') : aqi >= 50 ? t('drawer.medium') : t('drawer.healthy')})
-          </span>
-        </div>
-        <div className="relative h-2.5 rounded-full bg-white/5 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-55" />
-          {/* Current AQI marker */}
-          <div 
-            className="absolute h-full w-1.5 bg-white border border-black shadow-[0_0_6px_rgba(255,255,255,0.9)] rounded-full"
-            style={{ left: `${Math.min(98, (aqi / 150) * 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-[8.5px] font-mono text-text-muted mt-1.5">
-          <span>0 ({t('drawer.healthy')})</span>
-          <span>50 ({t('drawer.medium')})</span>
-          <span>100+ ({t('drawer.unhealthy')})</span>
-        </div>
-      </div>
-    </div>
+      {aqi != null && (
+        <Meter
+          label={t('drawer.airQuality')}
+          value={aqi}
+          min={0}
+          max={100}
+          tone={aqiTone}
+          readout={`AQI ${aqi} · ${aqiWord}`}
+          zones={[
+            { from: 0, to: 40, tone: 'safe' },
+            { from: 40, to: 80, tone: 'moderate' },
+            { from: 80, to: 100, tone: 'danger' },
+          ]}
+          ticks={[
+            { at: 0, label: '0' },
+            { at: 40, label: '40' },
+            { at: 80, label: '80' },
+            { at: 100, label: '100+' },
+          ]}
+        />
+      )}
+    </VisualBlock>
   );
 }
 
-// ─── Generative UI Parsing Helpers ─────────────────────────────────
+// ─── Pemecah markdown laporan ───────────────────────────────────────
 
 const parseSections = (markdown) => {
   if (!markdown) return [];
@@ -261,7 +523,7 @@ const parseSections = (markdown) => {
   const sections = [];
   let currentSection = null;
 
-  // Accept level-2 or level-3 ATX headers ("## Judul" or "### Judul").
+  // Terima header level-2 atau level-3 ("## Judul" atau "### Judul").
   const headerRe = /^#{2,3}\s+/;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -271,37 +533,40 @@ const parseSections = (markdown) => {
       }
       const title = line.replace(headerRe, '').replace(/\*/g, '').trim();
       currentSection = { title, contentLines: [] };
-    } else {
-      if (currentSection) {
-        currentSection.contentLines.push(lines[i]);
-      }
+    } else if (currentSection) {
+      currentSection.contentLines.push(lines[i]);
     }
   }
   if (currentSection) {
     sections.push(currentSection);
   }
 
-  return sections.map(s => ({
+  return sections.map((s) => ({
     title: s.title,
-    content: s.contentLines.join('\n').trim()
+    content: s.contentLines.join('\n').trim(),
   }));
 };
 
 const parseMitigations = (content) => {
   const items = [];
   const lines = content.split('\n');
-  
-  // Detect if we have standard multi-line bullet details
-  const hasSubBullets = content.includes('- Apa yang harus dilakukan') || content.includes('- Tindakan') || content.includes('- What to do') || content.includes('- Action:');
-  
+
+  const hasSubBullets =
+    content.includes('- Apa yang harus dilakukan') ||
+    content.includes('- Tindakan') ||
+    content.includes('- What to do') ||
+    content.includes('- Action:');
+
   if (hasSubBullets) {
     const blocks = content.split(/(?:\r?\n)+(?=\d+\.|\*\*\d+\.)/);
     for (const block of blocks) {
       const trimmed = block.trim();
       if (!trimmed) continue;
-      
+
       let title = '';
-      const titleMatch = trimmed.match(/^(?:\*\*\d+\.\s*(.*?)\*\*|\d+\.\s*\*\*(.*?)\*\*|\d+\.\s*(.*?)(?:\r?\n|-))/);
+      const titleMatch = trimmed.match(
+        /^(?:\*\*\d+\.\s*(.*?)\*\*|\d+\.\s*\*\*(.*?)\*\*|\d+\.\s*(.*?)(?:\r?\n|-))/
+      );
       if (titleMatch) {
         title = (titleMatch[1] || titleMatch[2] || titleMatch[3] || '').trim();
       }
@@ -309,215 +574,233 @@ const parseMitigations = (content) => {
         const linesOfBlock = trimmed.split('\n');
         title = linesOfBlock[0].replace(/[\d.]/g, '').trim();
       }
-      
+
       let action = '';
       let why = '';
       let cost = '';
       let priority = '';
-      
+
       const linesOfBlock = trimmed.split('\n');
       for (const line of linesOfBlock) {
         const lineTrim = line.trim();
         if (lineTrim.match(/-\s*(?:Apa yang harus dilakukan|What to do|Tindakan|Action)\s*:\s*(.*)/i)) {
-          action = lineTrim.match(/-\s*(?:Apa yang harus dilakukan|What to do|Tindakan|Action)\s*:\s*(.*)/i)[1].trim();
+          action = lineTrim.match(
+            /-\s*(?:Apa yang harus dilakukan|What to do|Tindakan|Action)\s*:\s*(.*)/i
+          )[1].trim();
         } else if (lineTrim.match(/-\s*(?:Mengapa penting|Why it matters|Pentingnya|Rationale)\s*:\s*(.*)/i)) {
-          why = lineTrim.match(/-\s*(?:Mengapa penting|Why it matters|Pentingnya|Rationale)\s*:\s*(.*)/i)[1].trim();
+          why = lineTrim.match(
+            /-\s*(?:Mengapa penting|Why it matters|Pentingnya|Rationale)\s*:\s*(.*)/i
+          )[1].trim();
         } else if (lineTrim.match(/-\s*(?:Estimasi biaya|Estimated cost|Biaya|Cost)\s*:\s*(.*)/i)) {
           cost = lineTrim.match(/-\s*(?:Estimasi biaya|Estimated cost|Biaya|Cost)\s*:\s*(.*)/i)[1].trim();
         } else if (lineTrim.match(/-\s*(?:Prioritas|Priority)\s*:\s*(.*)/i)) {
           priority = lineTrim.match(/-\s*(?:Prioritas|Priority)\s*:\s*(.*)/i)[1].trim();
         }
       }
-      
+
       if (title) {
         items.push({ title, action, why, cost, priority });
       }
     }
   } else {
-    // Single-line format, e.g.:
-    // **Audit Struktur oleh Ahli**: Wajib dilakukan sebelum renovasi. Biaya: Rp 15-25 juta. Prioritas: WAJIB.
+    // Format satu baris:
+    // **Audit Struktur oleh Ahli**: Wajib sebelum renovasi. Biaya: Rp 15-25 juta. Prioritas: WAJIB.
     for (const line of lines) {
       const lineTrim = line.trim();
       if (!lineTrim) continue;
-      
-      // Match title in bold (could start with bullet or number)
+
       const boldMatch = lineTrim.match(/^(?:-\s*|\d+\.\s*)?\*\*(.*?)\*\*(?:\s*:\s*|\s*-\s*)(.*)/);
       if (boldMatch) {
         const title = boldMatch[1].trim();
         const rest = boldMatch[2].trim();
-        
+
         let cost = '';
         let priority = '';
         let action = rest;
-        
-        // Try to extract Biaya / Cost
+
         const costMatch = rest.match(/(?:Estimasi biaya|Estimasi Biaya|Biaya|Cost)\s*:\s*([^.\n]+)/i);
         if (costMatch) {
           cost = costMatch[1].trim();
           action = action.replace(costMatch[0], '');
         }
-        
-        // Try to extract Prioritas / Priority
+
         const priorityMatch = rest.match(/(?:Prioritas|Priority)\s*:\s*([^.\n]+)/i);
         if (priorityMatch) {
           priority = priorityMatch[1].trim();
           action = action.replace(priorityMatch[0], '');
         }
 
-        // Clean up action text
-        action = action.replace(/(?:Estimasi biaya|Estimasi Biaya|Biaya|Cost)\s*:\s*$/i, '')
-                      .replace(/(?:Prioritas|Priority)\s*:\s*$/i, '')
-                      .replace(/[,.\s]+$/, '')
-                      .trim();
-        
-        items.push({
-          title,
-          action,
-          why: '',
-          cost,
-          priority
-        });
+        action = action
+          .replace(/(?:Estimasi biaya|Estimasi Biaya|Biaya|Cost)\s*:\s*$/i, '')
+          .replace(/(?:Prioritas|Priority)\s*:\s*$/i, '')
+          .replace(/[,.\s]+$/, '')
+          .trim();
+
+        items.push({ title, action, why: '', cost, priority });
       }
     }
   }
   return items;
 };
 
-const getSectionMeta = (title) => {
-  const t = title.toLowerCase();
-  
-  // Default values
-  let icon = FileText;
-  let accentClass = 'text-accent border-accent/20 bg-accent/5';
-  let isImportant = false;
-  
-  if (t.includes('ringkasan') || t.includes('summary') || t.includes('verdict') || t.includes('hasil')) {
-    icon = Sparkles;
-    accentClass = 'text-amber-400 border-amber-400/20 bg-amber-400/5';
-    isImportant = true;
-  } else if (t.includes('geoteknik') || t.includes('geotechnical') || t.includes('tanah') || t.includes('soil')) {
-    icon = Layers;
-    accentClass = 'text-amber-500 border-amber-500/20 bg-amber-500/5';
-  } else if (t.includes('gempa') || t.includes('earthquake') || t.includes('tektonik') || t.includes('seismic')) {
-    icon = Activity;
-    accentClass = 'text-red-400 border-red-400/20 bg-red-400/5';
-  } else if (t.includes('banjir') || t.includes('flood') || t.includes('lingkungan') || t.includes('environmental')) {
-    icon = Droplets;
-    accentClass = 'text-blue-400 border-blue-400/20 bg-blue-400/5';
-  } else if (t.includes('mikro') || t.includes('micro') || t.includes('evakuasi') || t.includes('jalan')) {
-    icon = MapPin;
-    accentClass = 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5';
-  } else if (t.includes('regulasi') || t.includes('sni') || t.includes('code') || t.includes('persyaratan bangunan')) {
-    icon = BookOpen;
-    accentClass = 'text-purple-400 border-purple-400/20 bg-purple-400/5';
-  } else if (t.includes('mitigasi') || t.includes('mitigation') || t.includes('rekomendasi')) {
-    icon = Wrench;
-    accentClass = 'text-orange-400 border-orange-400/20 bg-orange-400/5';
-  } else if (t.includes('investasi') || t.includes('investment') || t.includes('harga') || t.includes('biaya total')) {
-    icon = TrendingUp;
-    accentClass = 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5';
-  } else if (t.includes('referensi') || t.includes('reference') || t.includes('disclaimer')) {
-    icon = Info;
-    accentClass = 'text-gray-400 border-gray-400/20 bg-gray-400/5';
-  } else if (t.includes('contrast') || t.includes('perbandingan') || t.includes('head-to-head')) {
-    icon = Scale;
-    accentClass = 'text-rose-400 border-rose-400/20 bg-rose-400/5';
-  }
-  
-  return { icon, accentClass, isImportant };
+/**
+ * Ikon per bagian tetap berbeda supaya laporan bisa dipindai cepat, tapi
+ * warnanya tidak lagi. Satu aksen merek untuk semua bagian; warna risiko
+ * disimpan khusus untuk angka yang memang punya ambang batas.
+ */
+const getSectionIcon = (title) => {
+  const s = title.toLowerCase();
+  if (s.includes('ringkasan') || s.includes('summary') || s.includes('verdict') || s.includes('hasil'))
+    return Sparkles;
+  if (
+    s.includes('geoteknik') ||
+    s.includes('geotechnical') ||
+    s.includes('tanah') ||
+    s.includes('soil') ||
+    s.includes('likuefaksi')
+  )
+    return Layers;
+  if (
+    s.includes('gempa') ||
+    s.includes('earthquake') ||
+    s.includes('tektonik') ||
+    s.includes('seismic') ||
+    s.includes('seismik') ||
+    s.includes('sesar')
+  )
+    return Activity;
+  if (
+    s.includes('banjir') ||
+    s.includes('flood') ||
+    s.includes('lingkungan') ||
+    s.includes('environmental') ||
+    s.includes('hidrometeorologi')
+  )
+    return Droplets;
+  if (s.includes('mikro') || s.includes('micro') || s.includes('evakuasi') || s.includes('jalan'))
+    return MapPin;
+  if (s.includes('regulasi') || s.includes('sni') || s.includes('code') || s.includes('persyaratan bangunan'))
+    return BookOpen;
+  if (s.includes('mitigasi') || s.includes('mitigation') || s.includes('rekomendasi')) return Wrench;
+  if (s.includes('investasi') || s.includes('investment') || s.includes('harga') || s.includes('biaya total'))
+    return TrendingUp;
+  if (s.includes('referensi') || s.includes('reference') || s.includes('disclaimer')) return Info;
+  if (s.includes('contrast') || s.includes('perbandingan') || s.includes('head-to-head')) return Scale;
+  return FileText;
 };
 
-// ─── Generative UI Subcomponents ───────────────────────────────────
+/** Dibungkus agar tabel ikon tidak terbaca sebagai komponen baru tiap render. */
+const SectionIcon = ({ title, className }) =>
+  createElement(getSectionIcon(title), { className });
 
-function MitigationCard({ item }) {
+// ─── Subkomponen laporan ────────────────────────────────────────────
+
+function ReportSkeleton({ label = 'Loading report' }) {
+  return (
+    <div className="space-y-6" role="status" aria-live="polite">
+      <span className="sr-only">{label}</span>
+      <div className="space-y-2.5">
+        <Skeleton className="h-3 w-2/5 rounded" />
+        <SkeletonText lines={4} />
+      </div>
+      <div className="space-y-2.5">
+        <Skeleton className="h-3 w-1/3 rounded" />
+        <SkeletonText lines={5} />
+      </div>
+      <Skeleton className="h-28 rounded-xl" />
+    </div>
+  );
+}
+
+function MitigationCard({ item, index }) {
   const t = useT();
   const { title, action, why, cost, priority } = item;
-  const p = priority.toLowerCase();
+  const p = (priority || '').toLowerCase();
+
+  let tone = null;
   let priorityLabel = priority;
-  let priorityStyle = 'bg-gray-500/[0.02] border-white/8';
-  let badgeColor = 'secondary';
-  
+
   if (p.includes('wajib') || p.includes('required') || p.includes('high') || p.includes('urgent')) {
-    priorityLabel = priority.includes('wajib') ? 'WAJIB' : 'REQUIRED';
-    priorityStyle = 'bg-risk-danger/[0.02] border-risk-danger/20';
-    badgeColor = 'danger';
+    tone = 'danger';
+    priorityLabel = p.includes('wajib') ? 'WAJIB' : 'REQUIRED';
   } else if (p.includes('disarankan') || p.includes('recommended') || p.includes('moderate') || p.includes('medium')) {
-    priorityLabel = priority.includes('disarankan') ? 'DISARANKAN' : 'RECOMMENDED';
-    priorityStyle = 'bg-risk-moderate/[0.02] border-risk-moderate/20';
-    badgeColor = 'warning';
+    tone = 'moderate';
+    priorityLabel = p.includes('disarankan') ? 'DISARANKAN' : 'RECOMMENDED';
   } else if (p.includes('jangka panjang') || p.includes('long-term') || p.includes('low') || p.includes('long term')) {
-    priorityLabel = priority.includes('jangka') ? 'JANGKA PANJANG' : 'LONG-TERM';
-    priorityStyle = 'bg-accent/[0.02] border-accent/20';
-    badgeColor = 'accent';
+    tone = 'safe';
+    priorityLabel = p.includes('jangka') ? 'JANGKA PANJANG' : 'LONG-TERM';
   }
-  
+
+  const toneColor = tone ? TONE_HEX[tone] : ACCENT;
+
+  // Prioritas ditandai lewat tepi kartu dan chip, bukan pita samping tebal:
+  // tiga kartu berdampingan dengan balok warna terbaca sebagai peringatan
+  // berjenjang, padahal urutannya sudah dinyatakan oleh nomor dan chip.
   return (
-    <div className={`flex flex-col justify-between rounded-2xl border p-4.5 shadow-sm hover:border-white/16 hover:scale-[1.01] transition-all duration-300 relative overflow-hidden ${priorityStyle}`}>
-      {/* Decorative background circle */}
-      <div className="absolute -right-6 -bottom-6 h-12 w-12 rounded-full bg-white/[0.01] blur-xl" />
-      
-      <div className="relative z-10">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <h4 className="font-display text-[12px] font-bold text-text-primary leading-snug">
-            {title}
-          </h4>
-          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-widest shrink-0 ${
-            badgeColor === 'danger' ? 'bg-risk-danger/10 text-risk-danger border border-risk-danger/20' :
-            badgeColor === 'warning' ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/20' :
-            'bg-accent/10 text-accent border border-accent/20'
-          }`}>
+    <article
+      className="rpt-surface relative overflow-hidden rounded-xl p-4"
+      style={tone ? { borderColor: `${TONE_HEX[tone]}55` } : undefined}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h4 className="font-display text-[13px] font-bold leading-snug text-text-primary">
+          <span className="mr-1.5 font-data text-[11px] font-medium text-text-muted">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+          {title}
+        </h4>
+        {priorityLabel && (
+          <span
+            className="rpt-hair shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+            style={{
+              color: toneColor,
+              borderColor: tone ? `${TONE_HEX[tone]}55` : undefined,
+            }}
+          >
             {priorityLabel}
           </span>
-        </div>
-        
-        {cost && (
-          <div className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/6 px-2.5 py-1 text-[10px] font-mono text-text-primary mb-3.5 shadow-sm">
-            <Award className="h-3 w-3 text-accent" />
-            <span className="text-text-muted">{t('drawer.cost')}</span>
-            <span className="font-extrabold text-accent">{cost}</span>
+        )}
+      </div>
+
+      {cost && (
+        <p className="mt-2.5 font-data text-[11px] text-text-secondary">
+          <span className="text-text-muted">{stripColon(t('drawer.cost'))} </span>
+          <span className="font-semibold text-accent">{cost}</span>
+        </p>
+      )}
+
+      <dl className="mt-3 space-y-2">
+        {action && (
+          <div>
+            <dt className="rpt-eyebrow">{stripColon(t('drawer.action'))}</dt>
+            <dd className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">{action}</dd>
           </div>
         )}
-        
-        <div className="space-y-2 text-xs">
-          {action && (
-            <div className="flex gap-2">
-              <span className="text-text-muted/50 select-none shrink-0 mt-0.5">✦</span>
-              <p className="text-text-secondary leading-relaxed text-[11px]">
-                <span className="font-bold text-text-primary">{t('drawer.action')}</span>
-                {action}
-              </p>
-            </div>
-          )}
-          {why && (
-            <div className="flex gap-2">
-              <span className="text-text-muted/50 select-none shrink-0 mt-0.5">✦</span>
-              <p className="text-text-secondary leading-relaxed text-[11px]">
-                <span className="font-bold text-text-primary">{t('drawer.reason')}</span>
-                {why}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+        {why && (
+          <div>
+            <dt className="rpt-eyebrow">{stripColon(t('drawer.reason'))}</dt>
+            <dd className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">{why}</dd>
+          </div>
+        )}
+      </dl>
+    </article>
   );
 }
 
 function MitigationSection({ content }) {
   const mitigations = parseMitigations(content);
-  
+
   if (mitigations.length === 0) {
     return (
-      <article className="prose-safe">
+      <article className="prose-safe rpt-prose">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </article>
     );
   }
-  
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
       {mitigations.map((item, idx) => (
-        <MitigationCard key={idx} item={item} />
+        <MitigationCard key={`${item.title}-${idx}`} item={item} index={idx} />
       ))}
     </div>
   );
@@ -526,69 +809,57 @@ function MitigationSection({ content }) {
 function CodeCard({ item }) {
   const t = useT();
   const { code, description, url, badge, fullTitle } = item;
-  
+
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
       title={`${t('drawer.openDoc')}: ${code}${fullTitle ? ` — ${fullTitle}` : ''}`}
-      aria-label={`${t('drawer.openDoc')}: ${code}`}
-      className="group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/[0.01] p-4.5 hover:border-purple-500/30 hover:bg-purple-500/[0.03] transition-all duration-300 relative overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-purple-500/40 cursor-pointer block"
-      style={{
-        backgroundImage: 'radial-gradient(rgba(255,255,255,0.01) 1px, transparent 1px)',
-        backgroundSize: '12px 12px'
-      }}
+      className="rpt-surface rpt-focus group flex items-start gap-3.5 rounded-xl p-4 transition-colors hover:border-accent/40"
     >
-      {/* Decorative subtle background glow on hover */}
-      <div className="absolute -right-8 -bottom-8 h-16 w-16 rounded-full bg-purple-500/[0.04] blur-xl group-hover:bg-purple-500/[0.12] transition-colors" />
+      <span className="rpt-hair mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/[0.10] text-accent">
+        <FileCheck className="h-4 w-4" />
+      </span>
 
-      <div className="flex items-start gap-4 flex-1 min-w-0 z-10">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 group-hover:bg-purple-500/20 group-hover:text-purple-300 group-hover:scale-105 transition-all duration-200 shadow-sm mt-0.5">
-          <FileCheck className="h-5 w-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h4 className="font-mono text-xs font-extrabold text-purple-300 uppercase tracking-widest group-hover:text-purple-200 transition-colors">
-              {code}
-            </h4>
-            {badge && (
-              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold font-mono tracking-wider bg-purple-500/10 border border-purple-500/25 text-purple-300/80">
-                {badge}
-              </span>
-            )}
-          </div>
-          {description && (
-            <p className="text-[11px] leading-relaxed text-text-secondary group-hover:text-text-primary/90 transition-colors">
-              {description}
-            </p>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="font-data text-[12px] font-semibold uppercase tracking-[0.1em] text-accent">
+            {code}
+          </span>
+          {badge && (
+            <span className="rpt-hair rounded px-1.5 py-px font-data text-[10px] tracking-wide text-text-muted">
+              {badge}
+            </span>
           )}
-        </div>
-      </div>
+        </span>
+        {description && (
+          <span className="mt-1 block text-[12.5px] leading-relaxed text-text-secondary">
+            {description}
+          </span>
+        )}
+      </span>
 
-      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/25 px-2.5 py-1.5 text-[10px] font-semibold text-purple-300 group-hover:text-purple-100 transition-all shadow-sm z-10">
-        <span>{t('drawer.openDoc')}</span>
-        <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-      </div>
+      <ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-text-muted transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
     </a>
   );
 }
 
 function CodeSection({ content }) {
   const codes = parseBuildingCodes(content);
-  
+
   if (codes.length === 0) {
     return (
-      <article className="prose-safe">
+      <article className="prose-safe rpt-prose">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </article>
     );
   }
-  
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {codes.map((item, idx) => (
-        <CodeCard key={idx} item={item} />
+        <CodeCard key={`${item.code}-${idx}`} item={item} />
       ))}
     </div>
   );
@@ -600,495 +871,241 @@ function stripMarkdownNode(props) {
   return rest;
 }
 
+const markdownComponents = {
+  h4: (props) => (
+    <h4
+      className="mb-2 mt-5 text-[11px] font-bold uppercase tracking-[0.16em] text-text-primary"
+      {...stripMarkdownNode(props)}
+    />
+  ),
+  p: (props) => (
+    <p className="mb-3 text-[13px] leading-[1.72] text-text-secondary" {...stripMarkdownNode(props)} />
+  ),
+  ul: (props) => <ul className="mb-3 list-none space-y-1.5 pl-0" {...stripMarkdownNode(props)} />,
+  ol: (props) => <ol className="mb-3 list-none space-y-1.5 pl-0" {...stripMarkdownNode(props)} />,
+  li: (props) => {
+    const cleanProps = stripMarkdownNode(props);
+    return (
+      <li className="flex gap-2.5 text-[13px] leading-[1.72] text-text-secondary">
+        <span
+          aria-hidden="true"
+          className="mt-[0.62em] h-px w-2.5 shrink-0"
+          style={{ background: 'var(--rpt-line-strong)' }}
+        />
+        <span className="min-w-0">{cleanProps.children}</span>
+      </li>
+    );
+  },
+  strong: (props) => <strong className="font-semibold text-text-primary" {...stripMarkdownNode(props)} />,
+  table: ({ children, ...props }) => (
+    <div className="table-scroll rpt-hair my-4 max-w-full overflow-hidden rounded-xl">
+      <table className="min-w-full text-left text-[12.5px]" {...stripMarkdownNode(props)}>
+        {children}
+      </table>
+    </div>
+  ),
+  thead: (props) => (
+    <thead style={{ background: 'var(--rpt-fill-2)' }} {...stripMarkdownNode(props)} />
+  ),
+  tbody: (props) => <tbody className="rpt-rows" {...stripMarkdownNode(props)} />,
+  tr: (props) => <tr {...stripMarkdownNode(props)} />,
+  th: (props) => (
+    <th
+      className="px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-text-primary"
+      {...stripMarkdownNode(props)}
+    />
+  ),
+  td: (props) => <td className="px-3.5 py-2.5 align-top text-text-secondary" {...stripMarkdownNode(props)} />,
+};
+
 function SectionCard({ title, content, defaultExpanded = false, property }) {
   const t = useT();
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const { icon: Icon } = getSectionMeta(title);
-  
-  const isMitigationSection = title.toLowerCase().includes('mitigasi') || title.toLowerCase().includes('mitigation') || title.toLowerCase().includes('rekomendasi');
-  const isCodeSection = title.toLowerCase().includes('persyaratan bangunan') || title.toLowerCase().includes('building code') || title.toLowerCase().includes('regulasi') || title.toLowerCase().includes('sni') || title.toLowerCase().includes('standar');
-  
-  const isGeotechnical = title.toLowerCase().includes('geoteknik') || title.toLowerCase().includes('geotechnical') || title.toLowerCase().includes('tanah') || title.toLowerCase().includes('soil') || title.toLowerCase().includes('stabilitas');
-  const isSeismic = title.toLowerCase().includes('gempa') || title.toLowerCase().includes('seismic') || title.toLowerCase().includes('sesar') || title.toLowerCase().includes('tektonik');
-  const isEnvironment = title.toLowerCase().includes('banjir') || title.toLowerCase().includes('flood') || title.toLowerCase().includes('lingkungan') || title.toLowerCase().includes('environmental') || title.toLowerCase().includes('hidrometeorologi');
+  const s = title.toLowerCase();
+
+  const isMitigation = s.includes('mitigasi') || s.includes('mitigation') || s.includes('rekomendasi');
+  const isCode =
+    s.includes('persyaratan bangunan') ||
+    s.includes('building code') ||
+    s.includes('regulasi') ||
+    s.includes('sni') ||
+    s.includes('standar');
+  const isGeotechnical =
+    s.includes('geoteknik') || s.includes('geotechnical') || s.includes('tanah') || s.includes('soil') || s.includes('stabilitas');
+  const isSeismic =
+    s.includes('gempa') || s.includes('seismic') || s.includes('sesar') || s.includes('tektonik');
+  const isEnvironment =
+    s.includes('banjir') || s.includes('flood') || s.includes('lingkungan') || s.includes('environmental') || s.includes('hidrometeorologi');
 
   return (
-    <motion.div layout className="border-b border-white/[0.07] last:border-b-0">
+    <motion.section layout>
       <button
         type="button"
         aria-expanded={expanded}
-        aria-label={`${expanded ? t('accessibility.close') : t('cmd.select')} ${title}`}
-        onClick={() => setExpanded(!expanded)}
-        className="group flex w-full items-center gap-3 py-3.5 text-left"
+        aria-label={`${expanded ? t('drawer.sectionCollapse') : t('drawer.sectionExpand')}: ${title}`}
+        onClick={() => setExpanded((v) => !v)}
+        className="rpt-focus group flex w-full items-center gap-3 py-4 text-left"
       >
-        <Icon className={`h-3.5 w-3.5 shrink-0 transition-colors ${expanded ? 'text-accent' : 'text-text-muted'}`} />
-        <h3 className="flex-1 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-text-primary">
+        <span
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors"
+          style={{
+            borderColor: expanded ? 'hsl(var(--safe-accent) / 0.38)' : 'var(--rpt-line)',
+            background: expanded ? 'hsl(var(--safe-accent) / 0.12)' : 'var(--rpt-fill)',
+          }}
+        >
+          <SectionIcon
+            title={title}
+            className={`h-3.5 w-3.5 ${expanded ? 'text-accent' : 'text-text-muted'}`}
+          />
+        </span>
+
+        <h3 className="min-w-0 flex-1 font-display text-[12px] font-bold uppercase tracking-[0.14em] text-text-primary">
           {title}
         </h3>
+
         <ChevronDown
           className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
             expanded ? 'rotate-180 text-accent' : 'text-text-muted group-hover:text-text-secondary'
           }`}
         />
       </button>
-      
+
       <AnimatePresence initial={false}>
         {expanded && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-            className="max-w-[70ch] overflow-hidden pb-5 text-sm leading-relaxed text-text-secondary space-y-4"
+            transition={{ duration: 0.28, ease: [0.04, 0.62, 0.23, 0.98] }}
+            className="overflow-hidden"
           >
-          {isMitigationSection ? (
-            <MitigationSection content={content} />
-          ) : isCodeSection ? (
-            <CodeSection content={content} />
-          ) : (
-            <article className="prose-safe max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h4: (props) => <h4 className="text-xs font-bold text-text-primary mt-4 mb-2 uppercase tracking-widest" {...stripMarkdownNode(props)} />,
-                  p: (props) => <p className="text-xs text-text-secondary leading-relaxed mb-3" {...stripMarkdownNode(props)} />,
-                  ul: (props) => <ul className="list-none space-y-2 mb-3 pl-1" {...stripMarkdownNode(props)} />,
-                  li: (props) => {
-                    const cleanProps = stripMarkdownNode(props);
-                    return (
-                      <li className="flex items-start gap-2 text-xs text-text-secondary leading-relaxed">
-                        <span className="text-accent/60 mt-1 select-none text-[10px] shrink-0">✦</span>
-                        <span>{cleanProps.children}</span>
-                      </li>
-                    );
-                  },
-                  strong: (props) => <strong className="font-semibold text-text-primary" {...stripMarkdownNode(props)} />,
-                  table: ({ children, ...props }) => (
-                    <div className="table-scroll my-4 max-w-full rounded-xl border border-white/8 bg-white/[0.01] backdrop-blur-md overscroll-contain">
-                      <table className="min-w-full divide-y divide-white/8 text-left text-xs" {...stripMarkdownNode(props)}>{children}</table>
-                    </div>
-                  ),
-                  thead: (props) => <thead className="bg-white/[0.02]" {...stripMarkdownNode(props)} />,
-                  tbody: (props) => <tbody className="divide-y divide-white/6" {...stripMarkdownNode(props)} />,
-                  tr: (props) => <tr className="hover:bg-white/[0.01] transition-colors" {...stripMarkdownNode(props)} />,
-                  th: (props) => <th className="px-4 py-2.5 font-bold text-accent tracking-wider" {...stripMarkdownNode(props)} />,
-                  td: (props) => <td className="px-4 py-2 text-text-secondary" {...stripMarkdownNode(props)} />,
-                }}
-              >
-                {content}
-              </ReactMarkdown>
-            </article>
-          )}
+            <div className="max-w-[74ch] pb-6 pl-10">
+              {isMitigation ? (
+                <MitigationSection content={content} />
+              ) : isCode ? (
+                <CodeSection content={content} />
+              ) : (
+                <article className="prose-safe rpt-prose max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {content}
+                  </ReactMarkdown>
+                </article>
+              )}
 
-          {/* Dynamic Visualizations */}
-          {isGeotechnical && property && <SoilVisual property={property} />}
-          {isSeismic && property && <SeismicVisual property={property} />}
-          {isEnvironment && property && <EnvironmentVisual property={property} />}
+              {isGeotechnical && property && <SoilVisual property={property} />}
+              {isSeismic && property && <SeismicVisual property={property} />}
+              {isEnvironment && property && <EnvironmentVisual property={property} />}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </motion.section>
   );
 }
 
-export function AuditDrawer() {
-  const t = useT();
-  const open = useAppStore((s) => s.auditDrawerOpen);
-  const propertyA = useAppStore((s) => s.propertyA);
-  const propertyB = useAppStore((s) => s.propertyB);
-  const mode = useAppStore((s) => s.mode);
-  const battleReport = useAppStore((s) => s.battleReportContent);
-  const battleReportMeta = useAppStore((s) => s.battleReportMeta);
-  const battleReportLoading = useAppStore((s) => s.battleReportLoading);
-  const setAuditDrawer = useAppStore((s) => s.setAuditDrawer);
-  const reportRef = useRef(null);
-  const [copied, setCopied] = useState(false);
+function SectionList({ markdown, property, isExpanded }) {
+  const sections = parseSections(markdown);
 
-  // In battle mode, show battle report; in audit mode, show single site report
-  const isBattle = mode === 'battle' && propertyB;
-  const aiReport = propertyA?.aiReport;
-  const drawerScore = computeScore(propertyA);
-  const drawerScoreReady = Number.isFinite(drawerScore);
+  if (sections.length === 0) {
+    return (
+      <article className="prose-safe rpt-prose max-w-[74ch]">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {markdown}
+        </ReactMarkdown>
+      </article>
+    );
+  }
 
-  const lang = useAppStore((s) => s.lang);
-
-  const [pdfLoading, setPdfLoading] = useState(false);
-
-  const handleCopy = async () => {
-    if (propertyA?.lat == null) return;
-    const url = locationToUrl(propertyA.lat, propertyA.lon);
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success(t('toast.shareCopied'));
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error(t('toast.shareFailed'));
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!propertyA || !canExportSniReport(propertyA)) {
-      toast.warning(
-        lang === 'en'
-          ? 'PDF is locked because this audit has insufficient evidence.'
-          : 'PDF dikunci karena bukti audit belum cukup.'
-      );
-      return;
-    }
-    setPdfLoading(true);
-    const toastId = toast.loading(lang === 'en' ? 'Preparing full audit PDF…' : 'Menyiapkan PDF audit full…');
-    try {
-      await exportPrintReadyPdf(propertyA, lang);
-      toast.success(
-        lang === 'en' ? 'Full AI audit PDF downloaded.' : 'PDF full audit AI berhasil diunduh.',
-        { id: toastId }
-      );
-    } catch (error) {
-      console.error('PDF export failed', error);
-      toast.error(
-        error.message || (lang === 'en' ? 'PDF export failed.' : 'Ekspor PDF gagal.'),
-        { id: toastId }
-      );
-    } finally {
-      setPdfLoading(false);
-    }
-  };
-
-  const drawerTitle = isBattle
-    ? t('drawer.battleTitle')
-    : t('drawer.title');
-
-  const drawerSubtitle = isBattle
-    ? `${propertyA?.address?.slice(0, 30) ?? '---'} vs ${propertyB?.address?.slice(0, 30) ?? '---'}`
-    : (propertyA?.address?.slice(0, 60) ?? '---');
-  const reportGeneratedBy = isBattle
-    ? battleReportMeta?.delivery_mode === 'fallback'
-      ? 'S.A.F.E House deterministic fallback'
-      : battleReportMeta?.model
-        ? `Gemini (${battleReportMeta.model})`
-        : 'Audit deterministik'
-    : (aiReport?.generatedBy || 'Audit deterministik');
-
-  // Vaul 1.1.2 keeps Radix's modal pointer lock active internally even when
-  // its own `modal` option is false. Restore page interaction after the
-  // drawer mounts so elements outside the report can still receive events.
-  useEffect(() => {
-    if (!open || typeof document === 'undefined') return undefined;
-
-    const unlockPage = window.setTimeout(() => {
-      document.body.style.pointerEvents = 'auto';
-    }, 0);
-
-    return () => window.clearTimeout(unlockPage);
-  }, [open]);
-
-  // Keep this drawer non-modal so the floating audit chatbot remains usable
-  // while the full report is open. Vaul's modal mode sets body pointer-events
-  // to none, which makes elements outside the drawer look visible but ignore
-  // clicks and focus. The custom backdrop preserves the dimmed presentation
-  // and dismiss behavior without locking the rest of the app.
   return (
-    <Drawer.Root modal={false} open={open} onOpenChange={setAuditDrawer}>
-      <Drawer.Portal>
-        <div
-          aria-hidden="true"
-          data-testid="audit-drawer-backdrop"
-          onClick={() => setAuditDrawer(false)}
-          className="pointer-events-auto fixed inset-0 z-30 bg-bg/60 backdrop-blur-sm"
+    <div className="rpt-sections">
+      {sections.map((sec, idx) => (
+        <SectionCard
+          key={`${sec.title}-${idx}`}
+          title={sec.title}
+          content={sec.content}
+          defaultExpanded={isExpanded(sec, idx)}
+          property={property}
         />
-        {/* z-40: panel chatbot memakai z-[35]. Dengan z-30, panel chat menutupi
-            laporan dan membuatnya tak terbaca saat keduanya terbuka. */}
-        <Drawer.Content data-testid="audit-drawer" className="glass-strong fixed bottom-0 left-0 right-0 z-40 mt-24 flex h-[min(78dvh,56rem)] max-h-[calc(100dvh-env(safe-area-inset-top))] flex-col rounded-t-2xl border-t border-white/10 outline-none max-[639px]:h-[calc(100dvh-env(safe-area-inset-top))] max-[639px]:rounded-t-3xl">
-          <Drawer.Title className="sr-only">{drawerTitle}</Drawer.Title>
-          <Drawer.Description className="sr-only">{drawerSubtitle}</Drawer.Description>
-
-          {/* Drag handle */}
-          <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-white/14" />
-
-          {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/8 bg-bg-surface/92 px-4 py-4 pr-20 backdrop-blur-xl sm:px-6 sm:pr-24">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 border border-accent/30">
-                {isBattle
-                  ? <GitCompareArrows className="h-4 w-4 text-accent" />
-                  : <FileText className="h-4 w-4 text-accent" />
-                }
-              </div>
-              <div className="min-w-0">
-                <h2 className="truncate font-display text-base font-semibold text-text-primary">
-                  {drawerTitle}
-                </h2>
-                <p className="flex min-w-0 flex-wrap items-center gap-1.5 text-[10px] font-mono tracking-wider text-text-muted">
-                  {reportGeneratedBy}
-                  {!isBattle && aiReport?.deliveryMode && (
-                    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-bold tracking-widest uppercase ${
-                      aiReport.deliveryMode === 'live' ? 'bg-risk-safe/10 text-risk-safe border border-risk-safe/20' :
-                      aiReport.deliveryMode === 'fallback' ? 'bg-risk-moderate/10 text-risk-moderate border border-risk-moderate/20' :
-                      'bg-accent/10 text-accent border border-accent/20'
-                    }`}>
-                      {aiReport.deliveryMode === 'live' ? `LIVE · ${aiReport.aiModel || ''}` :
-                       aiReport.deliveryMode === 'fallback' ? `FALLBACK · ${aiReport.aiModel || ''}` :
-                       `CACHED · ${t('drawer.cached')}`}
-                    </span>
-                  )}
-                  {isBattle && (
-                    <>
-                      <span className="text-text-muted/60">·</span>
-                      {drawerSubtitle}
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              {!isBattle && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleDownloadPdf}
-                  disabled={pdfLoading}
-                  className="min-h-[44px] px-2.5 sm:px-3 text-xs flex items-center gap-1.5 border border-white/10 hover:border-accent/40 hover:text-accent"
-                  title={lang === 'en' ? 'Download full PDF report' : 'Unduh laporan PDF full'}
-                >
-                  {pdfLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-                  ) : (
-                    <Download className="h-3.5 w-3.5 text-accent" />
-                  )}
-                  <span className="max-[639px]:hidden">{lang === 'en' ? 'Full PDF' : 'Unduh PDF'}</span>
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" onClick={handleCopy} className="min-h-[44px] px-2 sm:px-3">
-                {copied
-                  ? <Check className="h-3.5 w-3.5" />
-                  : <Copy className="h-3.5 w-3.5" />
-                }
-                <span className="max-[639px]:hidden">{copied ? t('drawer.copied') : t('drawer.copyLink')}</span>
-              </Button>
-            </div>
-            <button
-              type="button"
-              data-testid="audit-drawer-close"
-              aria-label={t('drawer.close')}
-              title={t('drawer.close')}
-              onClick={() => setAuditDrawer(false)}
-              className="absolute right-2 top-2 z-[45] flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-bg-surface/95 text-text-muted shadow-glass-lg transition-colors hover:bg-white/8 hover:text-text-primary sm:right-4 sm:top-3"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="overscroll-contain flex-1 overflow-y-auto">
-            <div
-              ref={reportRef}
-              className="mx-auto w-full max-w-[1440px] min-w-0 px-4 py-6 sm:px-8 sm:py-9"
-            >
-              {!isBattle && propertyA && (
-                <header className="mb-8">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-accent">
-                    {t('drawer.auditResult')}
-                  </span>
-                  {/* Alamat penuh dulu dipangkas paksa dengan `truncate`, jadi
-                      nama jalan sering hilang. Dua baris cukup untuk alamat
-                      Nominatim terpanjang sekalipun. */}
-                  <h1
-                    className="mt-2 max-w-[46ch] font-display text-xl font-bold leading-snug text-text-primary sm:text-2xl"
-                    title={propertyA.address}
-                  >
-                    {shortAddress(propertyA.address, 3)}
-                  </h1>
-                  <p className="mt-2 font-mono text-[10px] tracking-wide text-text-muted">
-                    {propertyA.lat?.toFixed(5)}, {propertyA.lon?.toFixed(5)}
-                    <span className="mx-2 text-text-muted/40">/</span>
-                    {propertyA.elevation ?? propertyA.geotech?.elevation_m} m dpl
-                  </p>
-                </header>
-              )}
-
-              {isBattle ? (
-                /* ── Laporan perbandingan ── */
-                <div className="mx-auto max-w-3xl">
-                  {battleReport ? (
-                    (() => {
-                      const sections = parseSections(battleReport);
-                      if (sections.length > 0) {
-                        return (
-                          <div>
-                            {sections.map((sec, idx) => (
-                              <SectionCard
-                                key={idx}
-                                title={sec.title}
-                                content={sec.content}
-                                defaultExpanded={idx === 0 || idx === 1}
-                                property={propertyA}
-                              />
-                            ))}
-                          </div>
-                        );
-                      }
-                      return (
-                        <article className="prose-safe">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {battleReport}
-                          </ReactMarkdown>
-                        </article>
-                      );
-                    })()
-                  ) : battleReportLoading ? (
-                    <ReportSkeleton
-                      label={lang === 'en' ? 'Generating comparison report' : 'Menyusun laporan perbandingan'}
-                    />
-                  ) : (
-                    <p className="text-sm text-text-muted">{t('drawer.reportLoading')}</p>
-                  )}
-                </div>
-              ) : (
-                /* Dua kolom di layar lebar: bukti terukur di kiri, narasi di
-                   kanan. Sebelumnya semuanya satu kolom max-w-3xl, sehingga di
-                   monitor lebar laporan jadi pita sempit dengan ruang kosong
-                </div>
-              ) : (
-                /* Dua kolom di layar lebar: bukti terukur di kiri, narasi di
-                   kanan. Sebelumnya semuanya satu kolom max-w-3xl, sehingga di
-                   monitor lebar laporan jadi pita sempit dengan ruang kosong
-                   besar di kedua sisi. */
-                <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-12">
-                  <aside className="space-y-7 lg:sticky lg:top-0 lg:self-start">
-                    <HeroScore
-                      score={drawerScore}
-                      ready={drawerScoreReady}
-                      status={propertyA?.audit_status}
-                    />
-
-                    <KeyParameters property={propertyA} />
-
-                    {propertyA?.data_quality?.fields && (
-                      <DataCoverageSummary property={propertyA} />
-                    )}
-                  </aside>
-
-                  <div className="min-w-0">
-                    {aiReport?.aiError && (
-                      <div className="mb-6 flex items-start gap-3 rounded-xl border border-risk-danger/25 bg-risk-danger/[0.06] p-4">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-risk-danger" />
-                        <div>
-                          <p className="mb-1 text-sm font-semibold text-risk-danger">
-                            {t('drawer.aiUnavailable')}
-                          </p>
-                          <p className="text-xs leading-relaxed text-text-muted">
-                            {t('drawer.deterministicValid')}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {aiReport?.detailedReport ? (
-                      (() => {
-                        const sections = parseSections(aiReport.detailedReport);
-                        if (sections.length > 0) {
-                          return (
-                            <div>
-                              {sections.map((sec, idx) => (
-                                <SectionCard
-                                  key={idx}
-                                  title={sec.title}
-                                  content={sec.content}
-                                  defaultExpanded={idx < 3 || sec.title.toLowerCase().includes('mitigasi') || sec.title.toLowerCase().includes('rekomendasi')}
-                                  property={propertyA}
-                                />
-                              ))}
-                            </div>
-                          );
-                        }
-                        return (
-                          <article className="prose-safe max-w-[72ch]">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                table: ({ children, ...props }) => (
-                                  <div className="table-scroll my-4 max-w-full rounded-xl border border-white/8 bg-white/[0.01] backdrop-blur-md overscroll-contain">
-                                    <table {...stripMarkdownNode(props)}>{children}</table>
-                                  </div>
-                                ),
-                              }}
-                            >
-                              {aiReport.detailedReport}
-                            </ReactMarkdown>
-                          </article>
-                        );
-                      })()
-                    ) : aiReport?.reportLoading ? (
-                      <ReportSkeleton
-                        label={lang === 'en' ? 'Generating report' : 'Menyusun laporan'}
-                      />
-                    ) : !aiReport?.aiError ? (
-                      <p className="text-sm text-text-muted">{t('drawer.reportLoading')}</p>
-                    ) : null}
-
-                    {aiReport?.microAnalysis && (
-                      <p className="mt-7 max-w-[72ch] border-t border-white/6 pt-4 text-[11px] leading-relaxed text-text-muted">
-                        <span className="font-semibold text-text-secondary">{t('drawer.nearbyContext')}</span>
-                        {aiReport.microAnalysis}
-                      </p>
-                    )}
-
-                    {/* Satu-satunya disclaimer. Sebelumnya ada tiga blok
-                        peringatan bernada sama bertumpuk di bagian atas. */}
-                    <p className="mt-6 max-w-[72ch] text-[11px] leading-relaxed text-text-muted">
-                      {t('drawer.disclaimer')}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
+      ))}
+    </div>
   );
 }
 
-// ── Skor sebagai tokoh utama laporan ────────────────────────────────
-// Sebelumnya skor hanya chip kecil di pojok kartu identitas, padahal ia
-// adalah kesimpulan seluruh audit. Rel band memberi konteks yang tidak
-// dimiliki angka telanjang: seberapa jauh lokasi ini dari band berikutnya.
-const SCORE_BANDS = [
-  { max: 39, label: 'WASPADA', meaningKey: 'drawer.seriousMitigation' },
-  { max: 69, label: 'SEDANG', meaningKey: 'drawer.needsMitigation' },
-  { max: 100, label: 'AMAN', meaningKey: 'drawer.relativeBuildable' },
-];
+/**
+ * Asal laporan. Versi lama menuliskannya sebagai
+ * `FALLBACK · DETERMINISTIC-ENGINE` dalam mono kapital — terbaca seperti
+ * keluaran debug yang bocor ke antarmuka pengguna.
+ */
+function ProvenanceChip({ state, detail }) {
+  const tone = state === 'live' ? 'safe' : state === 'fallback' ? 'moderate' : null;
+  return (
+    <span className="rpt-hair inline-flex min-w-0 items-center gap-1.5 rounded-full py-0.5 pl-2 pr-2.5">
+      <span
+        aria-hidden="true"
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: tone ? TONE_HEX[tone] : ACCENT }}
+      />
+      <span className="font-data text-[10px] uppercase tracking-[0.12em] text-text-secondary">
+        {state}
+      </span>
+      {detail && (
+        <span className="truncate text-[10px] text-text-muted max-[479px]:hidden" title={detail}>
+          {detail}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ─── Skor sebagai tokoh utama laporan ───────────────────────────────
 
 function HeroScore({ score, ready, status }) {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
-  const value = ready ? score : 0;
-  const hex = riskHex(value);
-  const band = SCORE_BANDS.find((b) => value <= b.max) || SCORE_BANDS[2];
+  const hex = ready ? riskHex(score) : undefined;
+  const meaningKey =
+    score >= 70 ? 'drawer.relativeBuildable' : score >= 40 ? 'drawer.needsMitigation' : 'drawer.seriousMitigation';
+
+  const bands = [
+    { center: 19.5, name: riskLabel(20, lang), range: '0–39', tone: 'danger' },
+    { center: 54.5, name: riskLabel(55, lang), range: '40–69', tone: 'moderate' },
+    { center: 85, name: riskLabel(85, lang), range: '70–100', tone: 'safe' },
+  ];
+  const activeIdx = !ready ? -1 : score >= 70 ? 2 : score >= 40 ? 1 : 0;
 
   return (
     <section>
-      <div className="flex items-baseline gap-2.5">
+      <h2 className="rpt-eyebrow">{t('drawer.safeScore')}</h2>
+
+      <div className="mt-2 flex items-baseline gap-2">
         <span
-          className="data-num text-[56px] font-semibold leading-none tracking-tight"
-          style={{ color: ready ? hex : undefined }}
+          className="data-num text-[64px] font-semibold leading-[0.85] tracking-tighter"
+          style={{ color: hex }}
         >
           {ready ? score : '—'}
         </span>
-        <span className="data-num text-sm text-text-muted">/100</span>
+        <span className="data-num text-[15px] text-text-muted">/100</span>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-3.5 flex flex-wrap items-center gap-2">
         <span
-          className="text-[11px] font-bold uppercase tracking-[0.18em]"
-          style={{ color: ready ? hex : undefined }}
+          className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.16em]"
+          style={{ color: hex }}
         >
+          {ready && (
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ background: hex }}
+            />
+          )}
           {ready ? riskLabel(score, lang) : t('drawer.auditDataInsufficient')}
         </span>
         {status && status !== 'valid' && (
-          <span className="rounded-full border border-risk-moderate/30 bg-risk-moderate/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-risk-moderate">
+          <span
+            className="rpt-hair rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-risk-moderate"
+            style={{ borderColor: `${TONE_HEX.moderate}44` }}
+          >
             {status}
           </span>
         )}
@@ -1096,26 +1113,45 @@ function HeroScore({ score, ready, status }) {
 
       {ready && (
         <>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">
-            {t(band.meaningKey)}
-          </p>
+          <p className="mt-2 text-[12.5px] leading-relaxed text-text-secondary">{t(meaningKey)}</p>
 
-          {/* Rel band 0-39 / 40-69 / 70-100 */}
-          <div className="mt-4">
-            <div className="relative h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-              <div className="absolute inset-y-0 left-0 w-[39%] bg-risk-danger/25" />
-              <div className="absolute inset-y-0 left-[39%] w-[31%] bg-risk-moderate/25" />
-              <div className="absolute inset-y-0 left-[70%] right-0 bg-risk-safe/25" />
+          <div className="mt-5">
+            <div className="relative h-3.5">
+              <div className="rpt-well absolute inset-x-0 top-1/2 h-[7px] -translate-y-1/2 overflow-hidden rounded-full">
+                <div className="absolute inset-y-0 left-0 w-[39%]" style={{ background: ZONE_BG.danger }} />
+                <div className="absolute inset-y-0 left-[39%] w-[31%]" style={{ background: ZONE_BG.moderate }} />
+                <div className="absolute inset-y-0 left-[70%] right-0" style={{ background: ZONE_BG.safe }} />
+                <div className="rpt-tick absolute inset-y-0 left-[39%] w-px" />
+                <div className="rpt-tick absolute inset-y-0 left-[70%] w-px" />
+              </div>
               <div
-                className="absolute top-1/2 h-3 w-[3px] -translate-y-1/2 rounded-full ring-2 ring-bg"
-                style={{ left: `calc(${Math.min(100, Math.max(0, score))}% - 1.5px)`, background: hex }}
+                className="rpt-needle absolute top-0 h-3.5 w-[3px] rounded-full"
+                style={{
+                  left: `${clamp(score, 0, 100)}%`,
+                  transform: 'translateX(-50%)',
+                  background: hex,
+                }}
               />
             </div>
-            <div className="mt-1.5 flex justify-between font-mono text-[9px] tracking-wider text-text-muted">
-              <span>0</span>
-              <span>40</span>
-              <span>70</span>
-              <span>100</span>
+
+            <div className="relative mt-2 h-7">
+              {bands.map((b, i) => (
+                <span
+                  key={b.range}
+                  className="absolute top-0 whitespace-nowrap text-center"
+                  style={{ left: `${b.center}%`, transform: 'translateX(-50%)' }}
+                >
+                  <span
+                    className={`block text-[10px] font-bold uppercase tracking-[0.12em] ${
+                      i === activeIdx ? '' : 'text-text-muted'
+                    }`}
+                    style={i === activeIdx ? { color: TONE_HEX[b.tone] } : undefined}
+                  >
+                    {b.name}
+                  </span>
+                  <span className="mt-0.5 block font-data text-[10px] text-text-muted">{b.range}</span>
+                </span>
+              ))}
             </div>
           </div>
         </>
@@ -1124,11 +1160,8 @@ function HeroScore({ score, ready, status }) {
   );
 }
 
-// ── Parameter kunci ────────────────────────────────────────────────
-// Menggantikan tiga kartu ringkasan yang isinya kalimat robotik hasil
-// perakitan ("Audit mengestimasi Vs30 160 m/s ... dengan status RAWAN").
-// Angkanya dibaca langsung dari AuditResult, jadi tidak bergantung AI dan
-// tidak mengulang isi laporan naratif di sebelahnya.
+// ─── Parameter kunci ────────────────────────────────────────────────
+
 function KeyParameters({ property }) {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
@@ -1138,61 +1171,71 @@ function KeyParameters({ property }) {
   const hazard = property?.hazard || {};
   const fault = geo.nearest_fault || {};
   const floodKnown = hazard.flood_known !== false;
+  // `flood_label` datang sebagai "SEDANG — ESTIMASI PROVINSI (BUKAN PETA
+  // BANJIR)". Dirender utuh dan rata kanan, kalimat itu pecah jadi empat baris
+  // kapital yang menenggelamkan seluruh kolom. Band dan kualifikasinya
+  // dipisah: satu jadi nilai, satu jadi catatan.
+  const flood = hazardBand(hazard.flood_label);
+  const vs30 = num(geo.vs30);
+  const fs = num(geo.fs);
+  const pga = num(geo.pga_surface);
+  const faultDist = num(fault.distance_km);
 
   const rows = [
     {
       label: 'Vs30',
-      value: `${geo.vs30} m/s`,
-      note: siteClass(geo.vs30, lang),
+      value: vs30 != null ? `${vs30} m/s` : '—',
+      note: vs30 != null ? siteClass(vs30, lang) : null,
     },
     {
       label: t('drawer.liquefaction'),
-      value: Number(geo.fs).toFixed(2),
-      note: geo.status,
-      tone: geo.fs < 1 ? 'danger' : 'safe',
+      value: fs != null ? fs.toFixed(2) : '—',
+      note: geo.status || null,
+      tone: fs == null ? null : fs < 1 ? 'danger' : fs < 1.25 ? 'moderate' : 'safe',
     },
     {
       label: t('drawer.surfacePga'),
-      value: `${Number(geo.pga_surface).toFixed(3)} g`,
+      value: pga != null ? `${pga.toFixed(3)} g` : '—',
       note: null,
+      tone: pga == null ? null : pga >= 0.5 ? 'danger' : pga >= 0.2 ? 'moderate' : null,
     },
     {
       label: t('drawer.nearestFault'),
-      value: fault.distance_km != null ? `${Number(fault.distance_km).toFixed(1)} km` : '—',
+      value: faultDist != null ? `${faultDist.toFixed(1)} km` : '—',
       note: fault.name || null,
+      tone: faultDist == null ? null : faultDist < 10 ? 'danger' : faultDist < 30 ? 'moderate' : null,
     },
     {
       label: t('drawer.floodHazard'),
-      value: floodKnown ? (hazard.flood_label || '—') : '—',
-      note: floodKnown ? null : t('drawer.dataUnavailable'),
-      wide: true,
+      value: floodKnown && flood.band ? flood.band : '—',
+      note: !floodKnown
+        ? t('drawer.dataUnavailable')
+        : flood.provisional
+          ? lang === 'en'
+            ? 'provincial estimate, not a flood map'
+            : 'estimasi provinsi, bukan peta banjir'
+          : null,
     },
   ];
 
-  const toneClass = {
-    danger: 'text-risk-danger',
-    safe: 'text-risk-safe',
-  };
-
   return (
     <section>
-      <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-text-muted">
-        {t('drawer.keyParameters')}
-      </h2>
-      <dl className="divide-y divide-white/[0.06]">
+      <h2 className="rpt-eyebrow mb-1">{t('drawer.keyParameters')}</h2>
+      <dl className="rpt-rows">
         {rows.map((row) => (
-          <div key={row.label} className="flex items-start justify-between gap-4 py-2.5 max-[639px]:gap-3">
-            <dt className="shrink-0 text-[11px] text-text-muted">{row.label}</dt>
-            <dd className="min-w-0 max-w-[68%] text-right break-words">
+          <div key={row.label} className="flex items-baseline justify-between gap-4 py-3">
+            <dt className="min-w-0 text-[12px] text-text-muted">{row.label}</dt>
+            <dd className="min-w-0 max-w-[62%] text-right">
               <span
-                className={`data-num text-[13px] font-semibold ${
-                  row.wide ? 'text-[11px] uppercase tracking-wide' : ''
-                } ${toneClass[row.tone] || 'text-text-primary'}`}
+                className={`data-num block text-[14px] font-semibold ${row.tone ? '' : 'text-text-primary'}`}
+                style={row.tone ? { color: TONE_HEX[row.tone] } : undefined}
               >
                 {row.value}
               </span>
               {row.note && (
-                <span className="ml-2 text-[10px] text-text-muted">{row.note}</span>
+                <span className="mt-0.5 block text-[10.5px] leading-tight text-text-muted">
+                  {row.note}
+                </span>
               )}
             </dd>
           </div>
@@ -1201,6 +1244,8 @@ function KeyParameters({ property }) {
     </section>
   );
 }
+
+// ─── Kelengkapan data ───────────────────────────────────────────────
 
 const COVERAGE_LABELS = {
   location: 'Lokasi',
@@ -1248,13 +1293,19 @@ const COVERAGE_LABELS_EN = {
   official_pga_grid: 'Official PGA grid',
 };
 
+const COVERAGE_TONE = {
+  official: TONE_HEX.safe,
+  model: TONE_HEX.moderate,
+  reference: ACCENT,
+  open_data: ACCENT,
+};
+
 function DataCoverageSummary({ property }) {
   const t = useT();
   const lang = useAppStore((s) => s.lang);
-  // Blok ini berisi 16 chip status field. Berguna sebagai bukti provenance,
-  // tapi kalau selalu terbuka ia mendominasi layar dan mendorong skor serta
-  // analisis AI keluar dari pandangan pertama. Ringkasan satu baris tetap
-  // terlihat; detailnya dibuka saat dibutuhkan.
+  // Enam belas chip status yang selalu terbuka mendominasi kolom bukti dan
+  // mendorong skor keluar dari pandangan pertama. Rekapnya tetap terlihat
+  // sebagai satu pita provenance; daftarnya dibuka saat dibutuhkan.
   const [open, setOpen] = useState(false);
   const quality = property?.data_quality || {};
   const fields = quality.fields || {};
@@ -1263,64 +1314,396 @@ function DataCoverageSummary({ property }) {
     .filter(([key]) => fields[key])
     .map(([key, label]) => [key, label, fields[key]]);
 
-  const statusLabel = (status) => ({
-    official: lang === 'en' ? 'OFFICIAL' : 'RESMI',
-    model: 'MODEL',
-    reference: lang === 'en' ? 'REFERENCE' : 'REFERENSI',
-    open_data: 'OPEN DATA',
-    unavailable: lang === 'en' ? 'UNAVAILABLE' : 'BELUM TERSEDIA',
-  }[status] || String(status || '—').toUpperCase());
+  if (entries.length === 0) return null;
 
-  const statusClass = (status) => ({
-    official: 'text-risk-safe border-risk-safe/20 bg-risk-safe/5',
-    model: 'text-amber-300 border-amber-300/20 bg-amber-300/5',
-    reference: 'text-sky-300 border-sky-300/20 bg-sky-300/5',
-    open_data: 'text-sky-300 border-sky-300/20 bg-sky-300/5',
-    unavailable: 'text-text-muted border-white/10 bg-white/[0.03]',
-  }[status] || 'text-text-muted border-white/10 bg-white/[0.03]');
+  const covered = entries.filter(([, , item]) => item.status && item.status !== 'unavailable').length;
+
+  const statusLabel = (status) =>
+    ({
+      official: lang === 'en' ? 'OFFICIAL' : 'RESMI',
+      model: 'MODEL',
+      reference: lang === 'en' ? 'REFERENCE' : 'REFERENSI',
+      open_data: 'OPEN DATA',
+      unavailable: lang === 'en' ? 'UNAVAILABLE' : 'BELUM TERSEDIA',
+    })[status] || String(status || '—').toUpperCase();
 
   return (
-    <div className="mb-6 rounded-2xl border border-accent/15 bg-accent/[0.025] p-4 relative z-10">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <div>
-          <p className="text-[9px] font-bold tracking-[0.2em] text-accent uppercase">{t('drawer.dataCoverage')}</p>
-          <p className="mt-1 text-[11px] text-text-secondary">
-            {quality.coverage_status === 'complete_with_estimates'
-              ? t('drawer.coverageComplete')
-              : t('drawer.coverageUnavailable')}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          className="flex min-h-[40px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/8 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent/15"
-        >
-          {quality.mode === 'best_available' ? t('drawer.bestAvailable') : t('drawer.strict')}
-          <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
+    <section>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="rpt-eyebrow">{t('drawer.dataCoverage')}</h2>
+        <span className="data-num shrink-0 text-[12px] font-semibold text-text-primary">
+          {covered}
+          <span className="text-text-muted">/{entries.length}</span>
+        </span>
       </div>
-      {open && (
-      <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
+
+      {/* Pita provenance: satu segmen per field, diwarnai menurut asal data. */}
+      <div className="mt-2.5 flex h-2 gap-[2px]">
         {entries.map(([key, label, item]) => (
-          <div key={key} className="flex items-center justify-between gap-2 rounded-lg border border-white/6 bg-bg/15 px-2 py-1.5">
-            <span className="truncate text-[9px] text-text-muted">{label}</span>
-            <span className={`shrink-0 rounded border px-1 py-0.5 text-[7px] font-bold tracking-wider ${statusClass(item.status)}`}>
-              {statusLabel(item.status)}
-            </span>
-          </div>
+          <span
+            key={key}
+            title={`${label} — ${statusLabel(item.status)}`}
+            className="flex-1 rounded-[2px]"
+            style={{ background: COVERAGE_TONE[item.status] || 'var(--rpt-line-strong)' }}
+          />
         ))}
       </div>
-      )}
-      {/* Hanya daftar field proxy. Kalimat "bukan pengganti survei lapangan"
-          sudah ada di banner disclaimer paling atas drawer; mengulanginya di
-          sini membuat satu layar memuat peringatan yang sama dua kali. */}
+
+      <p className="mt-2.5 text-[11.5px] leading-relaxed text-text-muted">
+        {quality.coverage_status === 'complete_with_estimates'
+          ? t('drawer.coverageComplete')
+          : t('drawer.coverageUnavailable')}
+      </p>
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="rpt-focus mt-1 flex min-h-[40px] items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent transition-opacity hover:opacity-80"
+      >
+        {t('drawer.detail')}
+        <span className="font-data font-normal normal-case tracking-normal text-text-muted">
+          ({quality.mode === 'best_available' ? t('drawer.bestAvailable') : t('drawer.strict')})
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.24, ease: [0.04, 0.62, 0.23, 0.98] }}
+            className="overflow-hidden"
+          >
+            <dl className="rpt-rows mt-2">
+              {entries.map(([key, label, item]) => (
+                <div key={key} className="flex items-baseline justify-between gap-3 py-1.5">
+                  <dt className="min-w-0 truncate text-[11.5px] text-text-secondary">{label}</dt>
+                  <dd
+                    className="shrink-0 font-data text-[10px] uppercase tracking-[0.1em]"
+                    style={{ color: COVERAGE_TONE[item.status] || undefined }}
+                  >
+                    <span className={COVERAGE_TONE[item.status] ? '' : 'text-text-muted'}>
+                      {statusLabel(item.status)}
+                    </span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {quality.estimated_fields?.length > 0 && (
-        <p className="mt-3 text-[9px] leading-relaxed text-amber-200/80">
-          {t('drawer.modelProxy')} {quality.estimated_fields.map((name) => labels[name] || name).join(', ')}.
+        <p className="mt-3 text-[10.5px] leading-relaxed text-text-muted">
+          <span className="font-data uppercase tracking-[0.1em]">{t('drawer.modelProxy')}</span>{' '}
+          {quality.estimated_fields.map((name) => labels[name] || name).join(', ')}.
         </p>
       )}
-    </div>
+    </section>
   );
 }
 
+// ─── Drawer ─────────────────────────────────────────────────────────
+
+export function AuditDrawer() {
+  const t = useT();
+  const open = useAppStore((s) => s.auditDrawerOpen);
+  const propertyA = useAppStore((s) => s.propertyA);
+  const propertyB = useAppStore((s) => s.propertyB);
+  const mode = useAppStore((s) => s.mode);
+  const battleReport = useAppStore((s) => s.battleReportContent);
+  const battleReportMeta = useAppStore((s) => s.battleReportMeta);
+  const battleReportLoading = useAppStore((s) => s.battleReportLoading);
+  const setAuditDrawer = useAppStore((s) => s.setAuditDrawer);
+  const lang = useAppStore((s) => s.lang);
+  const reportRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  // Mode bandingkan menampilkan laporan head-to-head; mode audit menampilkan
+  // laporan satu tapak.
+  const isBattle = mode === 'battle' && propertyB;
+  const aiReport = propertyA?.aiReport;
+  const drawerScore = computeScore(propertyA);
+  const drawerScoreReady = Number.isFinite(drawerScore);
+
+  const handleCopy = async () => {
+    if (propertyA?.lat == null) return;
+    const url = locationToUrl(propertyA.lat, propertyA.lon);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success(t('toast.shareCopied'));
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(t('toast.shareFailed'));
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!propertyA || !canExportSniReport(propertyA)) {
+      toast.warning(
+        lang === 'en'
+          ? 'PDF is locked because this audit has insufficient evidence.'
+          : 'PDF dikunci karena bukti audit belum cukup.'
+      );
+      return;
+    }
+    setPdfLoading(true);
+    const toastId = toast.loading(lang === 'en' ? 'Preparing full audit PDF…' : 'Menyiapkan PDF audit full…');
+    try {
+      await exportPrintReadyPdf(propertyA, lang);
+      toast.success(
+        lang === 'en' ? 'Full AI audit PDF downloaded.' : 'PDF full audit AI berhasil diunduh.',
+        { id: toastId }
+      );
+    } catch (error) {
+      console.error('PDF export failed', error);
+      toast.error(error.message || (lang === 'en' ? 'PDF export failed.' : 'Ekspor PDF gagal.'), {
+        id: toastId,
+      });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const drawerTitle = isBattle ? t('drawer.battleTitle') : t('drawer.title');
+  const drawerSubtitle = isBattle
+    ? `${shortAddress(propertyA?.address) || '---'} vs ${shortAddress(propertyB?.address) || '---'}`
+    : shortAddress(propertyA?.address, 3) || '---';
+
+  // Chip provenance hanya menampilkan keterangan yang menambah informasi:
+  // "ENGINE · S.A.F.E engine" mengulang dirinya sendiri.
+  const provenance = isBattle
+    ? {
+        state: battleReportMeta?.delivery_mode === 'fallback' ? 'fallback' : 'live',
+        detail: battleReportMeta?.model || null,
+      }
+    : {
+        state: aiReport?.deliveryMode || 'engine',
+        detail:
+          aiReport?.deliveryMode === 'cached'
+            ? t('drawer.cached')
+            : aiReport?.aiModel || aiReport?.generatedBy || null,
+      };
+
+  // Vaul 1.1.2 tetap mengaktifkan kunci pointer milik Radix walau opsi `modal`
+  // dimatikan. Interaksi halaman dipulihkan setelah drawer mount supaya elemen
+  // di luar laporan masih menerima event.
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined;
+    const unlockPage = window.setTimeout(() => {
+      document.body.style.pointerEvents = 'auto';
+    }, 0);
+    return () => window.clearTimeout(unlockPage);
+  }, [open]);
+
+  return (
+    <Drawer.Root modal={false} open={open} onOpenChange={setAuditDrawer}>
+      <Drawer.Portal>
+        <div
+          aria-hidden="true"
+          data-testid="audit-drawer-backdrop"
+          onClick={() => setAuditDrawer(false)}
+          className="pointer-events-auto fixed inset-0 z-30 bg-bg/60 backdrop-blur-sm"
+        />
+        {/* z-40: panel chatbot memakai z-[35]. Dengan z-30, panel chat menutupi
+            laporan dan membuatnya tak terbaca saat keduanya terbuka. */}
+        <Drawer.Content
+          data-testid="audit-drawer"
+          className="rpt glass-strong fixed bottom-0 left-0 right-0 z-40 mt-24 flex h-[min(80dvh,58rem)] max-h-[calc(100dvh-env(safe-area-inset-top))] flex-col rounded-t-2xl outline-none max-[639px]:h-[calc(100dvh-env(safe-area-inset-top))] max-[639px]:rounded-t-3xl"
+        >
+          <Drawer.Title className="sr-only">{drawerTitle}</Drawer.Title>
+          <Drawer.Description className="sr-only">{drawerSubtitle}</Drawer.Description>
+
+          <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full" style={{ background: 'var(--rpt-line-strong)' }} />
+
+          {/* ── Header ── */}
+          <header className="rpt-hair-b sticky top-0 z-10 flex shrink-0 items-center gap-3 bg-bg-surface/95 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-3.5">
+            <span className="rpt-hair flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/[0.12] text-accent">
+              {isBattle ? <GitCompareArrows className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate font-display text-[15px] font-semibold leading-tight text-text-primary">
+                {drawerTitle}
+              </h2>
+              <div className="mt-1 flex min-w-0 items-center gap-2">
+                <ProvenanceChip state={provenance.state} detail={provenance.detail} />
+                <span className="hidden min-w-0 truncate text-[11px] text-text-muted sm:block">
+                  {drawerSubtitle}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+              {!isBattle && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleDownloadPdf}
+                  disabled={pdfLoading}
+                  className="rpt-hair flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-2.5 text-xs hover:border-accent/40 hover:text-accent sm:px-3"
+                  title={lang === 'en' ? 'Download full PDF report' : 'Unduh laporan PDF full'}
+                >
+                  {pdfLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 text-accent" />
+                  )}
+                  <span className="max-[899px]:hidden">{lang === 'en' ? 'Full PDF' : 'Unduh PDF'}</span>
+                </Button>
+              )}
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleCopy}
+                className="rpt-hair flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-2.5 text-xs sm:px-3"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-risk-safe" /> : <Copy className="h-3.5 w-3.5" />}
+                <span className="max-[899px]:hidden">{copied ? t('drawer.copied') : t('drawer.copyLink')}</span>
+              </Button>
+
+              <span aria-hidden="true" className="mx-0.5 h-6 w-px" style={{ background: 'var(--rpt-line)' }} />
+
+              <button
+                type="button"
+                data-testid="audit-drawer-close"
+                aria-label={t('drawer.close')}
+                title={t('drawer.close')}
+                onClick={() => setAuditDrawer(false)}
+                className="rpt-focus flex h-11 w-11 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-accent/[0.10] hover:text-text-primary"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </header>
+
+          {/* ── Isi ── */}
+          <div className="overscroll-contain flex-1 overflow-y-auto">
+            <div
+              ref={reportRef}
+              className="mx-auto w-full min-w-0 max-w-[1400px] px-4 py-6 sm:px-8 sm:py-9"
+            >
+              {!isBattle && propertyA && (
+                <header className="rpt-hair-b mb-8 pb-6">
+                  <span className="rpt-eyebrow text-accent">{t('drawer.auditResult')}</span>
+                  {/* Alamat penuh dulu dipangkas paksa dengan `truncate`, jadi
+                      nama jalan sering hilang. Dua baris cukup untuk alamat
+                      Nominatim terpanjang sekalipun. */}
+                  <h1
+                    className="mt-2.5 max-w-[42ch] font-display text-[22px] font-bold leading-[1.2] tracking-tight text-text-primary sm:text-[28px]"
+                    title={propertyA.address}
+                  >
+                    {shortAddress(propertyA.address, 3)}
+                  </h1>
+                  <p className="rpt-legend mt-3 font-data text-[11px] tracking-wide text-text-muted">
+                    <span>
+                      {propertyA.lat?.toFixed(5)}, {propertyA.lon?.toFixed(5)}
+                    </span>
+                    <span>{propertyA.elevation ?? propertyA.geotech?.elevation_m} mdpl</span>
+                  </p>
+                </header>
+              )}
+
+              {isBattle ? (
+                <div className="mx-auto max-w-3xl">
+                  {battleReport ? (
+                    <SectionList
+                      markdown={battleReport}
+                      property={propertyA}
+                      isExpanded={(sec, idx) => idx < 2}
+                    />
+                  ) : battleReportLoading ? (
+                    <ReportSkeleton
+                      label={lang === 'en' ? 'Generating comparison report' : 'Menyusun laporan perbandingan'}
+                    />
+                  ) : (
+                    <p className="text-sm text-text-muted">{t('drawer.reportLoading')}</p>
+                  )}
+                </div>
+              ) : (
+                /* Dua kolom di layar lebar: bukti terukur di kiri, narasi di
+                   kanan. Satu kolom max-w-3xl membuat laporan jadi pita sempit
+                   dengan ruang kosong besar di kedua sisi monitor lebar. */
+                <div className="grid min-w-0 gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-0">
+                  <aside className="space-y-8 lg:sticky lg:top-6 lg:self-start lg:pr-12">
+                    <HeroScore
+                      score={drawerScore}
+                      ready={drawerScoreReady}
+                      status={propertyA?.audit_status}
+                    />
+                    <KeyParameters property={propertyA} />
+                    {propertyA?.data_quality?.fields && <DataCoverageSummary property={propertyA} />}
+                  </aside>
+
+                  <div
+                    className="min-w-0 lg:border-l lg:pl-12"
+                    style={{ borderColor: 'var(--rpt-line)' }}
+                  >
+                    <h2 className="rpt-eyebrow mb-1 hidden lg:block">{t('drawer.analysis')}</h2>
+
+                    {aiReport?.aiError && (
+                      <div
+                        className="mb-6 mt-4 flex items-start gap-3 rounded-xl border p-4"
+                        style={{
+                          borderColor: `${TONE_HEX.danger}40`,
+                          background: 'rgba(239, 68, 68, 0.06)',
+                        }}
+                      >
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-risk-danger" />
+                        <div>
+                          <p className="mb-1 text-[13px] font-semibold text-risk-danger">
+                            {t('drawer.aiUnavailable')}
+                          </p>
+                          <p className="text-[12px] leading-relaxed text-text-muted">
+                            {t('drawer.deterministicValid')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {aiReport?.detailedReport ? (
+                      <SectionList
+                        markdown={aiReport.detailedReport}
+                        property={propertyA}
+                        isExpanded={(sec, idx) =>
+                          idx < 3 ||
+                          sec.title.toLowerCase().includes('mitigasi') ||
+                          sec.title.toLowerCase().includes('rekomendasi')
+                        }
+                      />
+                    ) : aiReport?.reportLoading ? (
+                      <div className="pt-4">
+                        <ReportSkeleton label={lang === 'en' ? 'Generating report' : 'Menyusun laporan'} />
+                      </div>
+                    ) : !aiReport?.aiError ? (
+                      <p className="pt-4 text-sm text-text-muted">{t('drawer.reportLoading')}</p>
+                    ) : null}
+
+                    {aiReport?.microAnalysis && (
+                      <p className="rpt-hair-t mt-8 max-w-[74ch] pt-5 text-[12px] leading-relaxed text-text-muted">
+                        <span className="font-semibold text-text-secondary">{t('drawer.nearbyContext')}</span>
+                        {aiReport.microAnalysis}
+                      </p>
+                    )}
+
+                    {/* Satu-satunya disclaimer. Sebelumnya ada tiga blok
+                        peringatan bernada sama bertumpuk di bagian atas. */}
+                    <p className="mt-5 max-w-[74ch] text-[11.5px] leading-relaxed text-text-muted">
+                      {t('drawer.disclaimer')}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
