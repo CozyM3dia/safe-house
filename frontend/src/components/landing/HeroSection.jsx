@@ -122,7 +122,7 @@ export default function HeroSection({ t }) {
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/30" />
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500/30" />
               </div>
-            <div className="flex w-36 items-center justify-center gap-1.5 rounded border border-border bg-secondary/50 px-3 py-1 text-[9px] tracking-wide text-muted-foreground font-mono sm:w-72 sm:text-[10px]">
+            <div className="flex w-auto max-w-full items-center justify-center gap-1.5 rounded border border-border bg-secondary/50 px-3 py-1 text-[9px] tracking-wide text-muted-foreground font-mono sm:w-72 sm:text-[10px]">
                 <span className="text-accent/60">✦</span>
                 <span className="opacity-60">safehouse.web.id/app</span>
               </div>

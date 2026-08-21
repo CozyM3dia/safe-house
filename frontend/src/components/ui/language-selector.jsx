@@ -50,7 +50,7 @@ export function LanguageSelector({ className }) {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:px-3",
+          "flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-all duration-200 sm:h-8 sm:gap-2 sm:px-3",
           open 
             ? "border-accent/45 bg-white/10 text-text-primary shadow-[0_0_0_3px_rgba(212,149,106,0.08)]"
             : "border-white/10 bg-bg-elevated/80 text-text-secondary hover:border-accent/35 hover:bg-white/10 hover:text-text-primary"

@@ -53,7 +53,7 @@ const metrics = (p, t) => {
       decimals: 0,
       sub: elevation < 10 ? t('card.lowFlood') : t('card.standard'),
       icon: Droplets,
-      color: elevation < 10 ? '#ef4444' : '#a78bfa',
+      color: elevation < 10 ? '#ef4444' : '#d4956a',
       indicator: Math.min(100, (elevation / 200) * 100),
     },
   ];

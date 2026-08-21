@@ -74,7 +74,7 @@ export const useAppStore = create(
       // (armedSlot === 'B') supaya MapArea & AuditConfirmDialog tak berubah.
       armedSlot: null,
       selectingBattlePin: false,
-      pendingAudit: null, // { lat: number, lng: number, isBattlePin?: boolean }
+      pendingAudit: null, // { lat: number, lng: number, isBattlePin?: boolean, address?: string }
       auditDrawerOpen: false,
       leftPanelOpen: true,
       cmdPaletteOpen: false,
@@ -381,6 +381,11 @@ export const useAppStore = create(
               .catch((error) => {
                 if (abortController.signal.aborted) return;
                 if (get().currentAiAbortController !== abortController) return;
+                // Kegagalan lapis AI ditelan diam-diam sebelumnya, jadi audit
+                // yang jatuh ke narasi prosedural tak bisa dibedakan dari yang
+                // memang dilayani mesin. `warn`, bukan `error`: aplikasi pulih
+                // dengan hasil deterministik yang tetap sahih.
+                console.warn('AI narrative unavailable, using deterministic fallback', error);
                 const fallbackNarrative = generateProceduralNarrative(data, lang);
                 set((state) => ({
                   propertyA: state.propertyA

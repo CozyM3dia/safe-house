@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 import { useAppStore, targetSlotFor } from '../../store/useAppStore';
+import { OriginButton } from '@/components/ui/origin-button';
 
 /**
  * Konfirmasi titik sebelum audit dijalankan.
@@ -39,6 +40,151 @@ function splitCoordinate(value, axis, isEn) {
 
 const EASE_OUT = [0.16, 1, 0.3, 1];
 
+const STAGE_VARIANTS = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.24, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.18, ease: 'easeIn' },
+  },
+};
+
+const BACKDROP_VARIANTS = {
+  hidden: { opacity: 0, backdropFilter: 'blur(0px)' },
+  visible: {
+    opacity: 1,
+    backdropFilter: 'blur(10px)',
+    transition: { duration: 0.46, ease: EASE_OUT },
+  },
+  exit: {
+    opacity: 0,
+    backdropFilter: 'blur(0px)',
+    transition: { duration: 0.16, ease: 'easeIn' },
+  },
+};
+
+const CARD_VARIANTS = {
+  hidden: {
+    opacity: 0,
+    y: 24,
+    scale: 0.95,
+    rotateX: 5,
+    filter: 'blur(8px)',
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotateX: 0,
+    filter: 'blur(0px)',
+    transition: {
+      type: 'spring',
+      damping: 27,
+      stiffness: 310,
+      mass: 0.78,
+      delay: 0.04,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 12,
+    scale: 0.975,
+    rotateX: -2,
+    filter: 'blur(4px)',
+    transition: { duration: 0.2, ease: EASE_OUT },
+  },
+};
+
+const HEADER_VARIANTS = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.42, delay: 0.13, ease: EASE_OUT },
+  },
+  exit: { opacity: 0, y: 6, transition: { duration: 0.12 } },
+};
+
+const ADDRESS_VARIANTS = {
+  hidden: { opacity: 0, y: -5, height: 0 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    height: 'auto',
+    transition: { duration: 0.38, delay: 0.04, ease: EASE_OUT },
+  },
+  exit: {
+    opacity: 0,
+    y: -3,
+    height: 0,
+    transition: { duration: 0.16, ease: 'easeIn' },
+  },
+};
+
+const PLATE_VARIANTS = {
+  hidden: { opacity: 0, y: 12, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.52, delay: 0.2, ease: EASE_OUT },
+  },
+  exit: { opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.14 } },
+};
+
+const DETAIL_VARIANTS = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.48, delay: 0.3, ease: EASE_OUT },
+  },
+  exit: { opacity: 0, y: 8, transition: { duration: 0.12 } },
+};
+
+const FOOTER_VARIANTS = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.42, delay: 0.38, ease: EASE_OUT },
+  },
+  exit: { opacity: 0, y: 6, transition: { duration: 0.12 } },
+};
+
+const AXIS_VARIANTS = {
+  hidden: { opacity: 0, x: 0, y: 8, filter: 'blur(4px)' },
+  visible: (index) => ({
+    opacity: 1,
+    x: 0,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: { duration: 0.44, delay: 0.3 + index * 0.07, ease: EASE_OUT },
+  }),
+  exit: { opacity: 0, y: 5, transition: { duration: 0.1 } },
+};
+
+const LIST_VARIANTS = {
+  hidden: {},
+  visible: { transition: { delayChildren: 0.38, staggerChildren: 0.045 } },
+  exit: { transition: { staggerChildren: 0.02, staggerDirection: -1 } },
+};
+
+const LIST_ITEM_VARIANTS = {
+  hidden: { opacity: 0, x: -5 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.28, ease: EASE_OUT } },
+  exit: { opacity: 0, x: -3, transition: { duration: 0.1 } },
+};
+
+const ART_VARIANTS = {
+  hidden: { opacity: 0, scale: 1.04 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.7, delay: 0.23, ease: EASE_OUT } },
+  exit: { opacity: 0, scale: 1.02, transition: { duration: 0.14 } },
+};
+
 const draw = (still, delay, duration = 0.6) =>
   still
     ? { initial: false }
@@ -66,12 +212,13 @@ function Graticule() {
   }
 
   return (
-    <svg
+    <motion.svg
       aria-hidden="true"
       viewBox="0 0 320 112"
       preserveAspectRatio="xMidYMid slice"
       className="pointer-events-none absolute inset-0 h-full w-full"
       fill="none"
+      variants={ART_VARIANTS}
     >
       <defs>
         <radialGradient id="acd-fade" cx="50%" cy="50%" r="66%">
@@ -90,16 +237,27 @@ function Graticule() {
 
       <circle cx="160" cy="56" r="64" fill="url(#acd-glow)" />
       <g mask="url(#acd-mask)">{grid}</g>
-
-      {/* Kurung sudut — bingkai bidik, penanda bahwa ini bidang pembacaan. */}
-      <g stroke="hsl(var(--safe-accent))" strokeOpacity="0.45" strokeWidth="1.1" strokeLinecap="round">
-        <path d="M10 21V10h11" />
-        <path d="M310 21V10h-11" />
-        <path d="M10 91v11h11" />
-        <path d="M310 91v11h-11" />
-      </g>
-    </svg>
+    </motion.svg>
   );
+}
+
+/** Kurung sudut plat — bingkai bidik, penanda bahwa ini bidang pembacaan. */
+function CornerBrackets() {
+  const corners = [
+    'left-2.5 top-2.5 border-l border-t rounded-tl-[3px]',
+    'right-2.5 top-2.5 border-r border-t rounded-tr-[3px]',
+    'left-2.5 bottom-2.5 border-b border-l rounded-bl-[3px]',
+    'right-2.5 bottom-2.5 border-b border-r rounded-br-[3px]',
+  ];
+  return corners.map((corner) => (
+    <motion.span
+      key={corner}
+      aria-hidden="true"
+      className={`pointer-events-none absolute h-2.5 w-2.5 ${corner}`}
+      style={{ borderColor: 'hsl(var(--safe-accent) / 0.45)' }}
+      variants={ART_VARIANTS}
+    />
+  ));
 }
 
 /**
@@ -109,13 +267,14 @@ function Graticule() {
  */
 function SeamReticle({ still }) {
   return (
-    <svg
+    <motion.svg
       aria-hidden="true"
       viewBox="0 0 40 40"
-      className="pointer-events-none absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2"
+      className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-8 w-8 -translate-x-1/2 -translate-y-1/2 min-[392px]:relative min-[392px]:left-auto min-[392px]:top-auto min-[392px]:col-start-2 min-[392px]:row-start-1 min-[392px]:self-center min-[392px]:justify-self-center min-[392px]:translate-x-0 min-[392px]:translate-y-0"
       fill="none"
       stroke="hsl(var(--safe-accent))"
       strokeLinecap="round"
+      variants={ART_VARIANTS}
     >
       <motion.circle cx="20" cy="20" r="11" strokeWidth="1" strokeOpacity="0.5" {...draw(still, 0.24, 0.7)} />
       <motion.circle cx="20" cy="20" r="3.2" strokeWidth="1.2" strokeOpacity="0.85" {...draw(still, 0.4, 0.4)} />
@@ -132,7 +291,7 @@ function SeamReticle({ still }) {
           {...draw(still, 0.46, 0.32)}
         />
       ))}
-    </svg>
+    </motion.svg>
   );
 }
 
@@ -190,7 +349,10 @@ export function AuditConfirmDialog() {
     ? slot === 'B'
       ? isEn ? 'Site B' : 'Lokasi B'
       : isEn ? 'Site A' : 'Lokasi A'
-    : null;
+      : null;
+  const address = typeof pendingAudit?.address === 'string'
+    ? pendingAudit.address.trim()
+    : '';
 
   const axes = pendingAudit
     ? [
@@ -207,31 +369,33 @@ export function AuditConfirmDialog() {
       ]
     : [];
 
-  const rise = reduceMotion
-    ? { initial: false }
-    : {
-        initial: { opacity: 0, y: 8, filter: 'blur(5px)' },
-        animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
-      };
+  const motionInitial = reduceMotion ? false : 'hidden';
 
   return createPortal(
     <AnimatePresence>
       {pendingAudit && (
-        <div className="acd safe-inset-x fixed inset-y-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
+        <motion.div
+          className="acd safe-inset-x fixed inset-y-0 z-[9999] flex items-center justify-center p-3 sm:p-4"
+          initial={motionInitial}
+          animate="visible"
+          exit="exit"
+          variants={STAGE_VARIANTS}
+          style={{ perspective: 1200 }}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            initial={motionInitial}
+            animate="visible"
+            exit="exit"
+            variants={BACKDROP_VARIANTS}
             onClick={cancelPendingAudit}
             className="absolute inset-0 bg-bg/80 backdrop-blur-md"
           />
 
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.965, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 10 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            initial={motionInitial}
+            animate="visible"
+            exit="exit"
+            variants={CARD_VARIANTS}
             role="dialog"
             aria-modal="true"
             aria-labelledby="audit-confirm-title"
@@ -245,14 +409,19 @@ export function AuditConfirmDialog() {
 
             <div className="relative z-10 flex min-h-0 flex-col">
               {/* ── Kepala ── */}
-              <div className="flex items-start gap-3 px-5 pt-4 sm:px-6 sm:pt-5">
+              <motion.div
+                initial={motionInitial}
+                animate="visible"
+                exit="exit"
+                variants={HEADER_VARIANTS}
+                className="flex items-start gap-3 px-5 pt-4 sm:px-6 sm:pt-5"
+              >
                 <div className="min-w-0 flex-1">
                   {/* Penanda slot hanya relevan di mode bandingkan; di mode
                       audit barisnya hilang sama sekali. */}
                   {slotLabel && (
                     <motion.span
-                      {...rise}
-                      transition={{ duration: 0.4, delay: 0.04, ease: EASE_OUT }}
+                      variants={HEADER_VARIANTS}
                       className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[0.10] py-0.5 pl-2 pr-2.5 font-data text-[10px] font-semibold uppercase tracking-[0.14em] text-accent"
                     >
                       <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
@@ -261,8 +430,7 @@ export function AuditConfirmDialog() {
                   )}
                   <motion.h3
                     id="audit-confirm-title"
-                    {...rise}
-                    transition={{ duration: 0.45, delay: 0.06, ease: EASE_OUT }}
+                    variants={HEADER_VARIANTS}
                     className="acd-title text-[27px] leading-[1.06] text-text-primary sm:text-[30px]"
                   >
                     Audit{' '}
@@ -271,6 +439,22 @@ export function AuditConfirmDialog() {
                     </span>
                     ?
                   </motion.h3>
+
+                  <AnimatePresence initial={false}>
+                    {address && (
+                      <motion.div
+                        initial={motionInitial}
+                        animate="visible"
+                        exit="exit"
+                        variants={ADDRESS_VARIANTS}
+                        className="acd-address mt-3 flex min-w-0 items-start gap-2 overflow-hidden rounded-lg px-2.5 py-2"
+                        title={address}
+                      >
+                        <MapPin aria-hidden="true" className="acd-address-icon mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span className="line-clamp-2 min-w-0">{address}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <button
@@ -281,53 +465,70 @@ export function AuditConfirmDialog() {
                 >
                   <X className="h-4 w-4" />
                 </button>
-              </div>
+              </motion.div>
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 pt-4 sm:px-6">
                 {/* ── Plat koordinat ── */}
                 <motion.div
-                  {...rise}
-                  transition={{ duration: 0.5, delay: 0.1, ease: EASE_OUT }}
+                  variants={PLATE_VARIANTS}
+                  initial={motionInitial}
+                  animate="visible"
+                  exit="exit"
                   className="acd-plate relative overflow-hidden rounded-2xl"
                 >
                   <Graticule />
+                  <CornerBrackets />
 
-                  <div className="relative grid grid-cols-1 min-[392px]:grid-cols-2">
+                  <div className="relative grid grid-cols-1 min-[392px]:grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)]">
                     <SeamReticle still={Boolean(reduceMotion)} />
                     {axes.map((axis, index) => (
-                      <div
+                      <motion.div
                         key={axis.key}
+                        custom={index}
+                        variants={AXIS_VARIANTS}
+                        initial={motionInitial}
+                        animate="visible"
+                        exit="exit"
                         className={
                           index === 1
-                            ? 'acd-hair border-t px-4 py-3 min-[392px]:border-l min-[392px]:border-t-0 sm:px-5 sm:py-4'
-                            : 'px-4 py-3 sm:px-5 sm:py-4'
+                            ? 'acd-hair relative z-10 col-start-1 flex flex-col items-center border-t px-3 py-3 text-center min-[392px]:col-start-3 min-[392px]:border-t-0 sm:px-5 sm:py-4'
+                            : 'relative z-10 col-start-1 flex flex-col items-center px-3 py-3 text-center min-[392px]:col-start-1 sm:px-5 sm:py-4'
                         }
                       >
-                        <span className="acd-eyebrow block text-[9.5px]">{axis.label}</span>
-                        <span className="mt-2 flex items-baseline gap-1 font-data text-[19px] font-semibold leading-none tabular-nums tracking-tight text-text-primary sm:text-[21px]">
+                        <span className="acd-eyebrow block text-center text-[9.5px]">{axis.label}</span>
+                        <span className="mt-2 flex whitespace-nowrap items-baseline justify-center font-data text-[18px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-text-primary sm:text-[20px]">
                           {axis.number}
-                          <span className="text-[12px] font-medium tracking-normal text-accent">
-                            °<span className="ml-[0.15em]">{axis.hemisphere}</span>
+                          <span className="text-[11px] font-medium tracking-normal text-accent sm:text-[12px]">
+                            °<span className="ml-[0.3em]">{axis.hemisphere}</span>
                           </span>
                         </span>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </motion.div>
 
                 {/* ── Apa yang dihitung ── */}
                 <motion.div
-                  {...rise}
-                  transition={{ duration: 0.5, delay: 0.16, ease: EASE_OUT }}
+                  variants={DETAIL_VARIANTS}
+                  initial={motionInitial}
+                  animate="visible"
+                  exit="exit"
                   className="mt-5"
                 >
                   <span className="acd-eyebrow">
                     {isEn ? 'This audit computes' : 'Audit ini menghitung'}
                   </span>
-                  <ul className="acd-hair mt-2.5 grid grid-cols-2 gap-x-4 border-t">
+                  <motion.ul
+                    variants={LIST_VARIANTS}
+                    initial={motionInitial}
+                    animate="visible"
+                    exit="exit"
+                    className="acd-hair mt-2.5 grid grid-cols-2 gap-x-4 border-t"
+                  >
                     {(isEn ? COMPUTES.en : COMPUTES.id).map((item) => (
-                      <li
+                      <motion.li
                         key={item}
+                        variants={LIST_ITEM_VARIANTS}
                         className="acd-hair flex items-center gap-2 border-b py-2 text-[12px] leading-tight text-text-secondary"
                       >
                         <span
@@ -335,40 +536,44 @@ export function AuditConfirmDialog() {
                           className="h-[3px] w-[3px] shrink-0 rotate-45 bg-accent/70"
                         />
                         <span className="min-w-0">{item}</span>
-                      </li>
+                      </motion.li>
                     ))}
-                  </ul>
+                  </motion.ul>
                 </motion.div>
               </div>
 
               {/* ── Aksi ── */}
-              <div className="acd-hair flex shrink-0 items-center gap-2.5 border-t px-5 py-4 sm:px-6">
-                <button
-                  type="button"
+              <motion.div
+                variants={FOOTER_VARIANTS}
+                initial={motionInitial}
+                animate="visible"
+                exit="exit"
+                className="acd-hair flex shrink-0 items-center gap-2 border-t px-5 py-3.5 sm:px-6"
+              >
+                <OriginButton
                   onClick={cancelPendingAudit}
-                  className="acd-ghost acd-focus flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-text-secondary transition-colors hover:text-text-primary"
+                  className="acd-ghost acd-focus h-11 rounded-[10px] px-3.5 text-[12.5px] text-text-secondary sm:h-10"
                 >
                   {isEn ? 'Cancel' : 'Batal'}
-                  <kbd className="acd-kbd hidden rounded px-1.5 py-1 font-data text-[9px] font-semibold uppercase leading-none tracking-wider text-text-muted sm:inline-block">
+                  <kbd className="acd-kbd hidden rounded px-1.5 py-[3px] font-data text-[9px] font-semibold uppercase leading-none tracking-wider sm:inline-block">
                     Esc
                   </kbd>
-                </button>
+                </OriginButton>
 
-                <button
-                  type="button"
+                <OriginButton
                   ref={confirmButtonRef}
                   onClick={confirmPendingAudit}
-                  className="acd-cta acd-focus flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl px-5 text-[13px] font-bold"
+                  className="acd-cta acd-focus h-11 flex-1 rounded-[10px] px-4 text-[12.5px] font-bold sm:h-10"
                 >
                   {isEn ? 'Start audit' : 'Mulai audit'}
-                  <kbd className="acd-kbd-cta hidden rounded px-1.5 py-1 font-data text-[10px] font-semibold leading-none sm:inline-block">
+                  <kbd className="acd-kbd-cta hidden rounded px-1.5 py-[3px] font-data text-[9.5px] font-semibold leading-none sm:inline-block">
                     &#8629;
                   </kbd>
-                </button>
-              </div>
+                </OriginButton>
+              </motion.div>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>,
     document.body
