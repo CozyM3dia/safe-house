@@ -512,9 +512,25 @@ const translations = {
     id: 'UJI LAPANGAN · ENGINE DETERMINISTIK',
     en: 'FIELD TEST · DETERMINISTIC ENGINE',
   },
-  'validasi.title': {
-    id: 'Engine yang sama, diuji di tempat kejadian.',
-    en: 'The same engine, tested where it happened.',
+  'validasi.titleLine1': {
+    id: 'Engine yang sama,',
+    en: 'The same engine,',
+  },
+  'validasi.titleEm': {
+    id: 'diuji',
+    en: 'tested',
+  },
+  'validasi.titleLine2': {
+    id: ' di tempat kejadian.',
+    en: ' where it happened.',
+  },
+  'validasi.scoreRecap': {
+    id: 'REKAP KECOCOKAN',
+    en: 'MATCH RECAP',
+  },
+  'validasi.specimens': {
+    id: 'SPESIMEN TITIK',
+    en: 'SITE SPECIMENS',
   },
   'validasi.subtitle': {
     id: 'Parameter di titik kejadian bencana terdokumentasi dihitung ulang saat halaman ini dibuka — bukan angka simpanan. Hasilnya dicocokkan dengan fakta lapangan, apa adanya.',
