@@ -167,6 +167,23 @@ export function ChatbotFab() {
     return subscribeToViewport(({ height }) => setViewportHeight(height || getViewportHeight()));
   }, [expanded]);
 
+  // Atribusi peta wajib selalu terbaca (lisensi OSM/Stadia). Dock AI menutupi
+  // pojok kanan-bawah, jadi posisi dock dipublikasikan lewat data-atribut body
+  // dan CSS mengangkat atribusi di atasnya.
+  useEffect(() => {
+    const state = expanded
+      ? 'panel'
+      : mapLayersOpen
+        ? 'hidden'
+        : chatDockDismissed
+          ? 'fab'
+          : 'dock';
+    document.body.dataset.chatDock = state;
+    return () => {
+      delete document.body.dataset.chatDock;
+    };
+  }, [expanded, mapLayersOpen, chatDockDismissed]);
+
   const send = async (text) => {
     const userMsg = text || input.trim();
     if (!userMsg || loading) return;

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Red+Hat+Display:wght@400;500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Red+Hat+Display:wght@400;500;600;700;800&display=swap');
 @import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
@@ -56,6 +56,7 @@
     overflow: hidden;
   }
 
+  .zzz-probe-base { color: green; }
   html {
     min-width: 320px;
     background: hsl(var(--safe-bg));
@@ -103,7 +104,7 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
-  /* Scrollbar — warm tint */
+  /* Scrollbar â€” warm tint */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -233,6 +234,18 @@
     border: 1px solid rgba(255, 210, 170, 0.10) !important;
   }
 
+  /* Dock AI menutupi pojok kanan-bawah peta; atribusi lisensi tetap wajib
+     terbaca, jadi ia diangkat di atas dock mengikuti data-chat-dock di body.
+     Targetnya sudut kontainer Leaflet (.leaflet-bottom) karena kontrol
+     atribusi sendiri hanya position:relative di dalamnya. */
+  body[data-chat-dock='dock'] .leaflet-bottom.leaflet-right {
+    bottom: calc(12rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  body[data-chat-dock='fab'] .leaflet-bottom.leaflet-right {
+    bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
+  }
+
   .leaflet-control-attribution a {
     color: #d4956a !important;
   }
@@ -251,7 +264,7 @@
 }
 
 @layer components {
-  /* Glass panel — warm dark frosted */
+  /* Glass panel â€” warm dark frosted */
   .glass {
     background: rgba(22, 14, 8, 0.86);
     backdrop-filter: blur(24px) saturate(150%);
@@ -285,7 +298,7 @@
     -webkit-mask-image: linear-gradient(to bottom, black, transparent 72%);
   }
 
-  /* Double-Bezel (Doppelrand) — machined hardware card enclosure */
+  /* Double-Bezel (Doppelrand) â€” machined hardware card enclosure */
   .bezel-outer {
     background: rgba(255, 210, 170, 0.03);
     border: 1px solid rgba(255, 210, 170, 0.08);
@@ -346,7 +359,7 @@
     @apply font-data font-medium tabular-nums tracking-tight;
   }
 
-  /* Seismogram hero — digambar sekali saat panel kosong muncul, tidak
+  /* Seismogram hero â€” digambar sekali saat panel kosong muncul, tidak
      berulang, agar terbaca sebagai pembacaan alat, bukan hiasan bergerak. */
   .seismic-trace {
     stroke-dasharray: 1000;
@@ -415,7 +428,7 @@
   }
 }
 
-/* ── Markdown AI Report — warm dark theme ──────────────── */
+/* â”€â”€ Markdown AI Report â€” warm dark theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .prose-safe {
   color: #c4a87e;
   font-size: 14px;
@@ -552,7 +565,7 @@
   border-bottom: none;
 }
 
-/* ── Risk zone tooltip — dark glass ─────────────────────── */
+/* â”€â”€ Risk zone tooltip â€” dark glass â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .risk-tooltip {
   background: rgba(15, 11, 8, 0.92) !important;
   border: 1px solid rgba(255, 210, 170, 0.16) !important;
@@ -590,11 +603,11 @@
   min-width: 100%;
 }
 
-/* Leaflet — latar dan tipografinya diseragamkan dengan chrome produk.
+/* Leaflet â€” latar dan tipografinya diseragamkan dengan chrome produk.
    Aturan ini harus berada di luar `@layer base`: leaflet.css di-import tanpa
    layer, dan gaya tak-berlayer mengalahkan lapisan base. Di dalam base,
    deklarasi ini tidak pernah menang dan peta tetap memakai #ddd bawaan
-   Leaflet — abu terang yang menyilaukan di tema gelap. */
+   Leaflet â€” abu terang yang menyilaukan di tema gelap. */
 .leaflet-container {
   background: #c9d7d0;
   /* leaflet.css berakhir di lembar gaya terpisah yang di-append belakangan,
@@ -731,7 +744,7 @@ html[data-theme='light'] .risk-tooltip::before {
   border-top-color: rgba(249, 244, 236, 0.98) !important;
 }
 
-/* ── Landing Page — SaaS Hero Redesign ─────── */
+/* â”€â”€ Landing Page â€” SaaS Hero Redesign â”€â”€â”€â”€â”€â”€â”€ */
 html.landing-scroll,
 html.landing-scroll body,
 html.landing-scroll #root {
@@ -834,7 +847,7 @@ html.document-scroll .report-page {
   filter: blur(0);
 }
 
-/* Hero page-load entrance — staggered via animation-delay */
+/* Hero page-load entrance â€” staggered via animation-delay */
 @keyframes hero-fade-up {
   from { opacity: 0; transform: translateY(20px); filter: blur(6px); }
   to { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -923,7 +936,7 @@ html.document-scroll .report-page {
   }
 }
 
-/* ── Leaflet Animated Overlays ─────────────────────────── */
+/* â”€â”€ Leaflet Animated Overlays â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes leaflet-pulse {
   0% {
     stroke-opacity: 0.35;
@@ -957,12 +970,12 @@ html.document-scroll .report-page {
   transition: filter 0.3s ease, mix-blend-mode 0.3s ease;
 }
 
-/* ══ Laporan audit — permukaan instrumen ═══════════════════════════════
+/* â•â• Laporan audit â€” permukaan instrumen â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    Laporan lama menumpuk puluhan nilai `white/x` yang di mode terang
    diratakan paksa oleh selector global `[class*='bg-white/']`, sehingga
    seluruh tingkatan lapisan runtuh jadi satu cokelat datar. Token di
    bawah dipisah per tema supaya garis, rel, dan permukaan tetap punya
-   hierarki di dua mode — dan supaya ukuran font tidak lagi dipakai
+   hierarki di dua mode â€” dan supaya ukuran font tidak lagi dipakai
    sebagai satu-satunya alat hierarki. */
 .rpt {
   --rpt-line: rgba(255, 210, 170, 0.11);
@@ -1103,7 +1116,7 @@ html[data-theme='light'] .rpt-well {
   padding: 10px 14px;
 }
 
-/* ══ Dialog konfirmasi audit — "kartu fix" instrumen survei ═══════════
+/* â•â• Dialog konfirmasi audit â€” "kartu fix" instrumen survei â•â•â•â•â•â•â•â•â•â•â•
    Versi lama menumpuk tiga kotak tanpa irama, dengan reticle SVG yang
    nyaris tak terlihat sehingga terbaca sebagai artefak, dan tombol utama
    berupa slab oranye pekat berpendar. Di sini plat koordinat dijadikan
@@ -1150,7 +1163,7 @@ html[data-theme='light'] .acd {
 }
 
 /* Butiran halus supaya bidang kartu punya permukaan, bukan warna datar.
-   Dibuat inline sebagai feTurbulence — tanpa permintaan jaringan. */
+   Dibuat inline sebagai feTurbulence â€” tanpa permintaan jaringan. */
 .acd-grain::after {
   content: '';
   position: absolute;
@@ -1196,7 +1209,7 @@ html[data-theme='light'] .acd-plate {
   color: hsl(var(--safe-accent));
 }
 
-/* Judul memakai Instrument Serif — sudah ada di stack merek (dipakai
+/* Judul memakai Instrument Serif â€” sudah ada di stack merek (dipakai
    halaman landing), jadi tak ada font baru yang diunduh. Serif di sini
    memberi momen ini nada editorial, bukan nada peringatan sistem. */
 .acd-title {
@@ -1211,46 +1224,43 @@ html[data-theme='light'] .acd-plate {
   color: inherit;
 }
 
-/* Tombol utama: gradien vertikal tipis dengan sorot dalam di tepi atas —
-   permukaan yang punya arah cahaya, bukan slab warna penuh berpendar. */
+/* Tombol utama */
 .acd-cta {
-  --ob-fill: var(--acd-cta-ink);
-  --ob-fill-fg: var(--acd-cta-fg);
   color: var(--acd-cta-fg);
   background: linear-gradient(180deg, hsl(var(--safe-accent)) 0%, hsl(var(--safe-accent-hover)) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.30),
     inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-    0 8px 20px -12px rgba(212, 149, 106, 0.85);
+    0 4px 14px -4px rgba(212, 149, 106, 0.6);
   transition:
-    color 240ms cubic-bezier(0.16, 1, 0.3, 1) 90ms,
-    box-shadow 200ms cubic-bezier(0.25, 0, 0, 1);
+    filter 150ms ease,
+    box-shadow 150ms ease,
+    transform 100ms ease;
 }
 
 .acd-cta:hover {
+  filter: brightness(1.08);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.38),
     inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-    0 12px 26px -12px rgba(212, 149, 106, 1);
+    0 6px 18px -4px rgba(212, 149, 106, 0.85);
 }
 
-/* Tinta menutupi seluruh bidang tombol, jadi latar di bawahnya tak lagi perlu
-   ikut berubah saat hover — perubahan ganda justru berkedip di sudut yang
-   belum tersapu lingkaran. Yang tersisa cuma penegasan garis tepi. */
+/* Tombol sekunder (Batal) */
 .acd-ghost {
-  /* Tinta tombol sekunder sengaja netral, bukan aksen: begitu Batal terisi
-     warna merek, ia jadi sekuat tombol utama dan hierarki dua tombol ini
-     hilang persis di saat pengguna sedang ragu. */
-  --ob-fill: var(--acd-ink-quiet);
-  --ob-fill-fg: hsl(var(--safe-text-primary));
+  color: hsl(var(--safe-text-secondary));
   background: var(--acd-fill);
   border: 1px solid var(--acd-line);
   transition:
-    color 240ms cubic-bezier(0.16, 1, 0.3, 1) 90ms,
-    border-color 180ms cubic-bezier(0.25, 0, 0, 1);
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    transform 100ms ease;
 }
 
 .acd-ghost:hover {
+  background: var(--acd-fill-2);
+  color: hsl(var(--safe-text-primary));
   border-color: var(--acd-line-strong);
 }
 
@@ -1260,7 +1270,7 @@ html[data-theme='light'] .acd-plate {
 }
 
 /* Chip papan tik di atas tombol aksen butuh gelap hangat, bukan hitam
-   murni — hitam murni memutus rantai warna merek di satu-satunya tombol
+   murni â€” hitam murni memutus rantai warna merek di satu-satunya tombol
    yang paling sering dilihat. */
 .acd {
   --acd-kbd-cta: rgba(58, 32, 14, 0.20);
@@ -1292,8 +1302,8 @@ html[data-theme='light'] .acd-cta.acd-focus:focus-visible {
     0 10px 24px -12px rgba(122, 76, 40, 0.6);
 }
 
-/* ══ Lantai tipografi ponsel ═══════════════════════════════════════════
-   Audit mobile menemukan 59 elemen teks di bawah 11px — label metrik inti
+/* â•â• Lantai tipografi ponsel â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Audit mobile menemukan 59 elemen teks di bawah 11px â€” label metrik inti
    panel kiri di 9px, petunjuk komposer chat di 8px, langkah alur di 9,5px.
    Ukuran itu lahir dari layar desktop dan ikut terbawa ke ponsel, tempat
    jarak baca lebih jauh relatif terhadap ukuran fisik piksel.
@@ -1301,7 +1311,7 @@ html[data-theme='light'] .acd-cta.acd-focus:focus-visible {
    Aturannya ditulis sekali di sini, bukan sebagai ~150 suntingan kelas
    responsif yang tersebar di 20 berkas dan pasti melenceng seiring waktu:
    di bawah 640px, tidak ada teks yang lebih kecil dari 11px. Skala halus
-   di desktop dibiarkan utuh — varian `sm:` dikompilasi ke min-width 640px
+   di desktop dibiarkan utuh â€” varian `sm:` dikompilasi ke min-width 640px
    sehingga tak pernah bertabrakan dengan media query ini. */
 @media (max-width: 639px) {
   .text-\[8px\],
@@ -1318,5 +1328,510 @@ html[data-theme='light'] .acd-cta.acd-focus:focus-visible {
   .rpt-eyebrow,
   .acd-eyebrow {
     font-size: 11px;
+  }
+}
+
+
+/* ══ Laporan perbandingan — "bangku pembanding" ═════════════════════
+   Versi lama merender battle report sebagai markdown polos di kolom
+   selebar 48rem: tabel enam baris, tiga paragraf, tidak ada satu pun
+   isyarat visual tentang siapa unggul di parameter mana. Pembaca harus
+   membandingkan angka satu per satu dengan mata.
+
+   Di sini perbandingan dijadikan instrumen, memakai kosakata visual yang
+   sudah dipakai laporan audit satu tapak (sumur, jarum, zona band, garis
+   rambut) supaya keduanya terbaca sebagai satu alat — bukan dua produk.
+   Tidak ada keluarga warna baru: pemenang diwarnai band skornya sendiri,
+   dan hijau hanya dipakai untuk menandai sisi yang unggul per parameter. */
+.btl {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+/* ── Arena: dua plinth + jahitan tengah ── */
+.btl-arena {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--rpt-line);
+  border-radius: 16px;
+  background: var(--rpt-fill);
+}
+
+@media (min-width: 720px) {
+  .btl-arena {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+}
+
+/* Graticule tipis memberi arena tekstur alat ukur tanpa menambah warna;
+   maskernya meredup ke bawah supaya tak pernah bersaing dengan angka. */
+.btl-graticule {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--rpt-line-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rpt-line-soft) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(130% 105% at 50% 0%, #000 8%, transparent 76%);
+  mask-image: radial-gradient(130% 105% at 50% 0%, #000 8%, transparent 76%);
+}
+
+.btl-plinth {
+  position: relative;
+  isolation: isolate;
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+
+@media (min-width: 720px) {
+  .btl-plinth {
+    padding: 1.75rem 1.75rem 2rem;
+  }
+}
+
+/* Pemenang tidak diberi warna baru: cahaya dan garis atasnya mengambil
+   warna band skornya sendiri, jadi "unggul" dan "seberapa aman" tetap
+   satu pesan, bukan dua sinyal yang bisa saling bertentangan. */
+.btl-plinth--lead::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    92% 68% at 50% 0%,
+    color-mix(in srgb, var(--btl-tone) 13%, transparent),
+    transparent 72%
+  );
+}
+
+.btl-plinth--lead::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--btl-tone), transparent);
+}
+
+/* Huruf sisi dicetak sebagai penanda plat, bukan hiasan: cukup besar untuk
+   memberi kedalaman, cukup redup untuk tak pernah terbaca sebagai teks. */
+.btl-plinth-ghost {
+  position: absolute;
+  right: 0.75rem;
+  bottom: -0.28em;
+  z-index: -1;
+  font-size: 10rem;
+  font-weight: 700;
+  line-height: 0.68;
+  letter-spacing: -0.04em;
+  color: hsl(var(--safe-text-primary));
+  opacity: 0.045;
+  user-select: none;
+}
+
+.btl-swatch {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--btl-tone);
+}
+
+.btl-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--rpt-line);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.btl-tag--muted {
+  color: hsl(var(--safe-text-muted));
+}
+
+/* ── Jahitan: arah dan besar selisih skor ── */
+.btl-seam {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0 1.25rem;
+}
+
+.btl-seam-rule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rpt-line-strong), transparent);
+}
+
+@media (min-width: 720px) {
+  .btl-seam {
+    flex-direction: column;
+    padding: 1.75rem 0.25rem;
+  }
+
+  .btl-seam-rule {
+    width: 1px;
+    height: auto;
+    background: linear-gradient(180deg, transparent, var(--rpt-line-strong), transparent);
+  }
+}
+
+.btl-crest {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--rpt-line);
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  background: var(--rpt-well);
+  white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  .btl-crest {
+    flex-direction: column;
+    gap: 0.15rem;
+    border-radius: 14px;
+    padding: 0.7rem 0.6rem;
+  }
+}
+
+.btl-crest-num {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--btl-tone);
+}
+
+.btl-crest-cap {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: hsl(var(--safe-text-muted));
+}
+
+.btl-crest-arrow {
+  display: flex;
+  color: var(--btl-tone);
+}
+
+/* ── Putusan: narasi AI dipisah dari dasar deterministik ──
+   Pemisahan ini bukan tata letak semata. Mesin S.A.F.E yang menghitung
+   angka; AI hanya menarasikannya. Dua blok dengan permukaan berbeda
+   membuat batas itu terbaca tanpa perlu dijelaskan. */
+.btl-verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--rpt-line);
+  border-radius: 14px;
+  background: var(--rpt-fill);
+}
+
+@media (min-width: 860px) {
+  .btl-verdict {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  }
+}
+
+.btl-verdict-ai,
+.btl-verdict-engine {
+  padding: 1.25rem 1.35rem;
+}
+
+.btl-verdict-engine {
+  border-top: 1px solid var(--rpt-line);
+  background: var(--rpt-well);
+}
+
+@media (min-width: 860px) {
+  .btl-verdict-engine {
+    border-top: 0;
+    border-left: 1px solid var(--rpt-line);
+  }
+}
+
+.btl-lede {
+  margin-top: 0.65rem;
+  max-width: 64ch;
+  font-size: 14px;
+  line-height: 1.72;
+  color: hsl(var(--safe-text-primary));
+}
+
+.btl-provenance {
+  margin-top: 0.8rem;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: hsl(var(--safe-text-muted));
+}
+
+/* ── Matriks diferensial ── */
+.btl-matrix-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rpt-line);
+}
+
+.btl-matrix-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 10.5px;
+  color: hsl(var(--safe-text-muted));
+}
+
+.btl-legend-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #10b981;
+}
+
+/* Ponsel menumpuk label di atas dan menaruh nilai A / jarum / nilai B pada
+   satu baris; desktop meratakannya jadi empat kolom seperti lembar ukur. */
+.btl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas:
+    'label label label'
+    'a gauge b';
+  align-items: center;
+  gap: 0.4rem 0.7rem;
+  padding: 0.85rem 0;
+}
+
+@media (min-width: 640px) {
+  .btl-row {
+    grid-template-columns: minmax(0, 1fr) 5.5rem 10rem 5.5rem;
+    grid-template-areas: 'label a gauge b';
+    gap: 0 0.9rem;
+    padding: 0.75rem 0;
+  }
+}
+
+/* Di layar lebar, kolom kosong di ujung kanan membuat rel jarum jatuh tepat
+   di sumbu tengah halaman — sumbu yang sama dengan jahitan antara dua plinth
+   skor di atasnya. Tanpa itu, garis "setara" bergeser ke kanan dan matriks
+   berhenti terbaca sebagai kelanjutan arena. */
+@media (min-width: 900px) {
+  .btl-row {
+    grid-template-columns: minmax(0, 1fr) 5.5rem 10rem 5.5rem minmax(0, 1fr);
+    grid-template-areas: 'label a gauge b .';
+  }
+}
+
+.btl-row--head {
+  padding-top: 0.9rem;
+  padding-bottom: 0.5rem;
+}
+
+.btl-rows > * + * {
+  border-top: 1px solid var(--rpt-line-soft);
+}
+
+.btl-cell-label {
+  grid-area: label;
+  min-width: 0;
+}
+
+.btl-label {
+  font-size: 12.5px;
+  color: hsl(var(--safe-text-secondary));
+}
+
+.btl-unit {
+  font-size: 11px;
+  color: hsl(var(--safe-text-muted));
+}
+
+.btl-cell-val {
+  min-width: 0;
+}
+
+.btl-cell-val > * {
+  display: block;
+}
+
+.btl-note {
+  margin-top: 0.1rem;
+  overflow: hidden;
+  font-size: 10.5px;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: hsl(var(--safe-text-muted));
+}
+
+/* Jarum simpangan: garis tengah adalah "setara", panjang batang adalah
+   selisih yang sudah dinormalkan terhadap toleransi parameter. */
+.btl-gauge {
+  grid-area: gauge;
+  min-width: 84px;
+}
+
+.btl-gauge-well {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--rpt-well);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme='light'] .btl-gauge-well {
+  box-shadow: inset 0 1px 2px rgba(91, 67, 48, 0.16);
+}
+
+/* Parameter tanpa data digambar berarsir, bukan dibiarkan kosong: rel
+   kosong terbaca sebagai "setara", dan itu kebohongan yang mahal. */
+.btl-gauge-well--void {
+  /* Arsirnya memakai garis kuat, bukan garis lembut: di mode terang latar
+     sumur sendiri sudah setara garis lembut, sehingga arsir yang lebih tipis
+     hilang sama sekali dan barisnya kembali terbaca sebagai "setara". */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--rpt-line-strong) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.btl-gauge-axis {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--rpt-line-strong);
+}
+
+.btl-gauge-fill {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  border-radius: 999px;
+  transform-origin: var(--btl-origin, left);
+  animation: btl-deflect 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.btl-gauge-fill[data-side='a'] {
+  background: linear-gradient(to left, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.62));
+}
+
+.btl-gauge-fill[data-side='b'] {
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.62));
+}
+
+.btl-gauge-fill::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  border-radius: 999px;
+  background: #10b981;
+}
+
+.btl-gauge-fill[data-side='a']::after {
+  left: 0;
+}
+
+.btl-gauge-fill[data-side='b']::after {
+  right: 0;
+}
+
+.btl-gauge-even {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--rpt-line-strong);
+}
+
+.btl-void-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  font-size: 11px;
+  line-height: 1.6;
+  color: hsl(var(--safe-text-muted));
+}
+
+.btl-sections {
+  border-top: 1px solid var(--rpt-line);
+}
+
+@keyframes btl-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes btl-deflect {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.btl-in {
+  animation: btl-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btl-in,
+  .btl-gauge-fill {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Lantai tipografi ponsel (lihat blok di atas) juga berlaku di sini. */
+@media (max-width: 639px) {
+  .btl-note,
+  .btl-unit,
+  .btl-provenance,
+  .btl-crest-cap,
+  .btl-tag,
+  .btl-matrix-legend,
+  .btl-void-note {
+    font-size: 11px;
+  }
+
+  .btl-plinth-ghost {
+    font-size: 7rem;
   }
 }

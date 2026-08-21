@@ -25,6 +25,7 @@ export const COMPARE_ROWS = [
   {
     key: 'score',
     label: 'Skor SAFE',
+    labelEn: 'S.A.F.E score',
     higherIsBetter: true,
     tolerance: 3,
     read: (p) => num(p?.safe_score),
@@ -35,6 +36,7 @@ export const COMPARE_ROWS = [
   {
     key: 'vs30',
     label: 'Vs30',
+    labelEn: 'Vs30',
     higherIsBetter: true,
     tolerance: 15,
     read: (p) => num(p?.geotech?.vs30),
@@ -45,6 +47,7 @@ export const COMPARE_ROWS = [
   {
     key: 'pga',
     label: 'PGA permukaan',
+    labelEn: 'Surface PGA',
     higherIsBetter: false,
     tolerance: 0.02,
     read: (p) => num(p?.geotech?.pga_surface),
@@ -55,6 +58,7 @@ export const COMPARE_ROWS = [
   {
     key: 'fs',
     label: 'FS likuefaksi',
+    labelEn: 'Liquefaction FS',
     higherIsBetter: true,
     tolerance: 0.15,
     read: (p) => num(p?.geotech?.fs),
@@ -65,6 +69,7 @@ export const COMPARE_ROWS = [
   {
     key: 'fault',
     label: 'Jarak sesar',
+    labelEn: 'Fault distance',
     higherIsBetter: true,
     tolerance: 2,
     read: (p) => num(p?.geotech?.nearest_fault?.distance_km),
@@ -75,6 +80,7 @@ export const COMPARE_ROWS = [
   {
     key: 'flood',
     label: 'Bahaya banjir',
+    labelEn: 'Flood hazard',
     higherIsBetter: false,
     tolerance: 10,
     // InaRISK bisa gagal dihubungi. `flood_known === false` berarti "server
@@ -120,6 +126,7 @@ function compareRow(row, a, b) {
   return {
     key: row.key,
     label: row.label,
+    labelEn: row.labelEn,
     unit: row.unit,
     aValue,
     bValue,
@@ -140,7 +147,7 @@ function compareRow(row, a, b) {
  * Selisih dinormalkan terhadap toleransi masing-masing parameter supaya
  * "PGA beda 0.05 g" dan "Vs30 beda 90 m/s" bisa dibandingkan besarannya.
  */
-function buildReason(rows, winner) {
+function buildReason(rows, winner, lang) {
   const drivers = rows
     .filter((r) => r.key !== 'score' && r.known && r.better !== 'equal')
     .map((r) => ({ ...r, weight: Math.abs(r.delta) / r.tolerance }))
@@ -149,22 +156,31 @@ function buildReason(rows, winner) {
 
   if (drivers.length === 0) return null;
 
-  const nameOf = (side) => `Lokasi ${side}`;
+  const isEn = lang === 'en';
+  const nameOf = (side) => (isEn ? `Site ${side}` : `Lokasi ${side}`);
   // Label dipakai apa adanya: Vs30, PGA, dan FS adalah akronim baku SNI —
   // menurunkannya jadi huruf kecil justru merusak istilah.
-  const phrase = (r) => `${r.label} (${r.aDisplay} vs ${r.bDisplay}${r.unit ? ` ${r.unit}` : ''})`;
+  const phrase = (r) =>
+    `${isEn ? r.labelEn || r.label : r.label} (${r.aDisplay} vs ${r.bDisplay}${r.unit ? ` ${r.unit}` : ''})`;
+  const and = isEn ? ' and ' : ' dan ';
 
   const aligned = drivers.filter((r) => r.better === winner);
   const opposed = drivers.filter((r) => r.better !== winner);
 
   if (winner && aligned.length > 0 && opposed.length > 0) {
-    return `${nameOf(winner)} unggul pada ${aligned.map(phrase).join(' dan ')}, meski ${nameOf(opposed[0].better)} lebih baik pada ${phrase(opposed[0])}.`;
+    return isEn
+      ? `${nameOf(winner)} leads on ${aligned.map(phrase).join(and)}, although ${nameOf(opposed[0].better)} is better on ${phrase(opposed[0])}.`
+      : `${nameOf(winner)} unggul pada ${aligned.map(phrase).join(and)}, meski ${nameOf(opposed[0].better)} lebih baik pada ${phrase(opposed[0])}.`;
   }
   if (winner && aligned.length > 0) {
-    return `${nameOf(winner)} unggul terutama pada ${aligned.map(phrase).join(' dan ')}.`;
+    return isEn
+      ? `${nameOf(winner)} leads mainly on ${aligned.map(phrase).join(and)}.`
+      : `${nameOf(winner)} unggul terutama pada ${aligned.map(phrase).join(and)}.`;
   }
   // Skor setara atau tak ada pemenang: sebutkan saja perbedaan terbesar.
-  return `Perbedaan terbesar ada pada ${drivers.map(phrase).join(' dan ')}.`;
+  return isEn
+    ? `The largest differences are in ${drivers.map(phrase).join(and)}.`
+    : `Perbedaan terbesar ada pada ${drivers.map(phrase).join(and)}.`;
 }
 
 /**
@@ -179,7 +195,7 @@ function buildReason(rows, winner) {
  *   unknownLabels: string[],
  * }}
  */
-export function compareAudits(propertyA, propertyB) {
+export function compareAudits(propertyA, propertyB, lang = 'id') {
   const rows = COMPARE_ROWS.map((row) => compareRow(row, propertyA, propertyB));
   const scoreRow = rows.find((r) => r.key === 'score');
 
@@ -208,7 +224,7 @@ export function compareAudits(propertyA, propertyB) {
     scoreA,
     scoreB,
     scoreDelta: scoreRow.delta,
-    reason: buildReason(rows, winner),
+    reason: buildReason(rows, winner, lang),
     unknownLabels: rows.filter((r) => !r.known).map((r) => r.label),
   };
 }

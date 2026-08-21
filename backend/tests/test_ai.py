@@ -381,7 +381,10 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
             return httpx.Response(401, json={"error": "unauthorized"})
 
         client = _mock_client(handler)
-        with patch.dict(os.environ, ENV_PRIMARY):
+        # OPENROUTER_API_KEY dinonaktifkan agar test tetap hermetik walau
+        # variabel tersebut tersedia di lingkungan mesin.
+        env = {**ENV_PRIMARY, "OPENROUTER_API_KEY": ""}
+        with patch.dict(os.environ, env):
             with self.assertRaises(ai.AIServiceError) as ctx:
                 await ai.generate_narrative(
                     sample_audit(), client=client, db_module=_mock_db()
@@ -392,7 +395,8 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
 
     # T9: API key kosong mengembalikan 503 tanpa kontak upstream
     async def test_missing_key_fails_without_contacting_upstream(self):
-        with patch.dict(os.environ, {"GEMINI_API_KEY": ""}):
+        env = {"GEMINI_API_KEY": "", "OPENROUTER_API_KEY": ""}
+        with patch.dict(os.environ, env):
             with self.assertRaises(ai.AIServiceError) as raised:
                 await ai.generate_narrative(sample_audit())
         self.assertEqual(503, raised.exception.status_code)
@@ -702,8 +706,117 @@ class GeminiContractTests(unittest.IsolatedAsyncioTestCase):
     # T18: Failed source does not appear as citation — tested in GroundingTests
 
 
-# ── Status endpoint logic test (no bson dependency) ─────────────────
+# ── OpenRouter fallback tier tests ──────────────────────────────────
 
+ENV_OPENROUTER = {
+    **ENV_PRIMARY,
+    "OPENROUTER_API_KEY": "or-test-key",
+    "OPENROUTER_MODEL": "google/gemini-2.5-flash",
+}
+
+
+def openrouter_response(payload: dict) -> httpx.Response:
+    return httpx.Response(
+        200,
+        json={"choices": [{"message": {"content": json.dumps(payload)}}]},
+    )
+
+
+class OpenRouterFallbackTests(unittest.IsolatedAsyncioTestCase):
+    async def test_openrouter_fallback_after_gemini_exhausted(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            if "generativelanguage.googleapis.com" in str(request.url):
+                return httpx.Response(500, json={"error": "down"})
+            return openrouter_response(VALID_NARRATIVE_RAW)
+
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_OPENROUTER):
+            result = await ai.generate_narrative(
+                sample_audit(), client=client, db_module=_mock_db()
+            )
+        await client.aclose()
+
+        self.assertEqual("openrouter/google/gemini-2.5-flash", result.metadata.model)
+        self.assertEqual("fallback", result.metadata.delivery_mode)
+        self.assertEqual("OpenRouter (google/gemini-2.5-flash)", result.generated_by)
+        self.assertIn("450", result.geo_stability_explanation)
+
+    async def test_openrouter_request_contract(self):
+        seen: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if "generativelanguage.googleapis.com" in str(request.url):
+                return httpx.Response(503, json={"error": "down"})
+            import json as _json
+
+            seen["auth"] = request.headers.get("authorization")
+            seen["body"] = _json.loads(request.content.decode("utf-8"))
+            return openrouter_response(VALID_NARRATIVE_RAW)
+
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_OPENROUTER):
+            await ai.generate_narrative(
+                sample_audit(), client=client, db_module=_mock_db()
+            )
+        await client.aclose()
+
+        self.assertEqual("Bearer or-test-key", seen["auth"])
+        body = seen["body"]
+        self.assertEqual("google/gemini-2.5-flash", body["model"])
+        roles = [message["role"] for message in body["messages"]]
+        self.assertEqual(["system", "user", "user"], roles)
+        self.assertTrue(body["messages"][0]["content"].startswith("Anda adalah S.A.F.E House"))
+        # Schema wajib ikut tertanam di pesan: provider Stealth mengabaikan
+        # response_format, jadi salinan inline satu-satunya kontrak yang pasti
+        # sampai ke model.
+        self.assertIn("detailed_report", body["messages"][-1]["content"])
+        schema = body["response_format"]["json_schema"]
+        self.assertTrue(schema["strict"])
+        self.assertIn("detailed_report", schema["schema"]["properties"])
+
+    async def test_openrouter_rescues_gemini_auth_failure(self):
+        gemini_calls = 0
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal gemini_calls
+            if "generativelanguage.googleapis.com" in str(request.url):
+                gemini_calls += 1
+                return httpx.Response(401, json={"error": "unauthorized"})
+            return openrouter_response(VALID_NARRATIVE_RAW)
+
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_OPENROUTER):
+            result = await ai.generate_narrative(
+                sample_audit(), client=client, db_module=_mock_db()
+            )
+        await client.aclose()
+
+        # Kunci Gemini ditolak -> chain Gemini dihentikan, OpenRouter menyelamatkan.
+        self.assertEqual(1, gemini_calls)
+        self.assertEqual("fallback", result.metadata.delivery_mode)
+        self.assertTrue(result.metadata.model.startswith("openrouter/"))
+
+    async def test_all_providers_fail_raises_service_error(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(500, json={"error": "down"})
+
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_OPENROUTER):
+            with self.assertRaises(ai.AIServiceError):
+                await ai.generate_narrative(
+                    sample_audit(), client=client, db_module=_mock_db(None)
+                )
+        await client.aclose()
+
+    async def test_openrouter_parser_strips_markdown_fence(self):
+        fenced = "```json\n" + json.dumps(VALID_NARRATIVE_RAW) + "\n```"
+        parsed = ai._parse_openrouter_json(
+            {"choices": [{"message": {"content": fenced}}]}
+        )
+        self.assertEqual(VALID_NARRATIVE_RAW["generated_by"], parsed["generated_by"])
+
+
+# ── Status endpoint logic test (no bson dependency) ─────────────────
 class StatusEndpointTests(unittest.TestCase):
     # T27: Status endpoint tidak membocorkan key
     def test_status_response_never_contains_key(self):

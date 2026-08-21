@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { MapPin, X } from 'lucide-react';
 import { useAppStore, targetSlotFor } from '../../store/useAppStore';
-import { OriginButton } from '@/components/ui/origin-button';
 
 /**
  * Konfirmasi titik sebelum audit dijalankan.
@@ -270,7 +269,13 @@ function SeamReticle({ still }) {
     <motion.svg
       aria-hidden="true"
       viewBox="0 0 40 40"
-      className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-8 w-8 -translate-x-1/2 -translate-y-1/2 min-[392px]:relative min-[392px]:left-auto min-[392px]:top-auto min-[392px]:col-start-2 min-[392px]:row-start-1 min-[392px]:self-center min-[392px]:justify-self-center min-[392px]:translate-x-0 min-[392px]:translate-y-0"
+      // Pemusatan tidak boleh lewat `-translate-x/y-1/2`: Tailwind v3 menaruh
+      // keduanya di properti `transform`, properti yang sama yang ditulis
+      // Motion untuk `scale` di ART_VARIANTS. Transform inline itu menang,
+      // pemusatannya hilang, dan reticle jatuh menimpa label "Bujur" di layar
+      // sempit. Margin negatif setengah ukuran kotak (h-8/w-8 = 32px → 16px)
+      // memberi hasil yang sama tanpa menyentuh `transform`.
+      className="pointer-events-none absolute left-1/2 top-1/2 z-0 -ml-4 -mt-4 h-8 w-8 min-[392px]:relative min-[392px]:left-auto min-[392px]:top-auto min-[392px]:col-start-2 min-[392px]:row-start-1 min-[392px]:ml-0 min-[392px]:mt-0 min-[392px]:self-center min-[392px]:justify-self-center"
       fill="none"
       stroke="hsl(var(--safe-accent))"
       strokeLinecap="round"
@@ -550,26 +555,30 @@ export function AuditConfirmDialog() {
                 exit="exit"
                 className="acd-hair flex shrink-0 items-center gap-2 border-t px-5 py-3.5 sm:px-6"
               >
-                <OriginButton
+                <button
+                  type="button"
                   onClick={cancelPendingAudit}
-                  className="acd-ghost acd-focus h-11 rounded-[10px] px-3.5 text-[12.5px] text-text-secondary sm:h-10"
+                  aria-label={isEn ? 'Cancel' : 'Batal'}
+                  className="acd-ghost acd-focus flex h-11 cursor-pointer select-none items-center justify-center gap-2 rounded-[10px] px-4 text-[12.5px] font-semibold transition-all active:scale-[0.98] sm:h-10"
                 >
-                  {isEn ? 'Cancel' : 'Batal'}
+                  <span>{isEn ? 'Cancel' : 'Batal'}</span>
                   <kbd className="acd-kbd hidden rounded px-1.5 py-[3px] font-data text-[9px] font-semibold uppercase leading-none tracking-wider sm:inline-block">
                     Esc
                   </kbd>
-                </OriginButton>
+                </button>
 
-                <OriginButton
+                <button
                   ref={confirmButtonRef}
+                  type="button"
                   onClick={confirmPendingAudit}
-                  className="acd-cta acd-focus h-11 flex-1 rounded-[10px] px-4 text-[12.5px] font-bold sm:h-10"
+                  aria-label={isEn ? 'Start audit' : 'Mulai audit'}
+                  className="acd-cta acd-focus flex h-11 flex-1 cursor-pointer select-none items-center justify-center gap-2 rounded-[10px] px-4 text-[12.5px] font-bold transition-all active:scale-[0.98] sm:h-10"
                 >
-                  {isEn ? 'Start audit' : 'Mulai audit'}
+                  <span>{isEn ? 'Start audit' : 'Mulai audit'}</span>
                   <kbd className="acd-kbd-cta hidden rounded px-1.5 py-[3px] font-data text-[9.5px] font-semibold leading-none sm:inline-block">
                     &#8629;
                   </kbd>
-                </OriginButton>
+                </button>
               </motion.div>
             </div>
           </motion.div>

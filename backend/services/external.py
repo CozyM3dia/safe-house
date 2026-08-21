@@ -20,6 +20,7 @@ import asyncio
 import logging
 import os
 import re
+import time
 from typing import Any, Optional
 
 import httpx
@@ -58,6 +59,14 @@ OFFICIAL_FAULT_GEOMETRY_PARAMS = {
 
 _shared_external_clients: dict[asyncio.AbstractEventLoop, httpx.AsyncClient] = {}
 _cached_fault_geometry: Optional[dict] = None
+# Cache negatif: endpoint BNPB yang lambat/gagal tidak boleh membuat SETIAP
+# audit membayar ulang timeout penuh. Selama TTL berlaku, gagal cepat tanpa
+# menyentuh jaringan — geometri sesar adalah layer opsional (masuk
+# optional_missing), bukan keputusan tolak/terima.
+_fault_geometry_failed_at: float = 0.0
+_FAULT_GEOMETRY_NEGATIVE_TTL_S = float(
+    os.getenv("FAULT_GEOMETRY_NEGATIVE_TTL_SECONDS", "300")
+)
 
 # Header standar agar server ArcGIS / OSM tidak memblokir IP cloud
 DEFAULT_HEADERS = {
@@ -221,19 +230,28 @@ async def _inarisk_layer(
 
 async def _official_fault_geometry(client: httpx.AsyncClient) -> dict:
     """Fetch the versioned PuSGeN 2024 official fault polylines with memory caching."""
-    global _cached_fault_geometry
+    global _cached_fault_geometry, _fault_geometry_failed_at
     if _cached_fault_geometry is not None:
         return _cached_fault_geometry
 
-    r = await client.get(
-        OFFICIAL_FAULT_GEOMETRY_URL,
-        params=OFFICIAL_FAULT_GEOMETRY_PARAMS,
-        timeout=FAULT_GEOMETRY_TIMEOUT_S,
-    )
-    r.raise_for_status()
-    payload = r.json()
-    if payload.get("type") != "FeatureCollection" or not isinstance(payload.get("features"), list):
-        raise RuntimeError("Geometri sesar resmi bukan GeoJSON FeatureCollection")
+    if time.monotonic() - _fault_geometry_failed_at < _FAULT_GEOMETRY_NEGATIVE_TTL_S:
+        raise RuntimeError(
+            "Geometri sesar resmi baru saja gagal diambil; menunggu TTL negatif"
+        )
+
+    try:
+        r = await client.get(
+            OFFICIAL_FAULT_GEOMETRY_URL,
+            params=OFFICIAL_FAULT_GEOMETRY_PARAMS,
+            timeout=FAULT_GEOMETRY_TIMEOUT_S,
+        )
+        r.raise_for_status()
+        payload = r.json()
+        if payload.get("type") != "FeatureCollection" or not isinstance(payload.get("features"), list):
+            raise RuntimeError("Geometri sesar resmi bukan GeoJSON FeatureCollection")
+    except Exception:
+        _fault_geometry_failed_at = time.monotonic()
+        raise
     _cached_fault_geometry = payload
     return payload
 

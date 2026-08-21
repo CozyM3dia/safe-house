@@ -370,6 +370,18 @@ async function run() {
     assert.ok(reportGeometry.left >= -1 && reportGeometry.right <= viewports.phoneLandscape.width + 1, 'shared report main has horizontal overflow');
     assert.ok(reportGeometry.scrollHeight > viewports.phoneLandscape.height, 'shared report should remain vertically scrollable');
 
+    await goto(page, '/validasi', viewports.phoneNarrow);
+    await assertResponsive(page, 'validation narrow phone 320', ['header', 'h1']);
+
+    await goto(page, '/validasi', viewports.phone);
+    await assertResponsive(page, 'validation phone 390', ['header', 'h1']);
+
+    await goto(page, '/validasi', viewports.tablet);
+    await assertResponsive(page, 'validation tablet 768', ['header', 'h1']);
+
+    await goto(page, '/validasi', viewports.desktop);
+    await assertResponsive(page, 'validation desktop 1440', ['header', 'h1']);
+
     await goto(page, '/', viewports.desktop);
     await page.waitForFunction(() => document.querySelector('header')?.getBoundingClientRect().top >= -1);
     await assertResponsive(page, 'landing desktop', ['header', 'h1']);

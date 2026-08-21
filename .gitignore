@@ -82,4 +82,9 @@ frontend-old/
 freellmapi/
 scratch/
 
+# Harness bisect sementara: konfigurasi vite terpisah plus hasil build-nya,
+# dipakai untuk mempersempit regresi dan tidak jadi bagian aplikasi.
+frontend/bisect/
+frontend/bisect-dist/
+
 .vercel
