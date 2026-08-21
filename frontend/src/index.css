@@ -1102,3 +1102,221 @@ html[data-theme='light'] .rpt-well {
   border-bottom: 0;
   padding: 10px 14px;
 }
+
+/* ══ Dialog konfirmasi audit — "kartu fix" instrumen survei ═══════════
+   Versi lama menumpuk tiga kotak tanpa irama, dengan reticle SVG yang
+   nyaris tak terlihat sehingga terbaca sebagai artefak, dan tombol utama
+   berupa slab oranye pekat berpendar. Di sini plat koordinat dijadikan
+   satu-satunya tokoh: graticule + reticle yang benar-benar terbaca,
+   angka lintang/bujur bergaya pembacaan alat, sisanya ditahan. */
+.acd {
+  --acd-line: rgba(255, 210, 170, 0.11);
+  --acd-line-strong: rgba(255, 210, 170, 0.24);
+  --acd-fill: rgba(255, 210, 170, 0.04);
+  --acd-fill-2: rgba(255, 210, 170, 0.085);
+  --acd-well: rgba(0, 0, 0, 0.34);
+  --acd-card: #17110c;
+  --acd-edge: rgba(255, 210, 170, 0.10);
+  --acd-kbd: rgba(255, 210, 170, 0.10);
+  --acd-grid: rgba(255, 210, 170, 0.16);
+  --acd-cta-fg: hsl(var(--safe-bg));
+  --acd-cta-ink: hsl(25 46% 45%);
+  --acd-ink-quiet: rgba(255, 210, 170, 0.15);
+  --acd-shadow: 0 34px 90px rgba(0, 0, 0, 0.76), 0 2px 10px rgba(0, 0, 0, 0.4);
+  --acd-grain: 0.05;
+}
+
+html[data-theme='light'] .acd {
+  --acd-line: rgba(91, 67, 48, 0.16);
+  --acd-line-strong: rgba(91, 67, 48, 0.34);
+  --acd-fill: rgba(91, 67, 48, 0.045);
+  --acd-fill-2: rgba(91, 67, 48, 0.09);
+  --acd-well: rgba(91, 67, 48, 0.07);
+  --acd-card: #fbf5ed;
+  --acd-edge: rgba(91, 67, 48, 0.18);
+  --acd-kbd: rgba(91, 67, 48, 0.10);
+  --acd-grid: rgba(91, 67, 48, 0.20);
+  --acd-cta-fg: #fdf8f1;
+  --acd-cta-ink: hsl(24 54% 24%);
+  --acd-ink-quiet: rgba(91, 67, 48, 0.13);
+  --acd-shadow: 0 28px 72px rgba(74, 54, 38, 0.26), 0 2px 8px rgba(74, 54, 38, 0.12);
+  --acd-grain: 0.035;
+}
+
+.acd-card {
+  background: var(--acd-card);
+  border: 1px solid var(--acd-edge);
+  box-shadow: var(--acd-shadow);
+}
+
+/* Butiran halus supaya bidang kartu punya permukaan, bukan warna datar.
+   Dibuat inline sebagai feTurbulence — tanpa permintaan jaringan. */
+.acd-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--acd-grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.acd-hair {
+  border-color: var(--acd-line);
+}
+
+.acd-plate {
+  background: var(--acd-well);
+  border: 1px solid var(--acd-line);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.24);
+}
+
+html[data-theme='light'] .acd-plate {
+  box-shadow: inset 0 1px 3px rgba(91, 67, 48, 0.12);
+}
+
+.acd-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: hsl(var(--safe-text-muted));
+}
+
+.acd-address {
+  border: 1px solid var(--acd-line);
+  background: var(--acd-fill);
+  color: hsl(var(--safe-text-secondary));
+  font-size: 11px;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+}
+
+.acd-address-icon {
+  color: hsl(var(--safe-accent));
+}
+
+/* Judul memakai Instrument Serif — sudah ada di stack merek (dipakai
+   halaman landing), jadi tak ada font baru yang diunduh. Serif di sini
+   memberi momen ini nada editorial, bukan nada peringatan sistem. */
+.acd-title {
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+.acd-kbd,
+.acd-kbd-cta {
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  color: inherit;
+}
+
+/* Tombol utama: gradien vertikal tipis dengan sorot dalam di tepi atas —
+   permukaan yang punya arah cahaya, bukan slab warna penuh berpendar. */
+.acd-cta {
+  --ob-fill: var(--acd-cta-ink);
+  --ob-fill-fg: var(--acd-cta-fg);
+  color: var(--acd-cta-fg);
+  background: linear-gradient(180deg, hsl(var(--safe-accent)) 0%, hsl(var(--safe-accent-hover)) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 8px 20px -12px rgba(212, 149, 106, 0.85);
+  transition:
+    color 240ms cubic-bezier(0.16, 1, 0.3, 1) 90ms,
+    box-shadow 200ms cubic-bezier(0.25, 0, 0, 1);
+}
+
+.acd-cta:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 12px 26px -12px rgba(212, 149, 106, 1);
+}
+
+/* Tinta menutupi seluruh bidang tombol, jadi latar di bawahnya tak lagi perlu
+   ikut berubah saat hover — perubahan ganda justru berkedip di sudut yang
+   belum tersapu lingkaran. Yang tersisa cuma penegasan garis tepi. */
+.acd-ghost {
+  /* Tinta tombol sekunder sengaja netral, bukan aksen: begitu Batal terisi
+     warna merek, ia jadi sekuat tombol utama dan hierarki dua tombol ini
+     hilang persis di saat pengguna sedang ragu. */
+  --ob-fill: var(--acd-ink-quiet);
+  --ob-fill-fg: hsl(var(--safe-text-primary));
+  background: var(--acd-fill);
+  border: 1px solid var(--acd-line);
+  transition:
+    color 240ms cubic-bezier(0.16, 1, 0.3, 1) 90ms,
+    border-color 180ms cubic-bezier(0.25, 0, 0, 1);
+}
+
+.acd-ghost:hover {
+  border-color: var(--acd-line-strong);
+}
+
+.acd-focus:focus-visible {
+  outline: 2px solid hsl(var(--safe-accent));
+  outline-offset: 2px;
+}
+
+/* Chip papan tik di atas tombol aksen butuh gelap hangat, bukan hitam
+   murni — hitam murni memutus rantai warna merek di satu-satunya tombol
+   yang paling sering dilihat. */
+.acd {
+  --acd-kbd-cta: rgba(58, 32, 14, 0.20);
+}
+
+html[data-theme='light'] .acd {
+  --acd-kbd-cta: rgba(255, 246, 236, 0.22);
+}
+
+
+/* Tombol utama menerima fokus otomatis saat dialog terbuka, jadi cincin
+   fokusnya terlihat setiap kali. Outline + offset menyisakan celah warna
+   kartu yang terbaca sebagai garis hitam tebal; cincin ganda box-shadow
+   menempel ke bentuk tombol dan jauh lebih tenang. */
+.acd-cta.acd-focus:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    0 0 0 3px hsl(var(--safe-accent) / 0.32),
+    0 10px 24px -12px rgba(212, 149, 106, 0.85);
+}
+
+/* Aksen mode terang adalah cokelat pekat, jadi halo fokus beropasitas sama
+   nyaris hilang di atas kertas. Alfanya dinaikkan khusus di tema ini. */
+html[data-theme='light'] .acd-cta.acd-focus:focus-visible {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 0 0 3px hsl(var(--safe-accent) / 0.45),
+    0 10px 24px -12px rgba(122, 76, 40, 0.6);
+}
+
+/* ══ Lantai tipografi ponsel ═══════════════════════════════════════════
+   Audit mobile menemukan 59 elemen teks di bawah 11px — label metrik inti
+   panel kiri di 9px, petunjuk komposer chat di 8px, langkah alur di 9,5px.
+   Ukuran itu lahir dari layar desktop dan ikut terbawa ke ponsel, tempat
+   jarak baca lebih jauh relatif terhadap ukuran fisik piksel.
+
+   Aturannya ditulis sekali di sini, bukan sebagai ~150 suntingan kelas
+   responsif yang tersebar di 20 berkas dan pasti melenceng seiring waktu:
+   di bawah 640px, tidak ada teks yang lebih kecil dari 11px. Skala halus
+   di desktop dibiarkan utuh — varian `sm:` dikompilasi ke min-width 640px
+   sehingga tak pernah bertabrakan dengan media query ini. */
+@media (max-width: 639px) {
+  .text-\[8px\],
+  .text-\[8\.5px\],
+  .text-\[9px\],
+  .text-\[9\.5px\],
+  .text-\[10px\],
+  .text-\[10\.5px\],
+  .text-\[7px\],
+  .text-\[7\.5px\] {
+    font-size: 11px;
+  }
+
+  .rpt-eyebrow,
+  .acd-eyebrow {
+    font-size: 11px;
+  }
+}

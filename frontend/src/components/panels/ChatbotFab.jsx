@@ -3,13 +3,11 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Activity,
   ArrowUpRight,
-  Bot,
   ChevronDown,
   FileText,
   MapPin,
   RotateCcw,
   Send,
-  ShieldCheck,
   X,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -78,9 +76,14 @@ function ContextLabel({ propertyA, lang }) {
   const label = getLocationLabel(propertyA, fallback);
 
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-[10px] text-text-muted">
+    // `truncate` di kotak inline-flex tidak menahan lebarnya sendiri:
+    // overflow-nya mengkleping anak, tapi kotaknya tetap tumbuh mengikuti isi.
+    // Alamat panjang jadi meluber 305px di dalam induk 216px dan menembus tepi
+    // layar. `max-w-full` mengunci lebarnya ke induk, `min-w-0` di anak yang
+    // membuat elipsisnya benar-benar bekerja.
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 text-[10px] text-text-muted">
       <MapPin className="h-3 w-3 shrink-0 text-accent/80" aria-hidden="true" />
-      <span className="truncate">{label}</span>
+      <span className="min-w-0 truncate">{label}</span>
     </span>
   );
 }
@@ -249,7 +252,11 @@ export function ChatbotFab() {
           aria-label={t('chat.open')}
           title={t('chat.open')}
           data-chat-dock-mark="safehouse"
-          className="safe-fixed-bottom fixed bottom-6 right-4 z-[35] flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/40 bg-bg-surface/95 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.36),0_0_15px_rgba(212,149,106,0.18)] backdrop-blur-xl transition-all hover:scale-105 hover:border-accent/70 hover:bg-accent/15 hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_24px_rgba(212,149,106,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
+          className={cn(
+            'safe-fixed-bottom fixed bottom-6 right-4 z-[35] flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/40 bg-bg-surface/95 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.36),0_0_15px_rgba(212,149,106,0.18)] backdrop-blur-xl transition-all hover:scale-105 hover:border-accent/70 hover:bg-accent/15 hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_24px_rgba(212,149,106,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:bottom-6 sm:right-6 sm:h-16 sm:w-16',
+            // Sama seperti dok: peluncur pun menutupi sudut kanan-bawah panel.
+            leftPanelOpen && 'max-[639px]:hidden'
+          )}
         >
           <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-9 w-9 object-contain sm:h-10 sm:w-10" />
           {hasMessages && (
@@ -269,19 +276,21 @@ export function ChatbotFab() {
           animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
           exit={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(4px)' }}
           transition={{ type: 'spring', damping: 30, stiffness: 200, mass: 1 }}
+          // Kartu dok tetap bisa diklik di mana saja untuk kenyamanan tetikus,
+          // tapi ia tidak lagi `role="button"`: di dalamnya ada tombol tutup,
+          // dan kontrol interaktif bersarang membuat pembaca layar mengumumkan
+          // seluruh kartu sebagai satu tombol sekaligus menyembunyikan tombol
+          // di dalamnya. Kontrol "buka" yang sebenarnya kini melekat pada
+          // ubin logo — satu-satunya bagian dok yang tampil di semua keadaan,
+          // termasuk saat menciut jadi ikon di ponsel.
           onClick={() => setExpanded(true)}
-          role="button"
-          tabIndex={0}
-          aria-label={t('chat.open')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setExpanded(true);
-            }
-          }}
           className={cn(
             'safe-fixed-bottom group fixed left-3 right-3 z-[35] cursor-pointer select-none sm:left-auto sm:right-5 sm:w-[440px]',
-            leftPanelOpen && 'max-[639px]:left-auto max-[639px]:right-4 max-[639px]:w-14'
+            // Di ponsel, dok mengambang di atas panel kiri dan menutupi kartu
+            // metrik di sudut kanan-bawah. Panel adalah permukaan utama saat
+            // terbuka, jadi dok mundur — sama seperti perlakuan yang sudah ada
+            // untuk panel layer peta.
+            leftPanelOpen && 'max-[639px]:hidden'
           )}
         >
           <div className="bezel-outer">
@@ -294,12 +303,19 @@ export function ChatbotFab() {
                   'flex w-full min-w-0 items-center gap-3',
                   leftPanelOpen && 'max-[639px]:justify-center'
                 )}>
-                  <div
+                  <button
+                    type="button"
                     data-chat-dock-mark="safehouse"
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 transition-all duration-200 group-hover:border-accent/55 group-hover:bg-accent/20 group-hover:shadow-[0_0_12px_rgba(212,149,106,0.25)]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpanded(true);
+                    }}
+                    aria-label={t('chat.open')}
+                    title={t('chat.open')}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 transition-all duration-200 group-hover:border-accent/55 group-hover:bg-accent/20 group-hover:shadow-[0_0_12px_rgba(212,149,106,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
                   >
                     <img src="/safe-icon.png" alt="" aria-hidden="true" className="h-7 w-7 object-contain" />
-                  </div>
+                  </button>
 
                   <div className={cn(
                     'min-w-0 flex-1',
@@ -336,7 +352,9 @@ export function ChatbotFab() {
                       }}
                       aria-label={t('chat.close')}
                       title={t('chat.close')}
-                      className="flex h-9 w-9 min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.035] text-text-muted transition-all hover:border-white/20 hover:bg-white/10 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+                      // 36px berada di bawah ambang 40px yang dipakai suite
+                      // responsif proyek ini untuk kontrol yang terlihat.
+                      className="flex h-10 w-10 min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.035] text-text-muted transition-all hover:border-white/20 hover:bg-white/10 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -415,7 +433,7 @@ export function ChatbotFab() {
               onClick={() => setExpanded(false)}
               aria-label={t('chat.minimize')}
               title={t('chat.minimize')}
-              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:min-h-[40px] sm:min-w-[40px]"
             >
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -427,7 +445,7 @@ export function ChatbotFab() {
               }}
               aria-label={t('chat.close')}
               title={t('chat.close')}
-              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-white/8 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:min-h-[40px] sm:min-w-[40px]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -608,7 +626,7 @@ export function ChatbotFab() {
               aria-label={t('chat.send')}
               disabled={!input.trim() || loading}
               className={cn(
-                'flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+                'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 sm:min-h-[40px] sm:min-w-[40px]',
                 input.trim()
                   ? 'bg-accent text-bg hover:bg-accent-hover'
                   : 'bg-white/[0.04] text-text-muted'
@@ -853,7 +871,7 @@ function MessageBubble({ role, content, citations, followUps, onFollowUpClick, l
                 onClick={() => !loading && onFollowUpClick(question)}
                 disabled={loading}
                 aria-label={question}
-                className="group flex min-h-[40px] items-center justify-between gap-2 rounded-lg border border-white/8 bg-white/[0.018] px-3 py-2 text-left text-[10px] text-text-secondary transition-colors hover:border-accent/35 hover:bg-accent/[0.05] hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+                className="group flex min-h-[44px] items-center justify-between gap-2 rounded-lg border border-white/8 bg-white/[0.018] px-3 py-2 text-left text-[10px] text-text-secondary transition-colors hover:border-accent/35 hover:bg-accent/[0.05] hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
               >
                 <span className="min-w-0 flex-1">{question}</span>
                 <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-accent/60 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />

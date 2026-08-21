@@ -63,10 +63,21 @@ export function TopBar() {
         </button>
 
         <div className="flex min-w-0 items-center gap-2.5">
+          {/* Di 320px, wordmark render selebar 94px sementara klaster kiri dan
+              kanan sama-sama `shrink-0`: totalnya 342px di dalam 302px, dan
+              tombol "Buka opsi tampilan" terdorong 39px keluar layar — tak
+              bisa disentuh sama sekali. Lambang perisai mengembalikan ~62px,
+              cukup untuk memuat semua kontrol sekaligus memberi kolom cari
+              ruang untuk menampilkan labelnya. */}
+          <BrandLogo
+            variant="icon"
+            alt="S.A.F.E House"
+            className="h-7 w-7 shrink-0 object-contain sm:hidden"
+          />
           <BrandLogo
             variant="full"
             alt="S.A.F.E House"
-            className="h-7 w-auto max-w-[120px] object-contain sm:h-8 sm:max-w-none"
+            className="hidden h-7 w-auto max-w-[120px] object-contain sm:block sm:h-8 sm:max-w-none"
           />
           <div className="hidden xl:flex flex-col justify-center border-l border-white/10 pl-2.5 leading-none">
             <span className="text-[11px] font-medium tracking-tight text-text-secondary">
@@ -90,7 +101,10 @@ export function TopBar() {
       >
         <Search className="h-3.5 w-3.5 text-accent/75" />
         <span className="flex-1 truncate text-xs text-text-secondary">
-          <span className="sm:hidden">{t('search.shortPlaceholder')}</span>
+          {/* Di 320px kolom cari menyusut sampai label "Cari" terpotong jadi
+              "C…", yang tak memberi tahu apa pun. Di bawah 360px ikon kaca
+              pembesar berdiri sendiri — sudah cukup dikenal. */}
+          <span className="hidden min-[360px]:inline sm:hidden">{t('search.shortPlaceholder')}</span>
           <span className="hidden sm:inline">{t('search.placeholder')}</span>
         </span>
         <kbd className="hidden sm:inline-flex items-center gap-1 rounded-md border border-white/12 bg-white/6 px-1.5 py-0.5 font-mono text-[10px] text-text-secondary">

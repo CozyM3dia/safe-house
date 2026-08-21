@@ -19,11 +19,87 @@ import { AuditConfirmDialog } from './AuditConfirmDialog';
 import { CompareMapBanner } from './CompareMapBanner';
 import { subscribeToViewport } from '../../lib/responsive';
 
+const REVERSE_GEOCODE_URL = 'https://nominatim.openstreetmap.org/reverse';
+const ADDRESS_PARTS = [
+  'house_number',
+  'road',
+  'pedestrian',
+  'residential',
+  'cycleway',
+  'footway',
+  'neighbourhood',
+  'suburb',
+  'hamlet',
+  'village',
+  'town',
+  'city_district',
+  'city',
+  'municipality',
+  'county',
+  'state_district',
+];
+
+const NATURAL_ONLY_LABELS = new Set([
+  'forest',
+  'wood',
+  'jungle',
+  'hutan',
+  'nature reserve',
+  'national park',
+  'park',
+  'grassland',
+  'farmland',
+  'scrub',
+  'heath',
+  'wetland',
+  'meadow',
+]);
+
+function meaningfulAddress(data) {
+  const address = data?.address;
+  if (!address || typeof address !== 'object') return '';
+
+  const parts = ADDRESS_PARTS
+    .map((key) => address[key])
+    .filter((part) => typeof part === 'string' && part.trim())
+    .map((part) => part.trim())
+    .filter((part, index, all) => all.indexOf(part) === index);
+
+  if (parts.length === 0) return '';
+
+  // Nominatim can return only "Hutan", "Forest", or a similar land-cover
+  // label for a remote point. That is a feature name, not an address users
+  // can recognize or act on, so leave the popup clean in that case.
+  if (parts.length === 1 && NATURAL_ONLY_LABELS.has(parts[0].toLowerCase())) return '';
+
+  return parts.slice(0, 4).join(', ');
+}
+
+async function reverseGeocodeAddress(lat, lng, signal) {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lng),
+    format: 'jsonv2',
+    addressdetails: '1',
+    zoom: '18',
+  });
+
+  const response = await fetch(`${REVERSE_GEOCODE_URL}?${params}`, {
+    signal,
+    headers: { 'Accept-Language': 'id' },
+  });
+  if (!response.ok) return '';
+  return meaningfulAddress(await response.json());
+}
+
 function MapInteractionLayer() {
   const loading = useAppStore((s) => s.loading);
   const setPendingAudit = useAppStore((s) => s.setPendingAudit);
   const mode = useAppStore((s) => s.mode);
   const selectingBattlePin = useAppStore((s) => s.selectingBattlePin);
+  const reverseRequestRef = useRef(null);
+
+  useEffect(() => () => reverseRequestRef.current?.abort(), []);
 
   useMapEvents({
     click(e) {
@@ -34,7 +110,27 @@ function MapInteractionLayer() {
         lat: e.latlng.lat,
         lng: e.latlng.lng,
         isBattlePin,
+        address: '',
       });
+
+      reverseRequestRef.current?.abort();
+      const controller = new AbortController();
+      reverseRequestRef.current = controller;
+      reverseGeocodeAddress(e.latlng.lat, e.latlng.lng, controller.signal)
+        .then((address) => {
+          const current = useAppStore.getState().pendingAudit;
+          if (
+            !current ||
+            current.lat !== e.latlng.lat ||
+            current.lng !== e.latlng.lng
+          ) return;
+          setPendingAudit({ ...current, address });
+        })
+        .catch((error) => {
+          if (error?.name !== 'AbortError') {
+            console.warn('Reverse geocoding for audit preview failed:', error);
+          }
+        });
     },
   });
   return null;

@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 import httpx
 
 from main import app
+from routers.audit import _REJECTED_CACHE
 
 
 def _land_geocode():
@@ -41,10 +42,18 @@ def _raw_data(*, geocode=None, flood=1, landslide=1):
 
 
 class AuditRouteIntegrationTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        _REJECTED_CACHE.clear()
+
     async def _post(self, lat, lon, raw):
+        geocode = raw.get("geocode")
+        elevation = (raw.get("weather") or {}).get("elevation")
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             with patch("routers.audit.external.fetch_all", new=AsyncMock(return_value=(raw, []))), patch(
+                "routers.audit.external.preflight_location",
+                new=AsyncMock(return_value=(geocode, elevation, [])),
+            ), patch(
                 "routers.audit.db.get_pool", return_value=None
             ):
                 return await client.post("/api/audit", json={"lat": lat, "lon": lon})
@@ -98,6 +107,32 @@ class AuditRouteIntegrationTests(unittest.IsolatedAsyncioTestCase):
         response = await self._post(1.30, 103.80, _raw_data(geocode=singapore))
         self.assertEqual(422, response.status_code)
         self.assertIn("luar indonesia", response.json()["detail"].lower())
+
+    async def test_repeated_rejection_is_served_from_cache_without_network(self):
+        ocean = {
+            **_land_geocode(),
+            "lat": "-7.3032412",
+            "lon": "110.0044145",
+            "type": "administrative",
+            "category": None,
+            "address": {"state": "Jawa Tengah", "country": "Indonesia", "country_code": "id"},
+        }
+        first = await self._post(-6.0, 110.5, _raw_data(geocode=ocean))
+        self.assertEqual(422, first.status_code)
+
+        fetch_mock = AsyncMock(return_value=(_raw_data(geocode=ocean), []))
+        preflight_mock = AsyncMock(return_value=(ocean, 13, []))
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            with patch("routers.audit.external.fetch_all", new=fetch_mock), patch(
+                "routers.audit.external.preflight_location", new=preflight_mock
+            ), patch("routers.audit.db.get_pool", return_value=None):
+                second = await client.post("/api/audit", json={"lat": -6.0, "lon": 110.5})
+
+        self.assertEqual(422, second.status_code)
+        self.assertIn("perairan", second.json()["detail"].lower())
+        fetch_mock.assert_not_awaited()
+        preflight_mock.assert_not_awaited()
 
     async def test_unmapped_hazards_receive_a_transparent_provisional_score(self):
         response = await self._post(-5.397, 105.266, _raw_data(flood=None, landslide=None))

@@ -15,16 +15,66 @@ from data.constants import INDONESIA_BOUNDS
 from models import AuditRequest, AuditResult
 from services import completeness, external, scoring
 from services.geotech import geotech_profile
-from services.location import classify_location
+from services.location import LocationClassification, classify_location
 
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["audit"])
 
+# Cache keputusan penolakan per titik (~110 m grid) supaya percobaan ulang di
+# laut / luar negeri yang sama ditolak instan tanpa panggilan jaringan lagi.
+_REJECTED_CACHE: dict[tuple[float, float], tuple[str, str]] = {}
+_REJECTED_CACHE_MAX = 1024
+
 
 def _within_indonesia(lat: float, lon: float) -> bool:
     b = INDONESIA_BOUNDS
     return b["lat_min"] <= lat <= b["lat_max"] and b["lon_min"] <= lon <= b["lon_max"]
+
+
+def _cache_key(lat: float, lon: float) -> tuple[float, float]:
+    return (round(lat, 3), round(lon, 3))
+
+
+def _remember_rejection(key: tuple[float, float], location: LocationClassification) -> None:
+    if len(_REJECTED_CACHE) >= _REJECTED_CACHE_MAX:
+        _REJECTED_CACHE.pop(next(iter(_REJECTED_CACHE)))
+    _REJECTED_CACHE[key] = (location.status, location.reason)
+
+
+def _raise_for_location(location: LocationClassification) -> None:
+    if location.status == "out_of_scope":
+        raise HTTPException(status_code=422, detail=location.reason)
+    if location.status == "not_buildable":
+        raise HTTPException(
+            status_code=422,
+            detail="Lokasi tidak dapat diaudit sebagai lahan bangunan: " + location.reason,
+        )
+    if location.status == "insufficient_data":
+        raise HTTPException(status_code=503, detail=location.reason)
+
+
+async def _preflight_gate(lat: float, lon: float) -> dict:
+    """Tolak cepat koordinat perairan / luar Indonesia sebelum audit penuh.
+
+    Hanya satu panggilan geocode + elevasi; sumber audit lain tidak disentuh.
+    `insufficient_data` sengaja tidak di-cache karena bisa jadi geocoder yang
+    sedang gagal, bukan lokasinya yang bermasalah.
+    """
+    key = _cache_key(lat, lon)
+    cached = _REJECTED_CACHE.get(key)
+    if cached is not None:
+        status, reason = cached
+        code = 503 if status == "insufficient_data" else 422
+        raise HTTPException(status_code=code, detail=reason)
+
+    geocode, elevation, _failed = await external.preflight_location(lat, lon)
+    location = classify_location(lat, lon, geocode, elevation)
+    if location.status != "valid_land":
+        if location.status != "insufficient_data":
+            _remember_rejection(key, location)
+        _raise_for_location(location)
+    return geocode
 
 
 def _extract_elevation(weather: Optional[dict]) -> Optional[float]:
@@ -109,7 +159,16 @@ async def create_audit(req: AuditRequest) -> AuditResult:
             detail="Lokasi di luar cakupan data Indonesia",
         )
 
-    raw, failed = await external.fetch_all(req.lat, req.lon)
+    # Gerbang tolak-cepat: laut / luar negeri ditolak di sini, sebelum
+    # seluruh sumber data dipanggil. Geocode-nya dipakai ulang agar
+    # Nominatim tidak dihubungi dua kali untuk audit yang valid.
+    prefetched_geocode = await _preflight_gate(req.lat, req.lon)
+
+    raw, failed = await external.fetch_all(
+        req.lat,
+        req.lon,
+        prefetched={"geocode": prefetched_geocode},
+    )
 
     # Semua sumber mati berarti tidak ada dasar untuk menilai apa pun.
     if len(failed) == len(raw):
@@ -122,15 +181,7 @@ async def create_audit(req: AuditRequest) -> AuditResult:
     address = _extract_address(raw.get("geocode"))
     location = classify_location(req.lat, req.lon, raw.get("geocode"), elevation)
 
-    if location.status == "out_of_scope":
-        raise HTTPException(status_code=422, detail=location.reason)
-    if location.status == "not_buildable":
-        raise HTTPException(
-            status_code=422,
-            detail="Lokasi tidak dapat diaudit sebagai lahan bangunan: " + location.reason,
-        )
-    if location.status == "insufficient_data":
-        raise HTTPException(status_code=503, detail=location.reason)
+    _raise_for_location(location)
 
     is_water = location.is_water
 

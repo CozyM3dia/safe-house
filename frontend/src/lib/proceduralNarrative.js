@@ -78,7 +78,9 @@ export function generateProceduralNarrative(property, lang = 'id') {
     : `Konteks spasial OpenStreetMap di sekitar tapak mencakup: ${nearby}. Aksesibilitas, utilitas umum, dan jalur evakuasi perlu diverifikasi.`;
 
   // 7 Structured Markdown sections
-  let detailedReport = '';
+  // Kedua cabang di bawah selalu menetapkan nilainya; inisialisasi '' hanya
+  // menyamarkan kalau suatu saat ada cabang yang lupa mengisi.
+  let detailedReport;
   if (isEn) {
     detailedReport = [
       `## Executive Summary & Site Characterization\n\nThe site evaluated at **${address}** obtained an overall **S.A.F.E Score of ${score}/100** (${riskLevel.toUpperCase()}). This audit is categorized as **${auditStatus}** with a data confidence index of **${confidence}%**. The terrain sits at an elevation of ${elevationNum.toFixed(1)} m above sea level. Development on this parcel requires appropriate geotechnical consideration and compliance with national building standards.`,

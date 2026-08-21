@@ -218,7 +218,7 @@ function MiniBar({ label, value }) {
   const hex = value >= 70 ? '#ef4444' : value >= 40 ? '#f59e0b' : '#10b981';
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[9px] font-semibold tracking-wider text-text-muted uppercase w-[68px] shrink-0 truncate">{label}</span>
+      <span className="text-[9px] font-semibold tracking-wider text-text-muted uppercase w-[84px] sm:w-[68px] shrink-0 truncate">{label}</span>
       <div className="flex-1 h-1 rounded-full bg-white/6 overflow-hidden">
         <motion.div
           className="h-full rounded-full"
@@ -228,7 +228,7 @@ function MiniBar({ label, value }) {
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
         />
       </div>
-      <span className="data-num text-[8px] w-5 text-right font-mono tabular-nums" style={{ color: hex }}>{value}</span>
+      <span className="data-num text-[8px] w-7 sm:w-5 text-right font-mono tabular-nums" style={{ color: hex }}>{value}</span>
     </div>
   );
 }

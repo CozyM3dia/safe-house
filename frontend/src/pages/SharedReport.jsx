@@ -48,7 +48,9 @@ export default function SharedReport() {
     <div className="report-page min-h-[100dvh] bg-bg text-text-primary">
       <header className="border-b border-[rgba(255,210,170,0.07)]">
         <div className="safe-top mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 pb-3 sm:px-5 sm:pb-4">
-          <Link to="/" className="flex items-center gap-2">
+          {/* Tautan ini setinggi barisnya saja (20px) — di bawah ambang target
+              sentuh, padahal ia satu-satunya jalan kembali ke beranda. */}
+          <Link to="/" className="flex min-h-[44px] items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-accent" />
             <span className="font-display text-sm font-bold tracking-tight">S.A.F.E House</span>
           </Link>

@@ -32,9 +32,11 @@ log = logging.getLogger(__name__)
 TIMEOUT_S = float(os.getenv("EXTERNAL_TIMEOUT_SECONDS", "3.5"))
 INARISK_TIMEOUT_S = float(os.getenv("INARISK_TIMEOUT_SECONDS", "3.5"))
 FAULT_GEOMETRY_TIMEOUT_S = float(os.getenv("FAULT_GEOMETRY_TIMEOUT_SECONDS", "3.5"))
+PREFLIGHT_TIMEOUT_S = float(os.getenv("PREFLIGHT_TIMEOUT_SECONDS", "2.0"))
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+OPEN_METEO_ELEVATION_URL = "https://api.open-meteo.com/v1/elevation"
 OPEN_METEO_AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 USGS_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 OVERPASS_URLS = [
@@ -283,9 +285,54 @@ async def _nearby_pois(client: httpx.AsyncClient, lat: float, lon: float) -> lis
     return []
 
 
-async def fetch_all(lat: float, lon: float) -> tuple[dict[str, Any], list[str]]:
+async def _elevation_quick(client: httpx.AsyncClient, lat: float, lon: float) -> Optional[float]:
+    """Elevasi saja dari endpoint Open-Meteo paling ringan (tanpa forecast)."""
+    r = await client.get(
+        OPEN_METEO_ELEVATION_URL,
+        params={"latitude": lat, "longitude": lon},
+        timeout=PREFLIGHT_TIMEOUT_S,
+    )
+    r.raise_for_status()
+    values = r.json().get("elevation") or []
+    return float(values[0]) if values else None
+
+
+async def preflight_location(
+    lat: float, lon: float
+) -> tuple[Optional[dict], Optional[float], list[str]]:
+    """Gerbang tolak-cepat sebelum audit penuh.
+
+    Hanya memanggil reverse geocode + elevasi secara paralel. Cukup untuk
+    memutuskan apakah titik berada di perairan atau di luar Indonesia, tanpa
+    menunggu seluruh sumber audit (InaRISK, Overpass, USGS, dsb) selesai.
+    """
+    client = _get_shared_client()
+    outcomes = await asyncio.gather(
+        _reverse_geocode(client, lat, lon),
+        _elevation_quick(client, lat, lon),
+        return_exceptions=True,
+    )
+
+    names = ("geocode", "elevation")
+    failed = [
+        name for name, outcome in zip(names, outcomes) if isinstance(outcome, BaseException)
+    ]
+    for name, outcome in zip(names, outcomes):
+        if isinstance(outcome, BaseException):
+            log.warning("Preflight '%s' gagal: %s", name, outcome)
+
+    geocode = None if isinstance(outcomes[0], BaseException) else outcomes[0]
+    elevation = None if isinstance(outcomes[1], BaseException) else outcomes[1]
+    return geocode, elevation, failed
+
+
+async def fetch_all(
+    lat: float, lon: float, prefetched: Optional[dict[str, Any]] = None
+) -> tuple[dict[str, Any], list[str]]:
     """Ambil semua sumber luar secara paralel dengan connection pooling.
 
+    `prefetched` berisi hasil yang sudah diambil gerbang preflight (misal
+    geocode) sehingga sumber yang sama tidak dipanggil dua kali.
     Mengembalikan (hasil, daftar_sumber_gagal). Nilai untuk sumber yang gagal
     adalah None — pemanggil wajib memeriksanya.
     """
@@ -311,9 +358,15 @@ async def fetch_all(lat: float, lon: float) -> tuple[dict[str, Any], list[str]]:
         }
     )
 
+    reused: dict[str, Any] = {}
+    for name, value in (prefetched or {}).items():
+        if value is not None and name in tasks:
+            tasks.pop(name)
+            reused[name] = value
+
     settled = await asyncio.gather(*tasks.values(), return_exceptions=True)
 
-    results: dict[str, Any] = {}
+    results: dict[str, Any] = dict(reused)
     failed: list[str] = []
 
     for name, outcome in zip(tasks.keys(), settled):
