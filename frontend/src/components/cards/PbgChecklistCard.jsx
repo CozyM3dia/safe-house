@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { CheckSquare, ExternalLink, FileCheck2, Square } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Check, ExternalLink, FileCheck2 } from 'lucide-react';
 
 import { resolveStandardDoc } from '../../lib/standards';
 import { useT } from '../../hooks/useTranslation';
@@ -42,61 +43,95 @@ export function PbgChecklistCard({ property }) {
       return value === undefined || value === null ? '—' : String(value);
     });
 
+  const allDone = doneCount === items.length;
+
   return (
-    <section aria-label={t('pbg.title')}>
+    <section aria-label={t('pbg.title')} className="rpt-surface rounded-lg p-4">
+      {/* Kepala + rel progres bergaya instrumen */}
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="rpt-eyebrow flex items-center gap-1.5">
           <FileCheck2 className="h-3.5 w-3.5 text-accent" />
           {t('pbg.title')}
         </h2>
-        <span className="data-num shrink-0 text-[12px] font-semibold text-text-primary">
+        <span className="data-num shrink-0 font-data text-[12px] font-semibold tabular-nums text-text-primary">
           {doneCount}
           <span className="text-text-muted">/{items.length}</span>
         </span>
       </div>
 
-      <ul className="mt-2.5 space-y-1.5">
+      <div className="rpt-well mt-2.5 h-[3px] overflow-hidden rounded-full">
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: allDone ? '#10b981' : 'hsl(var(--safe-accent))' }}
+          initial={false}
+          animate={{ width: `${(doneCount / items.length) * 100}%` }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </div>
+
+      <ul className="mt-3 space-y-1.5">
         {items.map((item) => {
           const isDone = checked.has(item.id);
           const wajib = item.priority === 'wajib';
           return (
-            <li
-              key={item.id}
-              className="rounded-lg border p-2.5 transition-colors"
-              style={{
-                borderColor: isDone ? 'var(--rpt-line)' : wajib ? `${TONE_WAJIB}55` : 'var(--rpt-line)',
-                background: isDone ? 'transparent' : wajib ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 210, 170, 0.03)',
-              }}
-            >
+            <li key={item.id}>
               <button
                 type="button"
                 onClick={() => toggle(item.id)}
-                className="rpt-focus flex w-full items-start gap-2.5 text-left"
                 aria-pressed={isDone}
+                className={`rpt-focus group flex w-full items-start gap-2.5 rounded-md border p-2.5 text-left transition-colors duration-200 ${
+                  isDone ? '' : 'hover:bg-[rgba(255,210,170,0.04)]'
+                }`}
+                style={{
+                  borderColor: isDone ? 'var(--rpt-line)' : wajib ? `${TONE_WAJIB}44` : 'var(--rpt-line)',
+                  background: isDone ? 'transparent' : wajib ? 'rgba(239, 68, 68, 0.045)' : 'var(--rpt-fill)',
+                }}
               >
-                {isDone ? (
-                  <CheckSquare className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                ) : (
-                  <Square className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
-                )}
+                {/* Kotak centang: kotak stensil yang terisi saat selesai. */}
+                <span
+                  aria-hidden
+                  className="mt-px flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[3px] border transition-all duration-200"
+                  style={{
+                    borderColor: isDone ? 'hsl(var(--safe-accent))' : 'var(--rpt-line-strong)',
+                    background: isDone ? 'hsl(var(--safe-accent))' : 'transparent',
+                  }}
+                >
+                  {isDone && (
+                    <motion.span
+                      initial={{ scale: 0.4, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex"
+                    >
+                      <Check className="h-[11px] w-[11px] text-bg" strokeWidth={3} />
+                    </motion.span>
+                  )}
+                </span>
+
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span
-                      className={`text-[12.5px] font-semibold leading-snug ${isDone ? 'text-text-muted line-through decoration-1' : 'text-text-primary'}`}
+                      className={`text-[12.5px] font-semibold leading-snug transition-colors duration-200 ${
+                        isDone ? 'text-text-muted line-through decoration-1' : 'text-text-primary'
+                      }`}
                     >
                       {t(`pbg.item.${item.id}.title`)}
                     </span>
                     <span
-                      className="rounded px-1 py-px font-data text-[8.5px] font-bold uppercase tracking-[0.12em]"
+                      className="rounded-sm px-1 py-px font-data text-[8.5px] font-bold uppercase tracking-[0.14em]"
                       style={{
                         color: wajib ? TONE_WAJIB : 'var(--safe-text-muted)',
-                        border: `1px solid ${wajib ? `${TONE_WAJIB}66` : 'var(--rpt-line-strong)'}`,
+                        border: `1px solid ${wajib ? `${TONE_WAJIB}55` : 'var(--rpt-line-strong)'}`,
                       }}
                     >
                       {wajib ? t('pbg.wajib') : t('pbg.disarankan')}
                     </span>
                   </span>
-                  <span className={`mt-0.5 block text-[11px] leading-relaxed ${isDone ? 'text-text-muted/70' : 'text-text-muted'}`}>
+                  <span
+                    className={`mt-0.5 block text-[11px] leading-relaxed transition-colors duration-200 ${
+                      isDone ? 'text-text-muted/60' : 'text-text-muted'
+                    }`}
+                  >
                     {fill(t(`pbg.item.${item.id}.detail`), item.params)}
                   </span>
                   {item.sni_refs.length > 0 && (
@@ -110,7 +145,8 @@ export function PbgChecklistCard({ property }) {
                             target="_blank"
                             rel="noreferrer noopener"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-0.5 rounded border border-[rgba(255,210,170,0.14)] bg-[rgba(22,14,8,0.5)] px-1.5 py-px font-data text-[9.5px] text-accent transition-colors hover:border-accent/40"
+                            className="inline-flex items-center gap-0.5 rounded-sm border px-1.5 py-px font-data text-[9.5px] text-accent transition-colors hover:border-accent/50 hover:bg-accent/10"
+                            style={{ borderColor: 'var(--rpt-line-strong)' }}
                           >
                             {ref}
                             <ExternalLink className="h-2.5 w-2.5" />
@@ -126,7 +162,7 @@ export function PbgChecklistCard({ property }) {
         })}
       </ul>
 
-      <p className="mt-2 text-[10px] leading-relaxed text-text-muted">
+      <p className="mt-2.5 border-t pt-2 text-[10px] leading-relaxed text-text-muted" style={{ borderColor: 'var(--rpt-line-soft)' }}>
         {t('pbg.note')}
       </p>
     </section>
