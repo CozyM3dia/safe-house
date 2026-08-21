@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import db
 from models import HealthResult
-from routers import ai, audit, share
+from routers import ai, audit, share, validasi
 
 load_dotenv()
 
@@ -69,5 +69,6 @@ async def health() -> HealthResult:
 app.include_router(audit.router)
 app.include_router(share.router)
 app.include_router(ai.router)
+app.include_router(validasi.router)
 
 # Router geo menyusul bila pencarian alamat dipindahkan sepenuhnya ke backend.

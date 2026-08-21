@@ -282,16 +282,21 @@ export default function LandingPage() {
             {[
               { label: 'About', target: 'about' },
               { label: 'Workflow', target: 'process' },
+              { label: 'Validasi', to: '/validasi' },
               { label: 'Disclaimer', target: 'disclaimer' },
               { label: 'FAQ', target: 'faq' },
             ].map((link) => (
-              <span 
-                key={link.target}
-                className="relative text-[10px] uppercase tracking-[0.15em] font-mono font-bold px-3.5 py-1.5 rounded-lg text-text-secondary hover:text-text-primary cursor-pointer transition-colors duration-300 z-10 select-none" 
-                onMouseEnter={() => setHoveredLink(link.target)}
-                onClick={() => document.getElementById(link.target)?.scrollIntoView({ behavior: 'smooth' })}
+              <span
+                key={link.target || link.to}
+                className="relative text-[10px] uppercase tracking-[0.15em] font-mono font-bold px-3.5 py-1.5 rounded-lg text-text-secondary hover:text-text-primary cursor-pointer transition-colors duration-300 z-10 select-none"
+                onMouseEnter={() => setHoveredLink(link.target || link.to)}
+                onClick={() =>
+                  link.to
+                    ? navigate(link.to)
+                    : document.getElementById(link.target)?.scrollIntoView({ behavior: 'smooth' })
+                }
               >
-                {hoveredLink === link.target && (
+                {hoveredLink === (link.target || link.to) && (
                   <motion.span
                     layoutId="nav-hover-pill"
                     className="absolute inset-0 bg-white/5 rounded-lg -z-10"

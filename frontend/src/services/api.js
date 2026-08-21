@@ -46,6 +46,15 @@ export async function checkHealth() {
 }
 
 /**
+ * Validasi historis: engine menghitung ulang titik kejadian bencana
+ * terdokumentasi untuk dicocokkan dengan fakta lapangan.
+ */
+export async function getValidation() {
+  const { data } = await client.get('/api/validasi');
+  return data;
+}
+
+/**
  * Jalankan audit untuk satu koordinat.
  * Mengembalikan AuditResult utuh (tanpa narrative sampai lapis AI aktif).
  */

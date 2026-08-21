@@ -26,6 +26,15 @@ class NearestFeature(BaseModel):
     distance_km: Optional[float] = None
 
 
+class PbgChecklistItem(BaseModel):
+    """Satu butir kelengkapan teknis PBG; teks diterjemahkan di frontend."""
+
+    id: str
+    priority: Literal["wajib", "disarankan"]
+    sni_refs: list[str] = Field(default_factory=list)
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
 class GeotechProfile(BaseModel):
     """Keluaran services.geotech — murni hasil hitungan, tanpa data eksternal."""
 
@@ -70,6 +79,9 @@ class AuditResult(BaseModel):
 
     # Diisi pada tahap 6 — lapis AI.
     narrative: Optional[dict[str, Any]] = None
+
+    # Checklist dokumen teknis PBG — deterministik dari services/pbg_checklist.
+    pbg_checklist: Optional[list[PbgChecklistItem]] = None
 
     # Sumber yang gagal dipanggil. Frontend memakainya untuk jujur soal
     # data yang hilang, bukan diam-diam menampilkan angka kosong.

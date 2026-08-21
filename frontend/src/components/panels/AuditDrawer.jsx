@@ -32,6 +32,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useT } from '../../hooks/useTranslation';
 import { Button } from '../ui/button';
 import { Skeleton, SkeletonText } from '../ui/skeleton';
+import { PbgChecklistCard } from '../cards/PbgChecklistCard';
 import { hazardBand, locationToUrl, riskHex, riskLabel, shortAddress } from '../../lib/utils';
 import { siteClass } from '../../lib/formatters';
 import { parseBuildingCodes } from '../../lib/standards';
@@ -1639,6 +1640,7 @@ export function AuditDrawer() {
                     />
                     <KeyParameters property={propertyA} />
                     {propertyA?.data_quality?.fields && <DataCoverageSummary property={propertyA} />}
+                    <PbgChecklistCard property={propertyA} />
                   </aside>
 
                   <div

@@ -6,6 +6,7 @@ import { getSharedReport } from '../services/api';
 import { SafeScoreCard } from '../components/cards/SafeScoreCard';
 import { RadarCard } from '../components/cards/RadarCard';
 import { AddressCard } from '../components/cards/AddressCard';
+import { PbgChecklistCard } from '../components/cards/PbgChecklistCard';
 import { Skeleton, SkeletonText } from '../components/ui/skeleton';
 import { useT } from '../hooks/useTranslation';
 
@@ -180,6 +181,8 @@ function ReportBody({ property }) {
         <SectionLabel>{t('report.location')}</SectionLabel>
         <AddressCard property={property} />
       </div>
+
+      <PbgChecklistCard property={property} />
 
       {/* Honest note when data was missing */}
       {property.sources_failed?.length > 0 && (

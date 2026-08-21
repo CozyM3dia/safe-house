@@ -506,6 +506,128 @@ const translations = {
     en: 'Share link copied to clipboard',
   },
   'toast.shareFailed': { id: 'Gagal menyalin link', en: 'Failed to copy link' },
+
+  // --- Halaman validasi historis (/validasi) ---
+  'validasi.eyebrow': {
+    id: 'UJI LAPANGAN · ENGINE DETERMINISTIK',
+    en: 'FIELD TEST · DETERMINISTIC ENGINE',
+  },
+  'validasi.title': {
+    id: 'Engine yang sama, diuji di tempat kejadian.',
+    en: 'The same engine, tested where it happened.',
+  },
+  'validasi.subtitle': {
+    id: 'Parameter di titik kejadian bencana terdokumentasi dihitung ulang saat halaman ini dibuka — bukan angka simpanan. Hasilnya dicocokkan dengan fakta lapangan, apa adanya.',
+    en: 'Parameters at documented disaster sites are recomputed the moment this page opens — not stored numbers. Results are checked against field facts, as they are.',
+  },
+  'validasi.computing': {
+    id: 'Menghitung ulang titik kejadian…',
+    en: 'Recomputing event sites…',
+  },
+  'validasi.failed': {
+    id: 'Validasi tidak dapat dimuat. Coba lagi beberapa saat.',
+    en: 'Validation could not be loaded. Please try again shortly.',
+  },
+  'validasi.scoreLine': {
+    id: 'kejadian terkurasi cocok antara hitungan engine dan fakta lapangan. Satu saja tidak cocok akan kami tampilkan juga.',
+    en: 'curated events match between engine output and field facts. Even a single mismatch would be shown honestly.',
+  },
+  'validasi.match': { id: 'SESUAI FAKTA', en: 'MATCHES FACTS' },
+  'validasi.mismatch': { id: 'TIDAK SESUAI', en: 'MISMATCH' },
+  'validasi.fieldFact': { id: 'Fakta lapangan', en: 'Field fact' },
+  'validasi.engineNow': { id: 'Hitungan engine saat ini', en: 'Engine output now' },
+  'validasi.class': { id: 'Kelas', en: 'Class' },
+  'validasi.nearestFault': { id: 'Sesar terdekat', en: 'Nearest fault' },
+  'validasi.expectation': { id: 'Ekspektasi dari fakta', en: 'Expected from facts' },
+  'validasi.ctaTitle': {
+    id: 'Coba pada lahan Anda sendiri',
+    en: 'Try it on your own land',
+  },
+  'validasi.ctaDesc': {
+    id: 'Satu koordinat, parameter SNI 1726:2019 siap-PBG dalam dua menit.',
+    en: 'One coordinate, PBG-ready SNI 1726:2019 parameters in two minutes.',
+  },
+
+  // --- Checklist kelengkapan teknis PBG ---
+  'pbg.title': { id: 'Keperluan Dokumen PBG', en: 'PBG Document Requirements' },
+  'pbg.wajib': { id: 'WAJIB', en: 'REQUIRED' },
+  'pbg.disarankan': { id: 'DISARANKAN', en: 'RECOMMENDED' },
+  'pbg.note': {
+    id: 'Disusun otomatis dari hasil audit sebagai alat bantu perencanaan; kebutuhan akhir mengikuti ketentuan pemerintah daerah setempat.',
+    en: 'Auto-assembled from audit results as a planning aid; final requirements follow your local government regulations.',
+  },
+  'pbg.item.soil_investigation.title': {
+    id: 'Laporan penyelidikan tanah (sondir/CPT/boring)',
+    en: 'Soil investigation report (CPT/SPT/boring)',
+  },
+  'pbg.item.soil_investigation.detail': {
+    id: 'Audit ini screening level — daya dukung dan profil tanah aktual wajib diverifikasi di lapangan sebelum desain fondasi.',
+    en: 'This audit is screening-level — actual bearing capacity and soil profile must be verified on site before foundation design.',
+  },
+  'pbg.item.seismic_design_spectrum.title': {
+    id: 'Spektrum respons desain gempa',
+    en: 'Seismic design response spectrum',
+  },
+  'pbg.item.seismic_design_spectrum.detail': {
+    id: 'Dasar desain struktur: PGA permukaan {pga_surface}g, kelas situs {site_class} sesuai SNI 1726:2019.',
+    en: 'Structural design basis: surface PGA {pga_surface}g, site class {site_class} per SNI 1726:2019.',
+  },
+  'pbg.item.ductile_detailing.title': {
+    id: 'Detail penulangan daktail struktur',
+    en: 'Ductile structural detailing',
+  },
+  'pbg.item.ductile_detailing.detail': {
+    id: 'Kelas situs {site_class} dengan guncangan signifikan memerlukan detail daktail sesuai SNI 2847:2019.',
+    en: 'Site class {site_class} under significant shaking requires ductile detailing per SNI 2847:2019.',
+  },
+  'pbg.item.liquefaction_study.title': {
+    id: 'Kajian likuefaksi lanjutan',
+    en: 'Advanced liquefaction study',
+  },
+  'pbg.item.liquefaction_study.detail': {
+    id: 'FS = {fs}. Perlu analisis siklik lanjutan dan rencana perbaikan tanah bila terkonfirmasi rawan.',
+    en: 'FS = {fs}. Needs advanced cyclic analysis and a ground improvement plan if vulnerability is confirmed.',
+  },
+  'pbg.item.fault_zone_review.title': {
+    id: 'Kajian zona sesar aktif',
+    en: 'Active fault zone review',
+  },
+  'pbg.item.fault_zone_review.detail': {
+    id: 'Lokasi ~{distance_km} km dari {fault_name}. Periksa garis sempat/zona setback sesuai regulasi setempat.',
+    en: 'Site ~{distance_km} km from {fault_name}. Check the setback line/zone per local regulation.',
+  },
+  'pbg.item.flood_proofing.title': {
+    id: 'Bukti elevasi lantai aman banjir',
+    en: 'Flood-safe floor elevation proof',
+  },
+  'pbg.item.flood_proofing.detail': {
+    id: 'Peta InaRISK menunjuk kelas bahaya banjir {flood_class}. Lampirkan DED elevasi lantai di atas peil banjir setempat.',
+    en: 'InaRISK map shows flood hazard class {flood_class}. Attach floor-elevation design above the local flood datum.',
+  },
+  'pbg.item.slope_stability.title': {
+    id: 'Kajian stabilitas lereng',
+    en: 'Slope stability study',
+  },
+  'pbg.item.slope_stability.detail': {
+    id: 'Kelas bahaya longsor {landslide_class}. Analisis lereng dan rencana mitigasi erosi diperlukan.',
+    en: 'Landslide hazard class {landslide_class}. Slope analysis and erosion mitigation plan required.',
+  },
+  'pbg.item.subsidence_monitoring.title': {
+    id: 'Rencana pemantauan penurunan tanah',
+    en: 'Land subsidence monitoring plan',
+  },
+  'pbg.item.subsidence_monitoring.detail': {
+    id: 'Indikasi risiko subsidensi tinggi di kawasan ini — pertimbangkan titik ukur dan interval pemantauan.',
+    en: 'High subsidence risk indicated in this area — consider monitoring points and intervals.',
+  },
+  'pbg.item.tsunami_readiness.title': {
+    id: 'Kesiapan evakuasi tsunami',
+    en: 'Tsunami preparedness measures',
+  },
+  'pbg.item.tsunami_readiness.detail': {
+    id: 'Jarak pantai dekat dengan elevasi rendah — sediakan jalur evakuasi dan rujukan peta inundasi BMKG.',
+    en: 'Nearby coast at low elevation — provide evacuation routes and refer to BMKG inundation maps.',
+  },
 };
 
 /**
