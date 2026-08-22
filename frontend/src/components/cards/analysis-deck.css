@@ -1,0 +1,544 @@
+/* ───────────────────────────────────────────────────────────────
+   Instrumen analisis — satu bahasa visual untuk tiga plot.
+
+   Sebelumnya radar, seismogram, dan spektrum masing-masing punya
+   bingkai kartu, tanda register sudut, dan garis kaki "FIG. NN"
+   sendiri. Tiga salinan ornamen yang sama membuat panel setinggi
+   ~1900px padahal isinya hanya tiga grafik. Sekarang bingkainya
+   digambar sekali; plotnya bertukar di dalamnya.
+
+   Semua warna lewat token supaya mode terang tidak bergantung pada
+   penimpaan `!important` global di index.css.
+   ─────────────────────────────────────────────────────────────── */
+
+.instr {
+  --in-accent: hsl(var(--safe-accent));
+  --in-b: #6ea8d4;
+
+  --in-safe: #10b981;
+  --in-moderate: #f59e0b;
+  --in-danger: #ef4444;
+  --in-status: var(--in-safe);
+
+  /* Garis: rambut → kisi → sumbu. Tiga tingkat saja, tidak lebih. */
+  --in-hairline: rgba(255, 210, 170, 0.09);
+  --in-grid: rgba(255, 210, 170, 0.12);
+  --in-axis: rgba(255, 210, 170, 0.26);
+
+  --in-ink-dim: hsl(var(--safe-text-muted));
+  --in-ink: hsl(var(--safe-text-secondary));
+
+  --in-tab-bg: rgba(255, 255, 255, 0.04);
+  --in-tab-active: rgba(212, 149, 106, 0.14);
+  --in-plot-bg: rgba(255, 255, 255, 0.015);
+}
+
+.instr[data-status='moderate'] {
+  --in-status: var(--in-moderate);
+}
+
+.instr[data-status='danger'] {
+  --in-status: var(--in-danger);
+}
+
+html[data-theme='light'] .instr {
+  /* Mode terang menaikkan semua tinta satu tingkat: teks mikro 9px pada
+     kertas krem tidak lolos 4.5:1 dengan warna `muted`, jadi `dim` memakai
+     `secondary` dan `ink` memakai `primary`. */
+  --in-b: #245c85;
+
+  --in-ink-dim: hsl(var(--safe-text-secondary));
+  --in-ink: hsl(var(--safe-text-primary));
+
+  --in-safe: #047857;
+  --in-moderate: #a45309;
+  --in-danger: #b91c1c;
+
+  --in-hairline: rgba(91, 67, 48, 0.16);
+  --in-grid: rgba(91, 67, 48, 0.2);
+  --in-axis: rgba(91, 67, 48, 0.42);
+
+  --in-tab-bg: rgba(91, 67, 48, 0.06);
+  --in-tab-active: rgba(162, 98, 47, 0.14);
+  --in-plot-bg: rgba(91, 67, 48, 0.025);
+}
+
+/* ── Kerangka kartu ─────────────────────────────────────────── */
+
+.instr-eyebrow {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--in-ink-dim);
+}
+
+/* Warna nada guncangan (aman/sedang/bahaya) hanya berlaku untuk angka yang
+   memang diturunkan dari PGA. Skor radar punya skalanya sendiri, jadi ia
+   memakai warna aksen — bukan merah yang berarti "guncangan tinggi". */
+.instr-value {
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.01em;
+  color: var(--in-accent);
+  transition: color 0.3s ease;
+}
+
+.instr-value-unit {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--in-ink);
+}
+
+.instr-value[data-tone='status'] {
+  color: var(--in-status);
+}
+
+/* ── Pemilih kanal ──────────────────────────────────────────── */
+
+.instr-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--in-tab-bg);
+  border: 1px solid var(--in-hairline);
+}
+
+.instr-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--in-ink-dim);
+  background: transparent;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.instr-tab:hover {
+  color: var(--in-ink);
+}
+
+.instr-tab[aria-selected='true'] {
+  color: var(--in-accent);
+}
+
+.instr-tab:focus-visible {
+  outline: 2px solid var(--in-accent);
+  outline-offset: -2px;
+}
+
+.instr-tab-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: var(--in-tab-active);
+  z-index: 0;
+}
+
+.instr-tab-label {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.instr-tab-icon {
+  position: relative;
+  z-index: 1;
+  flex: none;
+}
+
+/* Di bawah 360px label kanal terpotong jadi "GUNCAN…" kalau ikonnya ikut
+   berbagi ruang. Ikon yang mengalah, bukan namanya. */
+@media (max-width: 359px) {
+  .instr-tab-icon {
+    display: none;
+  }
+
+  .instr-tab {
+    padding: 0 4px;
+  }
+}
+
+/* ── Bidang plot ────────────────────────────────────────────── */
+
+.instr-plot {
+  position: relative;
+  margin-top: 10px;
+  border-top: 1px solid var(--in-hairline);
+  border-bottom: 1px solid var(--in-hairline);
+  padding: 8px 0;
+  background: var(--in-plot-bg);
+}
+
+.instr-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Baris keterangan: satu baris fakta unik per kanal — bukan moto. */
+.instr-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-top: 9px;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  color: var(--in-ink-dim);
+}
+
+/* ── Radar ──────────────────────────────────────────────────── */
+
+/* Grid dan data harus terbaca sebagai dua lapis, bukan satu gambar. Grid
+   selalu putus-putus dan tipis; hanya poligon data yang boleh jadi bentuk
+   tertutup bergaris penuh. */
+.rp-ring {
+  fill: none;
+  stroke: var(--in-grid);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+
+.rp-ring-outer {
+  stroke: var(--in-grid);
+  stroke-dasharray: 2 3;
+}
+
+.rp-spoke {
+  stroke: var(--in-grid);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  transition: stroke 0.2s ease, opacity 0.2s ease;
+}
+
+.rp-spoke-hot {
+  stroke: var(--in-accent);
+  stroke-dasharray: none;
+}
+
+.rp-poly {
+  stroke: var(--in-accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  fill: var(--in-accent);
+  fill-opacity: 0.16;
+}
+
+.rp-poly-b {
+  stroke: var(--in-b);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+  fill: var(--in-b);
+  fill-opacity: 0.12;
+}
+
+.rp-dot {
+  fill: var(--in-accent);
+}
+
+.rp-dot-b {
+  fill: var(--in-b);
+}
+
+.rp-name {
+  fill: var(--in-ink);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  transition: fill 0.2s ease;
+}
+
+.rp-val {
+  fill: var(--in-ink-dim);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: fill 0.2s ease;
+}
+
+.rp-val-b {
+  fill: var(--in-b);
+  font-weight: 600;
+}
+
+.rp-label,
+.rp-dot,
+.rp-ring,
+.rp-ring-outer {
+  transition: opacity 0.2s ease;
+}
+
+/* Saat satu sumbu dipilih, sisanya mundur ke latar. */
+.rp-dim {
+  opacity: 0.28;
+}
+
+.rp-hot .rp-name,
+.rp-hot .rp-val {
+  fill: var(--in-accent);
+}
+
+.rp-max .rp-val {
+  fill: var(--in-accent);
+}
+
+.rp-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rp-key-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 9999px;
+}
+
+.rp-key-dot-a {
+  background: var(--in-accent);
+}
+
+.rp-key-dot-b {
+  background: var(--in-b);
+}
+
+.rp-sector {
+  fill: transparent;
+  cursor: crosshair;
+  outline: none;
+}
+
+.rp-sector:focus-visible {
+  fill: var(--in-accent);
+  fill-opacity: 0.06;
+}
+
+/* ── Seismogram ─────────────────────────────────────────────── */
+
+/* Rasio dikunci sama dengan radar dan spektrum supaya tinggi plot tidak
+   melompat saat kanal bertukar — di lebar berapa pun. */
+.sp-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 340 / 176;
+}
+
+.sp-gutter {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 34px;
+  z-index: 1;
+}
+
+.sp-tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  transform: translateY(-50%);
+}
+
+.sp-tick-label {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--in-ink-dim);
+}
+
+.sp-tick-dash {
+  width: 5px;
+  height: 1px;
+  background: var(--in-grid);
+}
+
+.sp-tick-zero .sp-tick-label {
+  color: var(--in-ink);
+}
+
+.sp-tick-zero .sp-tick-dash {
+  width: 9px;
+  background: var(--in-axis);
+}
+
+.sp-canvas {
+  position: absolute;
+  inset-block: 0;
+  left: 34px;
+  right: 0;
+}
+
+.sp-canvas svg {
+  height: 100%;
+}
+
+.sp-grid {
+  stroke: var(--in-grid);
+}
+
+.sp-base {
+  stroke: var(--in-axis);
+}
+
+.sp-trace {
+  stroke: var(--in-status);
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: stroke 0.3s ease;
+}
+
+.sp-phase {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--in-ink);
+}
+
+.sp-phase::after {
+  content: '';
+  width: 1px;
+  height: 6px;
+  background: var(--in-axis);
+}
+
+.sp-time {
+  position: relative;
+  height: 14px;
+  margin-left: 34px;
+  margin-top: 4px;
+}
+
+.sp-time-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--in-ink-dim);
+}
+
+.sp-time-tick-first {
+  transform: none;
+}
+
+.sp-time-tick-last {
+  transform: translateX(-100%);
+}
+
+/* ── Spektrum ───────────────────────────────────────────────── */
+
+.qp-grid {
+  stroke: var(--in-grid);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+
+.qp-axis {
+  stroke: var(--in-axis);
+  stroke-width: 1;
+}
+
+.qp-tick {
+  fill: var(--in-ink-dim);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qp-axis-title {
+  fill: var(--in-ink-dim);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+}
+
+.qp-curve {
+  stroke: var(--in-status);
+  stroke-width: 2;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.qp-area {
+  opacity: 0.2;
+}
+
+.qp-grad-top {
+  stop-color: var(--in-status);
+  stop-opacity: 0.9;
+}
+
+.qp-grad-bottom {
+  stop-color: var(--in-status);
+  stop-opacity: 0;
+}
+
+.qp-anno {
+  stroke: var(--in-status);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.5;
+}
+
+.qp-anno-dot {
+  fill: var(--in-status);
+}
+
+.qp-anno-text {
+  fill: var(--in-status);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .instr *,
+  .instr *::before,
+  .instr *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

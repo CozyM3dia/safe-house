@@ -23,8 +23,10 @@ developer, konsultan geoteknik. Kontes Building Indonesia by Emergent.
     tersimpan. Tabel dibuat otomatis saat start (`backend/schema.sql`)
   - AuditResult disimpan utuh sebagai kolom JSONB; id = UUID
 - Engine kebenaran: `backend/services/geotech.py` (BUKAN Safe_House_Core.py)
-- Lapis AI: `backend/services/ai.py` — Google Gemini, server-side only.
-  Primary `gemini-3.7-flash`, fallback `gemini-3.1-flash-lite`, lalu cache.
+- Lapis AI: `backend/services/ai.py` — server-side only. Urutan tier:
+  chain Gemini (`GEMINI_MODEL` → `GEMINI_FALLBACK_MODEL` →
+  `GEMINI_FALLBACK_MODELS`), lalu OpenRouter (`OPENROUTER_MODEL`,
+  default `stealth/ox-alpha`) sebagai tier terakhir, lalu cache.
   AI hanya menjelaskan hasil audit, tidak pernah menghitung angka.
 - API: `POST /api/audit`, `/api/narrative`, `/api/narrative/{id}`,
   `/api/chat`, `GET /api/ai/status`, `/laporan/{slug}`
