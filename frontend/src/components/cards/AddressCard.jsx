@@ -115,10 +115,12 @@ export function AddressCard({ property }) {
 
 function CoordCell({ icon, label, value }) {
   return (
-    <div className="rounded-lg border border-white/6 bg-white/[0.02] px-2.5 py-2 hover:border-white/12 transition-colors shadow-[inset_0_1px_0_rgba(255,210,170,0.05)]">
-      <div className="flex items-center gap-1 mb-1">
-        {icon}
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-muted">
+    <div className="rounded-lg border border-white/6 bg-white/[0.02] px-2 py-2 transition-colors hover:border-white/12 shadow-[inset_0_1px_0_rgba(255,210,170,0.05)] sm:px-2.5">
+      {/* Di 320px "LINTANG" dengan tracking 0.2em lebih lebar dari selnya dan
+          melimpah keluar kotak; jaraknya yang mengalah dulu, baru truncate. */}
+      <div className="mb-1 flex items-center gap-1">
+        <span className="hidden shrink-0 items-center sm:flex">{icon}</span>
+        <p className="min-w-0 truncate text-[9px] font-bold uppercase tracking-[0.12em] text-text-muted sm:tracking-[0.2em]">
           {label}
         </p>
       </div>

@@ -64,7 +64,7 @@ function ArcGauge({ score, hex, size = 120 }) {
   });
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="drop-shadow-lg overflow-visible">
+    <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full overflow-visible drop-shadow-lg">
       <defs>
         <filter id="glow-arc" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="3" result="blur" />
@@ -160,11 +160,14 @@ export function SafeScoreCard({ property }) {
 
       <div className="relative flex items-center gap-3 sm:gap-4">
         {/* Arc gauge */}
-        <div className="relative shrink-0 flex items-center justify-center" style={{ width: 120, height: 120 }}>
+        {/* Di 320px gauge 120px menyisakan 110px untuk rincian bahaya —
+            kurang 18px dari lebar minimum satu baris MiniBar, sehingga
+            barisnya melimpah keluar kartu. Gauge-nya yang mengecil. */}
+        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center sm:h-[120px] sm:w-[120px]">
           <ArcGauge score={score} hex={hex} size={120} />
           {/* Score text centered in gauge */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-1">
-            <span className="data-num text-[30px] font-bold leading-none text-text-primary">
+            <span className="data-num text-[26px] font-bold leading-none text-text-primary sm:text-[30px]">
               {hasScore ? animatedScore : 'N/A'}
             </span>
             <span className="data-num mt-1 text-[11px] text-text-muted">{hasScore ? '/100' : ''}</span>
@@ -218,7 +221,7 @@ function MiniBar({ label, value }) {
   const hex = value >= 70 ? '#ef4444' : value >= 40 ? '#f59e0b' : '#10b981';
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[9px] font-semibold tracking-wider text-text-muted uppercase w-[84px] sm:w-[68px] shrink-0 truncate">{label}</span>
+      <span className="w-[76px] shrink-0 truncate text-[9px] font-semibold uppercase tracking-wider text-text-muted sm:w-[68px]">{label}</span>
       <div className="flex-1 h-1 rounded-full bg-white/6 overflow-hidden">
         <motion.div
           className="h-full rounded-full"
@@ -228,7 +231,7 @@ function MiniBar({ label, value }) {
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
         />
       </div>
-      <span className="data-num text-[8px] w-7 sm:w-5 text-right font-mono tabular-nums" style={{ color: hex }}>{value}</span>
+      <span className="data-num w-6 text-right font-mono text-[8px] tabular-nums sm:w-5" style={{ color: hex }}>{value}</span>
     </div>
   );
 }

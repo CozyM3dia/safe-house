@@ -12,9 +12,8 @@ import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { SafeScoreCard } from '../cards/SafeScoreCard';
 import { MetricsGrid } from '../cards/MetricsGrid';
+import { AnalysisDeck } from '../cards/AnalysisDeck';
 import { RadarCard } from '../cards/RadarCard';
-import { SeismicWaveform } from '../cards/SeismicWaveform';
-import { GaussianCard } from '../cards/GaussianCard';
 import { AddressCard } from '../cards/AddressCard';
 import { VerdictCard } from '../cards/VerdictCard';
 import { CompareSetup } from '../cards/CompareSetup';
@@ -341,11 +340,8 @@ function SkeletonState() {
         <Skeleton className="h-[72px] rounded-xl" />
       </div>
 
-      {/* Radar skeleton */}
-      <Skeleton className="h-56 w-full rounded-2xl" />
-
-      {/* Waveform skeleton */}
-      <Skeleton className="h-32 w-full rounded-2xl" />
+      {/* Analysis deck skeleton */}
+      <Skeleton className="h-64 w-full rounded-2xl" />
 
       {/* Address skeleton */}
       <Skeleton className="h-24 w-full rounded-2xl" />
@@ -421,18 +417,10 @@ function PopulatedState({ propertyA, onOpenDrawer }) {
         <MetricsGrid property={propertyA} />
       </motion.div>
 
-      {/* Analysis section */}
+      {/* Analysis section — tiga grafik dalam satu instrumen berkanal */}
       <motion.div variants={item}>
         <SectionLabel>{t('panel.riskAnalysis')}</SectionLabel>
-        <RadarCard propertyA={propertyA} />
-      </motion.div>
-
-      <motion.div variants={item}>
-        <SeismicWaveform property={propertyA} />
-      </motion.div>
-
-      <motion.div variants={item}>
-        <GaussianCard property={propertyA} />
+        <AnalysisDeck property={propertyA} />
       </motion.div>
 
       {/* Location section */}

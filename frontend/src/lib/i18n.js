@@ -207,6 +207,29 @@ const translations = {
   'card.riskRadar': { id: 'Radar Risiko (5-axis)', en: 'Risk Radar (5-axis)' },
   'card.seismic': { id: 'Profil Guncangan', en: 'Shaking profile' },
   'card.faultPrefix': { id: 'Sesar:', en: 'Fault:' },
+
+  // ─── Instrumen analisis (AnalysisDeck) ────────────────────────
+  'deck.radar': { id: 'Radar Bahaya', en: 'Hazard Radar' },
+  'deck.radarShort': { id: 'Radar', en: 'Radar' },
+  'deck.shaking': { id: 'Profil Guncangan', en: 'Shaking Profile' },
+  'deck.shakingShort': { id: 'Guncangan', en: 'Shaking' },
+  'deck.spectrum': { id: 'Spektrum Respons', en: 'Response Spectrum' },
+  'deck.spectrumShort': { id: 'Spektrum', en: 'Spectrum' },
+  'deck.scale': { id: 'Skala 0–100', en: 'Scale 0–100' },
+  'deck.peakHazard': { id: 'Bahaya tertinggi', en: 'Peak hazard' },
+  'deck.surfacePga': { id: 'PGA permukaan', en: 'Surface PGA' },
+  'deck.high': { id: 'Tinggi', en: 'High' },
+  'deck.medium': { id: 'Sedang', en: 'Moderate' },
+  'deck.low': { id: 'Rendah', en: 'Low' },
+  'deck.siteClass': { id: 'Kelas situs', en: 'Site class' },
+  'deck.radarMeta': {
+    id: 'Lima sumbu bahaya, skala 0–100',
+    en: 'Five hazard axes, scale 0–100',
+  },
+  'deck.shakingMeta': {
+    id: 'Model sintetik dari PGA, bukan rekaman',
+    en: 'Synthetic model from PGA, not a recording',
+  },
   'card.probability': {
     id: 'Distribusi Probabilitas',
     en: 'Probability Distribution',
