@@ -1208,33 +1208,13 @@ async def generate_with_fallback(
         "generationConfig": generation_config,
     }
 
+    # Gemini adalah primary: entri pertama chain "live", sisanya tier fallback.
     models_to_try = [
-        (model, "fallback")
-        for model in chain
+        (model, "live" if index == 0 else "fallback")
+        for index, model in enumerate(chain)
     ]
     last_error: Optional[AIServiceError] = None
-    openrouter_ready = openrouter_configured()
 
-    # OpenRouter (ox-alpha) adalah primary — dicoba pertama bila dikonfigurasi.
-    if openrouter_ready:
-        try:
-            or_model = openrouter_model()
-            response = await _post_openrouter_model(gemini_payload, client=client)
-            parsed = _parse_openrouter_json(response)
-
-            meta = AIMetadata(
-                model=f"openrouter/{or_model}",
-                delivery_mode="live",
-                prompt_version=PROMPT_VERSION,
-                generated_at=datetime.now(timezone.utc),
-            )
-            log.info("AI response ok provider=openrouter model=%s delivery=live", or_model)
-            return parsed, meta
-        except AIServiceError as exc:
-            last_error = exc
-            log.warning("OpenRouter primary failed (%s), falling back to Gemini chain", exc.status_code)
-
-    # Gemini chain sebagai fallback.
     for index, (model, delivery_mode) in enumerate(models_to_try):
         try:
             response = await _post_gemini_model(gemini_payload, model, client=client)
@@ -1262,6 +1242,26 @@ async def generate_with_fallback(
             if exc.status_code in {401, 403}:
                 break
             continue
+
+    # OpenRouter (ox-alpha) adalah tier terakhir: dicoba setelah seluruh chain
+    # Gemini habis, termasuk saat chain dihentikan karena kunci Gemini ditolak.
+    if openrouter_configured():
+        try:
+            or_model = openrouter_model()
+            response = await _post_openrouter_model(gemini_payload, client=client)
+            parsed = _parse_openrouter_json(response)
+
+            meta = AIMetadata(
+                model=f"openrouter/{or_model}",
+                delivery_mode="fallback",
+                prompt_version=PROMPT_VERSION,
+                generated_at=datetime.now(timezone.utc),
+            )
+            log.info("AI response ok provider=openrouter model=%s delivery=fallback", or_model)
+            return parsed, meta
+        except AIServiceError as exc:
+            last_error = exc
+            log.warning("OpenRouter fallback failed (%s)", exc.status_code)
 
     if last_error is not None:
         raise last_error
