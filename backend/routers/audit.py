@@ -72,29 +72,6 @@ def _audit_cache_store(key: tuple[float, float], payload: dict) -> None:
     _AUDIT_CACHE[key] = (time.monotonic(), payload)
 
 
-def _spawn_persist(pool: Any, audit_id: str, lat: float, lon: float, document: dict) -> None:
-    """Tulis audit ke DB tanpa membuat pengguna menunggu round-trip Supabase.
-
-    ID sudah dibuat aplikasi sehingga respons tetap membawa id/persisted;
-    kegagalan tulis hanya dicatat — penyimpanan memang bersifat toleran gagal.
-    """
-
-    async def _insert() -> None:
-        try:
-            await pool.execute(
-                "INSERT INTO audits (id, lat, lon, data) VALUES ($1, $2, $3, $4)",
-                uuid.UUID(audit_id),
-                lat,
-                lon,
-                document,
-            )
-        except Exception as exc:  # noqa: BLE001 — gagal simpan tidak boleh menggagalkan audit
-            log.warning("Audit tidak tersimpan: %s", exc)
-
-    task = asyncio.create_task(_insert())
-    db.track_write_task(task)
-
-
 def _spawn_prefetch(result: AuditResult) -> None:
     """Hangatkan cache naratif AI di latar belakang.
 
@@ -516,13 +493,26 @@ async def create_audit(req: AuditRequest) -> AuditResult:
     payload = result.model_dump(mode="json")
     pool = db.get_pool()
     if pool is not None:
-        result.persisted = True
+        # INSERT di-await inline: runtime serverless (Vercel) membatalkan task
+        # latar belakang setelah respons kembali, sehingga pola fire-and-forget
+        # membuat baris tidak pernah tersimpan. Biayanya satu round-trip
+        # pooler (~30-80 ms) — jauh lebih murah daripada kehilangan audit.
         document = {k: v for k, v in payload.items() if k not in ("id", "persisted")}
-        _spawn_persist(pool, result.id, result.lat, result.lon, document)
+        try:
+            await pool.execute(
+                "INSERT INTO audits (id, lat, lon, data) VALUES ($1, $2, $3, $4)",
+                uuid.UUID(result.id),
+                result.lat,
+                result.lon,
+                document,
+            )
+            result.persisted = True
+        except Exception as exc:  # noqa: BLE001 — gagal simpan tidak boleh menggagalkan audit
+            log.warning("Audit tidak tersimpan: %s", exc)
 
     _audit_cache_store(key, payload)
 
-    if pool is not None:
+    if pool is not None and result.persisted:
         _spawn_prefetch(result)
     return result
 

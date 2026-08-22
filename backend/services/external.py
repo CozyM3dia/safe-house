@@ -424,7 +424,10 @@ async def fetch_all(
     reused: dict[str, Any] = {}
     for name, value in (prefetched or {}).items():
         if value is not None and name in tasks:
-            tasks.pop(name)
+            # Tutup korutin yang tidak dijalankan agar tidak muncul
+            # "coroutine was never awaited" dan sumbernya tak dipanggil dua kali.
+            orphan = tasks.pop(name)
+            orphan.close()
             reused[name] = value
 
     settled = await asyncio.gather(*tasks.values(), return_exceptions=True)
