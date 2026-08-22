@@ -889,5 +889,96 @@ class BattleReportRouterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(generated.report, response.json()["report"])
 
 
+def _cached_narrative_row() -> dict:
+    cached_narrative = {
+        **VALID_NARRATIVE_RAW,
+        "geo_stability_explanation": "penjelasan dari cache",
+        "generated_by": "Gemini (gemini-3.7-flash)",
+    }
+    return {
+        "narrative": cached_narrative,
+        "model": "gemini-3.7-flash",
+        "prompt_version": ai.PROMPT_VERSION,
+        "generated_at": datetime.now(timezone.utc),
+        "expires_at": None,
+    }
+
+
+class NarrativeReadThroughTests(unittest.IsolatedAsyncioTestCase):
+    async def test_read_through_answers_without_model_call(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise AssertionError("Model tidak boleh dihubungi saat cache hit")
+
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_PRIMARY):
+            result = await ai.generate_narrative(
+                sample_audit(), client=client, db_module=_mock_db(_cached_narrative_row())
+            )
+        await client.aclose()
+
+        self.assertEqual("cached", result.metadata.delivery_mode)
+        self.assertIn("dari cache", result.geo_stability_explanation)
+
+    async def test_force_bypasses_read_through_cache(self):
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return gemini_response(VALID_NARRATIVE_RAW)
+
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_PRIMARY):
+            result = await ai.generate_narrative(
+                sample_audit(),
+                client=client,
+                db_module=_mock_db(_cached_narrative_row()),
+                force=True,
+            )
+        await client.aclose()
+
+        self.assertEqual(1, calls["n"])
+        self.assertEqual("live", result.metadata.delivery_mode)
+
+
+class PrefetchNarrativeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_prefetch_generates_and_stores_when_empty(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return gemini_response(VALID_NARRATIVE_RAW)
+
+        db_mock = _mock_db(None)
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_PRIMARY):
+            await ai.prefetch_narrative(
+                sample_audit(), client=client, db_module=db_mock
+            )
+        await client.aclose()
+
+        db_mock.get_pool.return_value.execute.assert_awaited_once()
+
+    async def test_prefetch_skips_model_when_already_cached(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise AssertionError("Prefetch tidak boleh memanggil model saat cache sudah ada")
+
+        db_mock = _mock_db(_cached_narrative_row())
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_PRIMARY):
+            await ai.prefetch_narrative(
+                sample_audit(), client=client, db_module=db_mock
+            )
+        await client.aclose()
+
+        db_mock.get_pool.return_value.execute.assert_not_awaited()
+
+    async def test_prefetch_disabled_short_circuits(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise AssertionError("Prefetch nonaktif tidak boleh menyentuh jaringan")
+
+        client = _mock_client(handler)
+        with patch.dict(os.environ, ENV_PRIMARY), \
+                patch.object(ai, "PREFETCH_ENABLED", False):
+            await ai.prefetch_narrative(sample_audit(), client=client, db_module=_mock_db(None))
+        await client.aclose()
+
+
 if __name__ == "__main__":
     unittest.main()

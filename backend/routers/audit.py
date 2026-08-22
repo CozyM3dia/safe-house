@@ -18,6 +18,7 @@ from data.constants import INDONESIA_BOUNDS
 from models import AuditRequest, AuditResult
 from services import completeness, external, scoring
 from services import pbg_checklist as pbg
+from services import ai as ai_service
 from services.geotech import geotech_profile
 from services.location import LocationClassification, classify_location
 
@@ -37,10 +38,6 @@ _REJECTED_CACHE_MAX = 1024
 _AUDIT_CACHE: dict[tuple[float, float], tuple[float, dict]] = {}
 _AUDIT_CACHE_MAX = 512
 _AUDIT_CACHE_TTL_S = float(os.getenv("AUDIT_CACHE_TTL_SECONDS", "600"))
-
-# Tahan referensi task persist agar tidak dibersihkan GC selesai sebelum
-# INSERT-nya berjalan (pola fire-and-forget asyncio).
-_pending_persist_tasks: set[asyncio.Task] = set()
 
 
 def _within_indonesia(lat: float, lon: float) -> bool:
@@ -95,8 +92,21 @@ def _spawn_persist(pool: Any, audit_id: str, lat: float, lon: float, document: d
             log.warning("Audit tidak tersimpan: %s", exc)
 
     task = asyncio.create_task(_insert())
-    _pending_persist_tasks.add(task)
-    task.add_done_callback(_pending_persist_tasks.discard)
+    db.track_write_task(task)
+
+
+def _spawn_prefetch(result: AuditResult) -> None:
+    """Hangatkan cache naratif AI di latar belakang.
+
+    Saat pengguna membuka panel AI beberapa detik kemudian, naratif sudah
+    tersimpan di ai_narratives dan permintaannya dijawab <100 ms. Kegagalan
+    prefetch tidak berdampak apa pun ke respons audit.
+    """
+
+    async def _warm() -> None:
+        await ai_service.prefetch_narrative(result, lang="id")
+
+    db.track_write_task(asyncio.create_task(_warm()))
 
 
 def _raise_for_location(location: LocationClassification) -> None:
@@ -502,13 +512,18 @@ async def create_audit(req: AuditRequest) -> AuditResult:
     # sebelumnya (narrative/{id} akan fallback ke audit inline bila baris
     # belum terlanjur tersimpan).
     result.id = str(uuid.uuid4())
+    # Satu serialisasi dipakai bersama oleh persist DB dan cache memori.
+    payload = result.model_dump(mode="json")
     pool = db.get_pool()
     if pool is not None:
         result.persisted = True
-        document = result.model_dump(mode="json", exclude={"id", "persisted"})
+        document = {k: v for k, v in payload.items() if k not in ("id", "persisted")}
         _spawn_persist(pool, result.id, result.lat, result.lon, document)
 
-    _audit_cache_store(key, result.model_dump(mode="json"))
+    _audit_cache_store(key, payload)
+
+    if pool is not None:
+        _spawn_prefetch(result)
     return result
 
 

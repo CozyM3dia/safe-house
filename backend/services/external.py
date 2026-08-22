@@ -68,6 +68,32 @@ _FAULT_GEOMETRY_NEGATIVE_TTL_S = float(
     os.getenv("FAULT_GEOMETRY_NEGATIVE_TTL_SECONDS", "300")
 )
 
+# Cache nilai piksel InaRISK per (layer, koordinat ~110 m grid). Layer raster
+# BNPB praktis statis (peta bahaya 30 hari), jadi hasil /identify boleh disimpan
+# jauh lebih lama daripada TTL audit umum — repeat & near-duplicate query
+# dijawab tanpa menyentuh server ArcGIS yang kerap lambat.
+_INARISK_CACHE_MAX = int(os.getenv("INARISK_CACHE_MAX", "2048"))
+_INARISK_CACHE_TTL_S = float(os.getenv("INARISK_CACHE_TTL_SECONDS", "86400"))
+_inarisk_cache: dict[tuple[str, float, float], tuple[float, Any]] = {}
+_INARISK_MISS = object()
+
+
+def _inarisk_cache_get(key: tuple[str, float, float]):
+    entry = _inarisk_cache.get(key)
+    if entry is None:
+        return _INARISK_MISS
+    stored_at, value = entry
+    if time.monotonic() - stored_at > _INARISK_CACHE_TTL_S:
+        _inarisk_cache.pop(key, None)
+        return _INARISK_MISS
+    return value
+
+
+def _inarisk_cache_store(key: tuple[str, float, float], value) -> None:
+    if len(_inarisk_cache) >= _INARISK_CACHE_MAX:
+        _inarisk_cache.pop(next(iter(_inarisk_cache)), None)
+    _inarisk_cache[key] = (time.monotonic(), value)
+
 # Header standar agar server ArcGIS / OSM tidak memblokir IP cloud
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 (SAFE-House-Audit/1.0)",
@@ -187,6 +213,11 @@ async def _inarisk_layer(
     """
     half_span = 0.01  # ~1 km, cukup untuk mengunci satu piksel
 
+    cache_key = (layer, round(lat, 3), round(lon, 3))
+    cached = _inarisk_cache_get(cache_key)
+    if cached is not _INARISK_MISS:
+        return cached
+
     r = await client.get(
         f"{INARISK_BASE}/{layer}/MapServer/identify",
         params={
@@ -213,16 +244,20 @@ async def _inarisk_layer(
 
     results = payload.get("results") or []
     if not results:
+        _inarisk_cache_store(cache_key, None)
         return None
 
     raw = results[0].get("attributes", {}).get("Stretch.Pixel Value")
     if raw in (None, "NoData", ""):
+        _inarisk_cache_store(cache_key, None)
         return None
 
     try:
         # Nilai piksel kadang datang sebagai desimal ("2.000000").
         value = float(raw)
-        return int(round(value)) if as_class else value
+        result = int(round(value)) if as_class else value
+        _inarisk_cache_store(cache_key, result)
+        return result
     except (TypeError, ValueError):
         log.warning("Nilai piksel InaRISK tidak dikenali: %r", raw)
         return None
@@ -274,32 +309,42 @@ async def _nearby_pois(client: httpx.AsyncClient, lat: float, lon: float) -> lis
     );
     out body 5;
     """
-    last_exc: Optional[Exception] = None
-    for url in OVERPASS_URLS:
-        try:
-            r = await client.post(url, data={"data": query}, headers=HEADERS, timeout=TIMEOUT_S)
-            if r.status_code == 200:
-                names: list[str] = []
-                for element in r.json().get("elements", []):
-                    tags = element.get("tags", {})
-                    name = (
-                        tags.get("name")
-                        or tags.get("waterway")
-                        or tags.get("amenity")
-                        or tags.get("highway")
-                    )
-                    if name:
-                        names.append(name)
+    async def _try_mirror(url: str):
+        r = await client.post(url, data={"data": query}, headers=HEADERS, timeout=TIMEOUT_S)
+        if r.status_code != 200:
+            raise RuntimeError(f"Overpass {url} -> HTTP {r.status_code}")
+        return r
 
-                # dict.fromkeys mempertahankan urutan sekaligus membuang duplikat
-                return list(dict.fromkeys(names))[:5]
-        except Exception as exc:
-            last_exc = exc
-            continue
+    # Race ketiga mirror secara bersamaan: yang pertama balas 200 menang,
+    # sisanya dibatalkan. Retry berantai dulu membuat audit membayar hingga
+    # ~3x TIMEOUT_S hanya untuk satu sumber opsional.
+    tasks = [asyncio.create_task(_try_mirror(url)) for url in OVERPASS_URLS]
+    try:
+        for fut in asyncio.as_completed(tasks):
+            try:
+                r = await fut
+            except Exception:
+                continue
+            names: list[str] = []
+            for element in r.json().get("elements", []):
+                tags = element.get("tags", {})
+                name = (
+                    tags.get("name")
+                    or tags.get("waterway")
+                    or tags.get("amenity")
+                    or tags.get("highway")
+                )
+                if name:
+                    names.append(name)
 
-    if last_exc is not None:
-        log.info("Overpass POI lookup dilewati (timeout/busy): %s", last_exc)
-        return []
+            # dict.fromkeys mempertahankan urutan sekaligus membuang duplikat
+            return list(dict.fromkeys(names))[:5]
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    log.info("Overpass POI lookup dilewati (semua mirror timeout/busy)")
     return []
 
 
