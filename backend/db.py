@@ -6,6 +6,7 @@ tersimpan. Saat demo di depan juri, database mati tidak boleh membuat aplikasi
 tampak rusak.
 """
 
+import asyncio
 import json
 import logging
 import os
@@ -16,6 +17,16 @@ import asyncpg
 log = logging.getLogger(__name__)
 
 _pool: asyncpg.Pool | None = None
+
+# Tahan referensi task tulis fire-and-forget (INSERT audit) agar tidak dibersihkan
+# GC selesai sebelum benar-benar berjalan, dan bisa di-drain saat shutdown.
+_pending_write_tasks: set[asyncio.Task] = set()
+
+
+def track_write_task(task: asyncio.Task) -> None:
+    """Daftarkan task tulis latar belakang agar bisa ditunggu saat shutdown."""
+    _pending_write_tasks.add(task)
+    task.add_done_callback(_pending_write_tasks.discard)
 
 _SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
@@ -64,6 +75,11 @@ async def connect() -> None:
 async def disconnect() -> None:
     global _pool
     if _pool is not None:
+        # Tunggu INSERT audit fire-and-forget selesai (dengan batas) agar
+        # redeploy tidak membuang audit yang sudah diterima pengguna.
+        tasks = [t for t in _pending_write_tasks if not t.done()]
+        if tasks:
+            await asyncio.wait(tasks, timeout=10)
         await _pool.close()
     _pool = None
 

@@ -44,9 +44,18 @@ PROMPT_VERSION = os.getenv("AI_PROMPT_VERSION", "institutional-v2")
 CACHE_ENABLED = os.getenv("AI_CACHE_ENABLED", "true").lower() == "true"
 CACHE_TTL = int(os.getenv("AI_CACHE_TTL_SECONDS", "604800"))
 REDACT_LOCATION = os.getenv("AI_REDACT_LOCATION", "true").lower() == "true"
+# Hangatkan cache naratif otomatis setelah tiap audit sukses (butuh DB).
+PREFETCH_ENABLED = os.getenv("AI_PREFETCH_NARRATIVE", "true").lower() == "true"
+_prefetch_inflight: set[str] = set()
 
 _RETRYABLE_STATUSES = frozenset({400, 404, 408, 429, 500, 502, 503, 504})
 _NO_FALLBACK_STATUSES = frozenset({401, 403})
+
+# Batas latensi lapisan AI. Timeout per tier menjaga satu model lambat agar
+# tidak membakar seluruh anggaran; total deadline menjamin klien tidak
+# pernah menunggu lebih dari itu walau seluruh chain mati sekaligus.
+AI_TIER_TIMEOUT_S = float(os.getenv("AI_TIER_TIMEOUT_SECONDS", "20"))
+AI_TOTAL_DEADLINE_S = float(os.getenv("AI_TOTAL_DEADLINE_SECONDS", "45"))
 
 _PROMPT_INJECTION_RE = re.compile(
     r"(?:ignore\s+(?:all|any|the|previous|prior)|reveal\s+(?:the\s+)?(?:system|developer|hidden|secret|api)|"
@@ -919,6 +928,7 @@ async def _post_gemini_model(
     model: str,
     *,
     client: Optional[httpx.AsyncClient] = None,
+    timeout_s: Optional[float] = None,
 ) -> dict[str, Any]:
     """Low-level POST to a specific Gemini model. Raises AIServiceError."""
 
@@ -930,7 +940,7 @@ async def _post_gemini_model(
             retryable=False,
         )
 
-    timeout_s = float(os.getenv("AI_TIMEOUT_SECONDS", "35"))
+    timeout_s = timeout_s or float(os.getenv("AI_TIMEOUT_SECONDS", "35"))
     url = f"{GEMINI_API_ROOT}/{model}:generateContent"
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
 
@@ -941,14 +951,14 @@ async def _post_gemini_model(
         request_client = _get_shared_ai_client()
 
     try:
-        response = await request_client.post(url, json=payload, headers=headers)
+        response = await request_client.post(url, json=payload, headers=headers, timeout=timeout_s)
         status = response.status_code
 
         # If 400 and thinkingConfig was passed, retry once without thinkingConfig
         if status == 400 and isinstance(payload.get("generationConfig"), dict) and "thinkingConfig" in payload["generationConfig"]:
             retry_payload = json.loads(json.dumps(payload))
             retry_payload["generationConfig"].pop("thinkingConfig", None)
-            retry_resp = await request_client.post(url, json=retry_payload, headers=headers)
+            retry_resp = await request_client.post(url, json=retry_payload, headers=headers, timeout=timeout_s)
             if retry_resp.status_code < 400:
                 return retry_resp.json()
             status = retry_resp.status_code
@@ -974,7 +984,17 @@ async def _post_gemini_model(
                 status_code=503,
                 retryable=retryable,
             )
-        return response.json()
+        data = response.json()
+        # Observability implicit caching Gemini: prefix system instruction
+        # yang identik antar permintaan seharusnya memicu diskon token input.
+        usage = data.get("usageMetadata") or {}
+        cached_tokens = usage.get("cachedContentTokenCount")
+        if cached_tokens:
+            log.info(
+                "Gemini prompt cache: %s/%s token dari cache",
+                cached_tokens, usage.get("totalTokenCount"),
+            )
+        return data
     except httpx.TimeoutException as exc:
         raise AIServiceError(
             "Layanan AI membutuhkan waktu terlalu lama. Silakan coba lagi.",
@@ -1065,6 +1085,7 @@ async def _post_openrouter_model(
     gemini_payload: dict[str, Any],
     *,
     client: Optional[httpx.AsyncClient] = None,
+    timeout_s: Optional[float] = None,
 ) -> dict[str, Any]:
     """POST the same grounded task to OpenRouter. Raises AIServiceError."""
 
@@ -1084,12 +1105,14 @@ async def _post_openrouter_model(
         "X-Title": "S.A.F.E House",
     }
     request_client = client if client is not None else _get_shared_ai_client()
+    timeout_s = timeout_s or float(os.getenv("AI_TIMEOUT_SECONDS", "35"))
 
     try:
         response = await request_client.post(
             url,
             json=_openrouter_chat_payload(gemini_payload, model),
             headers=headers,
+            timeout=timeout_s,
         )
         status = response.status_code
         if status >= 400:
@@ -1208,16 +1231,48 @@ async def generate_with_fallback(
         "generationConfig": generation_config,
     }
 
-    # Gemini adalah primary: entri pertama chain "live", sisanya tier fallback.
     models_to_try = [
         (model, "live" if index == 0 else "fallback")
         for index, model in enumerate(chain)
     ]
     last_error: Optional[AIServiceError] = None
+    openrouter_ready = openrouter_configured()
+
+    # Anggaran waktu total: tier berikutnya hanya dicoba bila masih ada sisa
+    # anggaran layak. Tanpa ini, chain mati total bisa menggantung klien
+    # hingga n x AI_TIMEOUT_SECONDS.
+    loop = asyncio.get_running_loop()
+    deadline_at = loop.time() + AI_TOTAL_DEADLINE_S
+
+    def _remaining() -> float:
+        return max(0.0, deadline_at - loop.time())
 
     for index, (model, delivery_mode) in enumerate(models_to_try):
+        if last_error is not None and last_error.status_code in {401, 403}:
+            if openrouter_ready:
+                # Kunci Gemini ditolak, tapi OpenRouter memakai kunci dan
+                # kuota sendiri — masih layak dicoba sebelum menyerah.
+                log.warning(
+                    "Gemini auth rejected (%s), switching to OpenRouter fallback",
+                    last_error.status_code,
+                )
+                break
+            raise last_error
+
+        remaining = _remaining()
+        if index > 0 and remaining < 3.0:
+            log.warning(
+                "AI total deadline (%.0fs) hampir habis; berhenti sebelum tier %s",
+                AI_TOTAL_DEADLINE_S, model,
+            )
+            break
         try:
-            response = await _post_gemini_model(gemini_payload, model, client=client)
+            response = await _post_gemini_model(
+                gemini_payload,
+                model,
+                client=client,
+                timeout_s=min(AI_TIER_TIMEOUT_S, _remaining()) or None,
+            )
             parsed = _parse_gemini_json(response)
 
             meta = AIMetadata(
@@ -1234,21 +1289,23 @@ async def generate_with_fallback(
             has_next = index + 1 < len(models_to_try)
             if has_next and exc.status_code not in {401, 403}:
                 log.warning(
-                    "Gemini %s failed (%s), trying next: %s",
+                    "Model %s failed (%s), trying next: %s",
                     model, exc.status_code, models_to_try[index + 1][0],
                 )
             else:
-                log.warning("Gemini %s failed (%s)", model, exc.status_code)
-            if exc.status_code in {401, 403}:
-                break
+                log.warning("Model %s failed (%s)", model, exc.status_code)
             continue
 
     # OpenRouter (ox-alpha) adalah tier terakhir: dicoba setelah seluruh chain
     # Gemini habis, termasuk saat chain dihentikan karena kunci Gemini ditolak.
-    if openrouter_configured():
+    if openrouter_ready and _remaining() >= 3.0:
         try:
             or_model = openrouter_model()
-            response = await _post_openrouter_model(gemini_payload, client=client)
+            response = await _post_openrouter_model(
+                gemini_payload,
+                client=client,
+                timeout_s=min(AI_TIER_TIMEOUT_S, _remaining()) or None,
+            )
             parsed = _parse_openrouter_json(response)
 
             meta = AIMetadata(
@@ -1481,6 +1538,79 @@ async def _store_cached_narrative(
 
 # ── Public API ──────────────────────────────────────────────────────
 
+def _narrative_from_cache_row(cached: dict[str, Any]) -> Optional[NarrativeResult]:
+    """Rebuild a NarrativeResult from an ai_narratives row (or None)."""
+    cached_narrative = dict(cached.get("narrative") or {})
+    if not cached_narrative:
+        return None
+    age = (
+        int((datetime.now(timezone.utc) - cached["generated_at"]).total_seconds())
+        if isinstance(cached.get("generated_at"), datetime)
+        else None
+    )
+    cached_narrative["metadata"] = AIMetadata(
+        model=cached.get("model", "unknown"),
+        delivery_mode="cached",
+        prompt_version=cached.get("prompt_version", PROMPT_VERSION),
+        generated_at=cached.get("generated_at", datetime.now(timezone.utc)),
+        cache_age_seconds=age,
+    ).model_dump(mode="json")
+    try:
+        return NarrativeResult.model_validate(cached_narrative)
+    except ValidationError:
+        return None
+
+
+async def prefetch_narrative(
+    audit: AuditResult,
+    lang: str = "id",
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+    db_module: Any = None,
+) -> None:
+    """Warm the narrative cache right after a successful audit.
+
+    Dipanggil fire-and-forget dari POST /api/audit sehingga saat pengguna
+    membuka panel AI, naratifnya sudah ada di tabel ai_narratives dan
+    permintaan berikutnya dijawab <100 ms. Tidak pernah melempar exception.
+    """
+    if not PREFETCH_ENABLED or not CACHE_ENABLED:
+        return
+    if not (os.getenv("GEMINI_API_KEY", "").strip() or openrouter_configured()):
+        return
+
+    if db_module is None:
+        try:
+            import db as _db
+            db_module = _db
+        except ImportError:
+            return
+    try:
+        pool = db_module.get_pool()
+    except Exception:
+        return
+    if pool is None:
+        return
+
+    fingerprint = audit_fingerprint(audit, lang)
+    if fingerprint in _prefetch_inflight:
+        return
+    if await _get_cached_narrative(fingerprint, db_module) is not None:
+        return
+
+    _prefetch_inflight.add(fingerprint)
+    try:
+        await asyncio.wait_for(
+            generate_narrative(audit, lang, client=client, db_module=db_module),
+            timeout=AI_TOTAL_DEADLINE_S + 5,
+        )
+        log.info("Narratif di-prefetch fp=%s", fingerprint[:8])
+    except Exception as exc:  # noqa: BLE001 — prefetch tidak boleh berdampak ke pengguna
+        log.info("Prefetch naratif dilewati: %s", exc)
+    finally:
+        _prefetch_inflight.discard(fingerprint)
+
+
 def _generated_by_label(meta: AIMetadata) -> str:
     """Attribution string that reflects the actual transport used."""
 
@@ -1496,6 +1626,7 @@ async def generate_narrative(
     *,
     client: Optional[httpx.AsyncClient] = None,
     db_module: Any = None,
+    force: bool = False,
 ) -> NarrativeResult:
     """Generate or retrieve a narrative. Uses in-memory & DB cache for instant response."""
 
@@ -1507,6 +1638,16 @@ async def generate_narrative(
             db_module = None
 
     fingerprint = audit_fingerprint(audit, lang)
+
+    # Read-through: naratif yang sudah ada (mis. hasil prefetch pasca-audit)
+    # dijawab tanpa menyentuh model sama sekali. force=True melewatinya.
+    if not force:
+        cached = await _get_cached_narrative(fingerprint, db_module)
+        if cached is not None:
+            instant = _narrative_from_cache_row(cached)
+            if instant is not None:
+                log.info("AI narrative cache hit fp=%s", fingerprint[:8])
+                return instant
 
     citations = available_citations(audit)
     language = "English" if lang == "en" else "Bahasa Indonesia"
@@ -1569,21 +1710,9 @@ async def generate_narrative(
         if db_module is not None:
             cached = await _get_cached_narrative(fingerprint, db_module)
             if cached is not None:
-                cached_narrative = cached["narrative"]
-                age = int(
-                    (datetime.now(timezone.utc) - cached["generated_at"]).total_seconds()
-                ) if isinstance(cached.get("generated_at"), datetime) else None
-                cached_narrative["metadata"] = AIMetadata(
-                    model=cached.get("model", "unknown"),
-                    delivery_mode="cached",
-                    prompt_version=cached.get("prompt_version", PROMPT_VERSION),
-                    generated_at=cached.get("generated_at", datetime.now(timezone.utc)),
-                    cache_age_seconds=age,
-                ).model_dump(mode="json")
-                try:
-                    return NarrativeResult.model_validate(cached_narrative)
-                except ValidationError:
-                    pass
+                cached_result = _narrative_from_cache_row(cached)
+                if cached_result is not None:
+                    return cached_result
         raise
 
     # Post-process: override model-provided values with deterministic ones

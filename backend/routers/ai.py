@@ -34,6 +34,7 @@ _requests_by_client: dict[str, deque[float]] = defaultdict(deque)
 _RATE_LIMIT = int(os.getenv("AI_RATE_LIMIT_PER_MINUTE", "15"))
 _RATE_WINDOW_SECONDS = 60.0
 _TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true"
+_sweep_counter = 0
 
 
 def _client_key(request: Request) -> str:
@@ -44,9 +45,17 @@ def _client_key(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _sweep_stale_clients(now: float) -> None:
+    """Buang bucket kosong/ kedaluwarsa agar map tidak tumbuh tanpa batas."""
+    for key in [k for k, b in _requests_by_client.items() if not b]:
+        _requests_by_client.pop(key, None)
+
+
 def _enforce_rate_limit(request: Request) -> None:
+    global _sweep_counter
     now = time.monotonic()
-    bucket = _requests_by_client[_client_key(request)]
+    key = _client_key(request)
+    bucket = _requests_by_client[key]
     while bucket and now - bucket[0] >= _RATE_WINDOW_SECONDS:
         bucket.popleft()
     if len(bucket) >= _RATE_LIMIT:
@@ -55,6 +64,11 @@ def _enforce_rate_limit(request: Request) -> None:
             detail="Terlalu banyak permintaan AI. Coba lagi dalam satu menit.",
         )
     bucket.append(now)
+
+    _sweep_counter += 1
+    if _sweep_counter >= 256:
+        _sweep_counter = 0
+        _sweep_stale_clients(now)
 
 
 def _raise_public_error(exc: ai.AIServiceError) -> None:
@@ -167,7 +181,7 @@ async def create_saved_narrative(
     audit = AuditResult.model_validate(data)
 
     try:
-        result = await ai.generate_narrative(audit, lang)
+        result = await ai.generate_narrative(audit, lang, force=force)
     except ai.AIServiceError as exc:
         _raise_public_error(exc)
 

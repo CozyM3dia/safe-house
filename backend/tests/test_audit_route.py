@@ -261,6 +261,32 @@ class AuditRouteIntegrationTests(unittest.IsolatedAsyncioTestCase):
         # Elevasi preflight == elevasi final -> klasifikasi gerbang dipakai ulang.
         classify_mock.assert_called_once()
 
+    async def test_successful_audit_spawns_narrative_prefetch_when_db_available(self):
+        import asyncio
+
+        raw = _raw_data()
+        pool = MagicMock()
+        pool.execute = AsyncMock(return_value=None)
+        prefetch_mock = AsyncMock()
+
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            with patch("routers.audit.external.fetch_all", new=AsyncMock(return_value=(raw, []))), patch(
+                "routers.audit.external.preflight_location",
+                new=AsyncMock(return_value=(raw["geocode"], 102, [])),
+            ), patch(
+                "routers.audit.db.get_pool", return_value=pool
+            ), patch(
+                "routers.audit.ai_service.prefetch_narrative", new=prefetch_mock
+            ):
+                response = await client.post("/api/audit", json={"lat": -5.414, "lon": 105.264})
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.json()["persisted"])
+        prefetch_mock.assert_awaited_once()
+
 
 if __name__ == "__main__":
     unittest.main()
