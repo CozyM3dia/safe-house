@@ -55,6 +55,58 @@ export function riskLabel(score, lang = 'id') {
 }
 
 /**
+ * Warna risiko semantik. Satu-satunya sumber kebenaran — sebelumnya triad
+ * ini diduplikasi lima kali di seluruh komponen laporan dan mulai saling
+ * menyimpang (BattleReport memakai rgba mentah, PbgChecklistCard punya
+ * konstantanya sendiri).
+ */
+export const TONE_HEX = {
+  danger: '#ef4444',
+  moderate: '#f59e0b',
+  safe: '#10b981',
+};
+
+/** Isian zona untuk rel ukur (Meter) — flat, bukan gradien. */
+export const ZONE_BG = {
+  danger: 'rgba(239, 68, 68, 0.26)',
+  moderate: 'rgba(245, 158, 11, 0.24)',
+  safe: 'rgba(16, 185, 129, 0.24)',
+  neutral: 'rgba(212, 149, 106, 0.14)',
+};
+
+/**
+ * Tone faktor aman likuefaksi mengacu praktik screening:
+ * FS < 1,0 potensi likuefaksi; 1,0-1,4 waspada (margin desain konservatif);
+ * >= 1,4 aman secara teori.
+ */
+export function fsTone(fs) {
+  if (!Number.isFinite(fs)) return null;
+  if (fs < 1) return 'danger';
+  if (fs < 1.4) return 'moderate';
+  return 'safe';
+}
+
+/** Tone nilai intensitas dengan ambang naik (PGA, AQI, dsb). */
+export function thresholdTone(value, moderateAt, dangerAt) {
+  if (!Number.isFinite(value)) return null;
+  if (value >= dangerAt) return 'danger';
+  if (value >= moderateAt) return 'moderate';
+  return null;
+}
+
+/**
+ * Tone dari kata band bahaya ("RENDAH", "SEDANG", "TINGGI") pada label
+ * berbahasa Indonesia maupun Inggris. Null berarti tidak dikenali.
+ */
+export function bandTone(band) {
+  const s = String(band ?? '').toUpperCase();
+  if (/TIDAK ADA|RENDAH|LOW|AMAN/.test(s)) return 'safe';
+  if (/SEDANG|MODERATE|WASPADA|MEDIUM/.test(s)) return 'moderate';
+  if (/TINGGI|RAWAN|HIGH/.test(s)) return 'danger';
+  return null;
+}
+
+/**
  * Convert latitude/longitude to a shareable URL.
  */
 export function locationToUrl(lat, lng) {

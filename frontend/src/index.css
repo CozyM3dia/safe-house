@@ -56,7 +56,6 @@
     overflow: hidden;
   }
 
-  .zzz-probe-base { color: green; }
   html {
     min-width: 320px;
     background: hsl(var(--safe-bg));
@@ -1077,7 +1076,82 @@ html[data-theme='light'] .rpt-well {
 }
 
 .rpt-sections > * + * {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
   border-top: 1px solid var(--rpt-line);
+}
+
+/* Prosa laporan SNI (SniReport). Menggantikan pasangan .prose-safe +
+   .rpt-prose yang dulu bertumpuk dan saling menimpa. Bullet-bar hanya
+   untuk <ul>; daftar berurutan kembali memakai penomoran asli. */
+.sni-prose {
+  font-size: 13px;
+  line-height: 1.72;
+}
+
+.sni-prose > :first-child {
+  margin-top: 0;
+}
+
+.sni-prose > :last-child {
+  margin-bottom: 0;
+}
+
+.sni-prose ul > li {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.sni-prose ul > li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 0.625rem;
+  height: 1px;
+  margin-top: 0.62em;
+  background: var(--rpt-line-strong);
+}
+
+.sni-ol {
+  list-style: decimal;
+  padding-left: 1.375rem;
+}
+
+.sni-ol > li {
+  display: list-item;
+}
+
+.sni-ol > li::marker {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: hsl(var(--safe-accent));
+}
+
+.sni-li {
+  min-width: 0;
+}
+
+/* Normalisasi tabel di dalam SniReport — sama dengan perlakuan .rpt-prose
+   agar header tabel tidak berhenti di tengah dan sel tidak terkunci warna. */
+.sni-report .table-scroll > table {
+  display: table;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 12.5px;
+}
+
+.sni-report .table-scroll th {
+  background: transparent;
+  color: hsl(var(--safe-text-primary));
+  border-bottom: 1px solid var(--rpt-line);
+  padding: 10px 14px;
+}
+
+.sni-report .table-scroll td {
+  color: hsl(var(--safe-text-secondary));
+  border-bottom: 0;
+  padding: 10px 14px;
 }
 
 .rpt-legend > * + *::before {
