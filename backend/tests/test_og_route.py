@@ -1,4 +1,4 @@
-"""FastAPI integration tests untuk endpoint OG crawler (/og/laporan, /og/img)."""
+"""FastAPI integration tests untuk endpoint OG crawler (/api/og/*)."""
 
 import unittest
 import uuid
@@ -30,8 +30,8 @@ def _pool_dengan_audit(data=None):
 class OgLaporanRouteTests(unittest.IsolatedAsyncioTestCase):
     async def _get(self, slug=_SLUG):
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            return await client.get(f"/og/laporan/{slug}")
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            return await client.get(f"/api/og/laporan/{slug}")
 
     async def test_slug_valid_menghasilkan_meta_lengkap(self):
         pool = _pool_dengan_audit()
@@ -42,10 +42,10 @@ class OgLaporanRouteTests(unittest.IsolatedAsyncioTestCase):
         body = response.text
         self.assertIn('property="og:title"', body)
         self.assertIn("Gang Teratai", body)
-        self.assertIn(f"/og/img/{_SLUG}.png", body)
-        self.assertRegex(body, r'property="og:image" content="https?://[^"]+"')
+        # og:image absolut, satu origin dengan host yang melayani HTML.
+        self.assertIn(f'property="og:image" content="http://testserver/api/og/img/{_SLUG}.png"', body)
         self.assertIn('name="twitter:card" content="summary_large_image"', body)
-        self.assertIn(f'http-equiv="refresh" content="0;url=', body)
+        self.assertIn('http-equiv="refresh" content="0;url=', body)
         self.assertIn(f"/laporan/{_SLUG}", body)
 
     async def test_slug_tak_kenal_404_dengan_meta_default(self):
@@ -91,6 +91,17 @@ class OgLaporanRouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn("S.A.F.E House", response.text)
 
+    async def test_public_site_url_mengoverride_og_url(self):
+        pool = _pool_dengan_audit()
+        with patch("routers.og.db.get_pool", return_value=pool), patch.dict(
+            "os.environ", {"PUBLIC_SITE_URL": "https://safehouse.web.id/"}
+        ):
+            response = await self._get()
+
+        self.assertIn('property="og:url" content="https://safehouse.web.id/laporan/', response.text)
+        # og:image tetap mengikuti host backend (yang melayani gambar).
+        self.assertIn(f"/api/og/img/{_SLUG}.png", response.text)
+
 
 class OgImgRouteTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -98,18 +109,18 @@ class OgImgRouteTests(unittest.IsolatedAsyncioTestCase):
 
         og._CACHE_PNG.clear()
 
-    async def _get_img(self, slug=_SLUG):
+    async def _get_img(self, path):
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            return await client.get(f"/og/img/{slug}.png")
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            return await client.get(path)
 
     async def test_slug_valid_png_dan_cache_hidup(self):
         pool = _pool_dengan_audit()
         with patch("routers.og.db.get_pool", return_value=pool):
-            first = await self._get_img()
+            first = await self._get_img(f"/api/og/img/{_SLUG}.png")
             # Panggilan kedua harus dilayani cache — pool.mock habis terpakai
             # pada panggilan pertama; jika query diulang, side_effect StopIteration.
-            second = await self._get_img()
+            second = await self._get_img(f"/api/og/img/{_SLUG}.png")
 
         self.assertEqual(200, first.status_code)
         self.assertEqual("image/png", first.headers["content-type"])
@@ -120,7 +131,7 @@ class OgImgRouteTests(unittest.IsolatedAsyncioTestCase):
         pool = MagicMock()
         pool.fetchrow = AsyncMock(return_value=None)
         with patch("routers.og.db.get_pool", return_value=pool):
-            response = await self._get_img("slugngaco")
+            response = await self._get_img("/api/og/img/slugngaco.png")
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("image/png", response.headers["content-type"])
@@ -130,9 +141,17 @@ class OgImgRouteTests(unittest.IsolatedAsyncioTestCase):
         data = {**_AUDIT_DATA, "safe_score": None, "risk_level": "insufficient_data"}
         pool = _pool_dengan_audit(data)
         with patch("routers.og.db.get_pool", return_value=pool):
-            response = await self._get_img()
+            response = await self._get_img(f"/api/og/img/{_SLUG}.png")
 
         self.assertEqual(200, response.status_code)
+        self.assertTrue(response.content.startswith(b"\x89PNG"))
+
+    async def test_default_png_tanpa_db(self):
+        with patch("routers.og.db.get_pool", return_value=None):
+            response = await self._get_img("/api/og/default.png")
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("image/png", response.headers["content-type"])
         self.assertTrue(response.content.startswith(b"\x89PNG"))
 
 

@@ -1,6 +1,10 @@
-"""Router OG — HTML ber-meta untuk crawler share (WA/X/Discord/TG/LI/FB).
+"""Router OG — HTML ber-meta + PNG kartu untuk crawler share (WA/X/Discord/TG/LI/FB).
 
 Crawler tidak mengeksekusi JS, jadi SPA tidak pernah bisa menyuntik meta.
+Semua endpoint sengaja hidup di bawah prefix /api/* karena itulah satu-satunya
+path yang di-proxy ke backend di host Emergent; Vercel rewrite (frontend)
+menunjuk ke sini lewat /api/og/laporan/{slug}.
+
 Endpoint ini TIDAK menaikkan counter views (beda dengan /api/share/{slug}) —
 hit crawler bukan sinyal minat. Query read-only, tanpa INSERT/UPDATE.
 """
@@ -10,7 +14,7 @@ import html as _html
 import logging
 import os
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, Response
 
 import db
@@ -18,12 +22,12 @@ from services.og_image import DEFAULT_TITLE, render_card
 
 log = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/og", tags=["og"])
+router = APIRouter(prefix="/api/og", tags=["og"])
 
 # Sentinel: slug memang tidak ada di DB (beda dengan DB mati).
 _MISSING = object()
 
-_BAUD_LABEL = {
+_BAND_LABEL = {
     "safe": "AMAN",
     "moderate": "SEDANG",
     "danger": "RISIKO TINGGI",
@@ -71,7 +75,7 @@ def _deskripsi(data: dict | None) -> str:
             "Kelas situs Vs30, PGA desain, FS likuefaksi, dan bahaya banjir "
             "dari satu koordinat — parameter SNI 1726:2019 siap-PBG dalam dua menit."
         )
-    band = _BAUD_LABEL.get(data.get("risk_level"), "DATA TERBATAS")
+    band = _BAND_LABEL.get(data.get("risk_level"), "DATA TERBATAS")
     geo = data.get("geotech") or {}
     if data.get("safe_score") is not None:
         bagian = [f"S.A.F.E Score {data.get('safe_score')} ({band})"]
@@ -86,12 +90,29 @@ def _deskripsi(data: dict | None) -> str:
     return " · ".join(bagian) + " — audit SNI 1726:2019 oleh S.A.F.E House"
 
 
-def _html_meta(*, judul: str, deskripsi: str, slug: str) -> str:
-    base_site = os.getenv("PUBLIC_SITE_URL", "https://safehouse.web.id").rstrip("/")
-    base_api = os.getenv("BACKEND_PUBLIC_URL", base_site).rstrip("/")
+def _base_api(request: Request) -> str:
+    """Host yang melayani endpoint ini. Env menang (proxy kadang menulis ulang
+    Host); tanpa env, host request dipakai — backend dan gambar selalu satu
+    origin sehingga og:image selalu fetchable di host mana pun HTML disajikan."""
+    env = os.getenv("BACKEND_PUBLIC_URL", "").strip().rstrip("/")
+    if env:
+        return env
+    return str(request.base_url).rstrip("/")
+
+
+def _base_site(request: Request) -> str:
+    """Domain kanonik halaman share. PUBLIC_SITE_URL menang bila diset;
+    default = host request (mengikuti kenyataan host yang dibagikan)."""
+    env = os.getenv("PUBLIC_SITE_URL", "").strip().rstrip("/")
+    if env:
+        return env
+    return str(request.base_url).rstrip("/")
+
+
+def _html_meta(*, judul: str, deskripsi: str, slug: str, base_api: str, base_site: str) -> str:
     esc = _html.escape
     slug_aman = esc(slug, quote=True)
-    gambar = f"{base_api}/og/img/{slug_aman}.png"
+    gambar = f"{base_api}/api/og/img/{slug_aman}.png"
     url_halaman = f"{base_site}/laporan/{slug_aman}"
     return f"""<!doctype html>
 <html lang="id"><head>
@@ -119,13 +140,19 @@ def _html_meta(*, judul: str, deskripsi: str, slug: str) -> str:
 
 
 @router.get("/laporan/{slug}", response_class=HTMLResponse)
-async def og_laporan(slug: str):
+async def og_laporan(slug: str, request: Request):
     data = await _muat_audit(slug)
     if data is _MISSING:
         # Slug tak dikenal: 404 semantik, tapi crawler mayoritas tetap
         # membaca body — beri meta default tanpa angka palsu.
         return HTMLResponse(
-            _html_meta(judul=_judul(None), deskripsi=_deskripsi(None), slug=slug),
+            _html_meta(
+                judul=_judul(None),
+                deskripsi=_deskripsi(None),
+                slug=slug,
+                base_api=_base_api(request),
+                base_site=_base_site(request),
+            ),
             status_code=404,
             headers={"Cache-Control": "public, max-age=60"},
         )
@@ -134,7 +161,13 @@ async def og_laporan(slug: str):
     judul = _judul(data)
     deskripsi = _deskripsi(data)
     return HTMLResponse(
-        _html_meta(judul=judul, deskripsi=deskripsi, slug=slug),
+        _html_meta(
+            judul=judul,
+            deskripsi=deskripsi,
+            slug=slug,
+            base_api=_base_api(request),
+            base_site=_base_site(request),
+        ),
         headers={"Cache-Control": "public, max-age=300"},
     )
 
@@ -143,6 +176,15 @@ async def og_laporan(slug: str):
 # sebagai kunci. Tanpa eviksi sengaja — jumlah laporan aktif kecil selama
 # kontes; ganti ke TTL bila tumbuh.
 _CACHE_PNG: dict[str, bytes] = {}
+_KUNCI_DEFAULT = "__default__"
+
+
+def _kartu_default() -> bytes:
+    if _KUNCI_DEFAULT not in _CACHE_PNG:
+        _CACHE_PNG[_KUNCI_DEFAULT] = render_card(
+            title=DEFAULT_TITLE, score=None, band_key="insufficient_data"
+        )
+    return _CACHE_PNG[_KUNCI_DEFAULT]
 
 
 @router.get("/img/{slug}.png")
@@ -150,9 +192,7 @@ async def og_img(slug: str):
     if slug not in _CACHE_PNG:
         data = await _muat_audit(slug)
         if data is None or data is _MISSING or not isinstance(data, dict):
-            _CACHE_PNG[slug] = render_card(
-                title=DEFAULT_TITLE, score=None, band_key="insufficient_data"
-            )
+            _CACHE_PNG[slug] = _kartu_default()
         else:
             judul = (data.get("address") or "Lokasi").split(",")[0].strip()
             _CACHE_PNG[slug] = await asyncio.to_thread(
@@ -163,6 +203,16 @@ async def og_img(slug: str):
             )
     return Response(
         _CACHE_PNG[slug],
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@router.get("/default.png")
+async def og_default():
+    """Kartu generik untuk meta statis index.html (landing, /app)."""
+    return Response(
+        _kartu_default(),
         media_type="image/png",
         headers={"Cache-Control": "public, max-age=86400"},
     )
