@@ -22,9 +22,9 @@ kumpulkan bukti bisnis nyata.
 
 | Env | URL | Status |
 |---|---|---|
-| Emergent (prod) | _(URL belum dicatat — isi)_ | LIVE (nembus 15 Agu) |
-| Vercel staging | https://safe-house-staging.vercel.app | Landing OK, **APP RUSAK** |
-| Domain rencana | safehouse.web.id | dipajang di hero, verifikasi |
+| Emergent (prod) | https://safehouse-pull.emergent.host | LIVE; proxy `/api/*` → backend, sisanya SPA |
+| Vercel staging | https://safe-house-staging.vercel.app | mati (DEPLOYMENT_NOT_FOUND per 25 Agu) |
+| Domain rencana | safehouse.web.id | **DNS belum aktif** (NXDOMAIN per 25 Agu) |
 
 ### 🔴 BLOCKER STAGING (dari audit 15 Agu) — WAJIB fix
 1. **`/app` → 404.** Route React Router valid (`App.jsx:128`) tapi **tidak ada

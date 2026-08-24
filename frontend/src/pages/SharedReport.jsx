@@ -32,7 +32,27 @@ export default function SharedReport() {
         if (!alive) return;
         // Judul dinamis untuk berbagi sosial dan tab peramban.
         if (data?.address) {
-          document.title = `${t('report.locationAudit')} ${data.address.split(',')[0]} — S.A.F.E House`;
+          const alamat = data.address.split(',')[0];
+          const judul =
+            data.safe_score != null
+              ? `S.A.F.E Score ${data.safe_score} — ${alamat}`
+              : `${t('report.locationAudit')} ${alamat} — S.A.F.E House`;
+          document.title = judul;
+          // Pre-viewer yang menjalankan JS (Discord kadang) membaca meta ini;
+          // crawler murni dilayani endpoint /og/laporan via rewrite Vercel.
+          for (const [sel, content] of [
+            ['meta[property="og:title"]', judul],
+            ['meta[name="twitter:title"]', judul],
+            [
+              'meta[property="og:description"]',
+              data.safe_score != null
+                ? `S.A.F.E Score ${data.safe_score}/100 · audit SNI 1726:2019 dari satu koordinat — S.A.F.E House`
+                : undefined,
+            ],
+          ]) {
+            if (!content) continue;
+            document.querySelector(sel)?.setAttribute('content', content);
+          }
         }
         setState({ status: 'ready', data, error: null });
       })
