@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { MapPin, Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Crosshair, Mountain, Waves, Activity, ArrowUpRight, X } from 'lucide-react';
+import { Sparkles, FileText, Loader2, GitCompareArrows, ChevronRight, Zap, Crosshair, ArrowUpRight, X } from 'lucide-react';
 
 import { useAppStore } from '../../store/useAppStore';
 import { canExportSniReport } from '../../lib/pdfExport';
@@ -17,6 +17,8 @@ import { RadarCard } from '../cards/RadarCard';
 import { AddressCard } from '../cards/AddressCard';
 import { VerdictCard } from '../cards/VerdictCard';
 import { CompareSetup } from '../cards/CompareSetup';
+import { TourMockReport } from '../onboarding/TourMockReport';
+import { CapabilityPipeline, SampleLocationChannels } from './SiteChannelDeck';
 
 const container = {
   hidden: { opacity: 0 },
@@ -46,12 +48,14 @@ export function LeftPanel() {
   const battleReportContent = useAppStore((s) => s.battleReportContent);
   const battleReportLoading = useAppStore((s) => s.battleReportLoading);
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
+  const tourMockPanel = useAppStore((s) => s.tourMockPanel);
 
   // Satu nama tampilan menggantikan empat kondisi bersebelahan.
   const view =
     mode === 'battle' ? 'battle'
     : loading ? 'skeleton'
     : propertyA ? 'populated'
+    : tourMockPanel ? 'mock'
     : 'empty';
 
   return (
@@ -105,6 +109,8 @@ export function LeftPanel() {
                 <SkeletonState />
               ) : view === 'populated' ? (
                 <PopulatedState propertyA={propertyA} onOpenDrawer={() => setAuditDrawer(true)} />
+              ) : view === 'mock' ? (
+                <TourMockReport />
               ) : (
                 <EmptyState />
               )}
@@ -131,23 +137,9 @@ function SectionLabel({ children, icon: Icon }) {
 
 // ── States ──────────────────────────────────────────────────────
 
-// Lokasi contoh: satu klik langsung menghasilkan audit sungguhan. Layar
-// kosong sebelumnya hanya memberi instruksi lalu menunggu; pengguna baru
-// harus menebak titik mana di peta yang layak dicoba.
-const SAMPLE_SITES = [
-  { label: 'Bandar Lampung', subId: 'Pesisir, tanah lunak', subEn: 'Coastal, soft soil', lat: -5.4292, lon: 105.261 },
-  { label: 'Jakarta Pusat', subId: 'Cekungan aluvial', subEn: 'Alluvial basin', lat: -6.2088, lon: 106.8456 },
-  { label: 'Bandung', subId: 'Dekat Sesar Lembang', subEn: 'Near Lembang Fault', lat: -6.9175, lon: 107.6191 },
-];
-
-const CAPABILITIES = [
-  { icon: Mountain, labelKey: 'empty.capabilityVs30', descKey: 'empty.capabilityVs30Desc' },
-  { icon: Waves, labelKey: 'empty.capabilityLiquefaction', descKey: 'empty.capabilityLiquefactionDesc' },
-  { icon: Activity, labelKey: 'empty.capabilityFault', descKey: 'empty.capabilityFaultDesc' },
-  { icon: Sparkles, labelKey: 'empty.capabilityAi', descKey: 'empty.capabilityAiDesc' },
-];
-
 const DATA_SOURCES = ['InaRISK BNPB', 'PuSGeN 2024', 'SNI 1726:2019', 'USGS'];
+// Versi pendek untuk strip kalibrasi di ponsel (lantai tipografi 11px).
+const DATA_SOURCES_SHORT = ['InaRISK', 'PuSGeN', 'SNI 1726', 'USGS'];
 
 // Jejak seismogram: tenang → burst → peluruhan → tenang. Digambar sekali
 // saat panel muncul sehingga terbaca sebagai pembacaan alat, bukan ornamen.
@@ -155,12 +147,18 @@ const SEISMOGRAM_PATH =
   'M0 36 H38 l6-4 5 9 6-7 5 5 6-3 H78 l4-14 4 27 4-34 5 41 4-30 4 22 4-16 4 11 4-7 4 5 ' +
   'H130 l6-5 5 8 6-6 5 4 H170 l4-9 4 15 4-12 4 7 H206 l6-3 5 5 6-4 H262 l5-6 4 9 5-5 H340';
 
+// Kontur topografi statis (dua ring tertutup + satu terbuka) sebagai lapisan
+// kedalaman di belakang konten. Statis sengaja: latar bergerak di belakang
+// teks panel audit mengganggu pembacaan angka.
+const CONTOUR_PATHS = [
+  'M-20 210 C40 150 90 190 150 150 C210 110 260 150 330 120 C390 95 430 120 480 100',
+  'M-20 250 C50 190 100 230 160 190 C220 150 270 190 335 160 C395 135 435 160 490 140',
+  'M-20 290 C60 235 110 270 175 235 C235 200 285 235 345 205 C400 182 440 205 500 185',
+];
+
 function EmptyState() {
   const t = useT();
-  const lang = useAppStore((s) => s.lang);
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
-  const processLocation = useAppStore((s) => s.processLocation);
-  const isEn = lang === 'en';
 
   return (
     <motion.div
@@ -169,11 +167,28 @@ function EmptyState() {
       animate="show"
       className="relative isolate flex flex-col overflow-hidden px-5 pb-7 pt-5 sm:px-6"
     >
-      <div className="audit-grid pointer-events-none absolute inset-0 -z-10 opacity-[0.28]" aria-hidden="true" />
-      <div
-        className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-64 w-[130%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(212,149,106,0.16),transparent_65%)]"
-        aria-hidden="true"
-      />
+      {/* Lapisan kedalaman: kontur topografi + grid audit + pendar hangat. */}
+      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+        <div className="audit-grid absolute inset-0 opacity-[0.22]" />
+        <svg
+          viewBox="0 0 480 340"
+          preserveAspectRatio="xMidYMax slice"
+          className="absolute inset-x-0 bottom-0 h-[62%] w-full text-accent"
+          fill="none"
+        >
+          {CONTOUR_PATHS.map((d, i) => (
+            <path
+              key={d}
+              d={d}
+              stroke="currentColor"
+              strokeOpacity={0.2 - i * 0.045}
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
+        <div className="absolute -top-24 left-1/2 h-64 w-[130%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(212,149,106,0.14),transparent_65%)]" />
+      </div>
 
       {/* ── Seismogram hero ── */}
       <motion.div variants={item} className="-mx-5 mb-1 sm:-mx-6" aria-hidden="true">
@@ -210,12 +225,21 @@ function EmptyState() {
         </svg>
       </motion.div>
 
+      {/* ── Strip kalibrasi sumber data ──
+          Lantai tipografi ponsel (index.css, max-width 639px) memaksa teks
+          kecil naik ke 11px, sehingga nama sumber versi penuh tak muat di
+          layar sempit. Di ponsel pakai nama pendek; sm: ke atas nama penuh. */}
+      <motion.div variants={item} className="mb-4 flex items-center gap-2" aria-hidden="true">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-risk-safe shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+        <span className="panel-meta truncate font-mono text-[8px] font-medium uppercase tracking-[0.12em]">
+          <span className="sm:hidden">{DATA_SOURCES_SHORT.join(' · ')}</span>
+          <span className="hidden sm:inline">{DATA_SOURCES.join(' · ')}</span>
+        </span>
+      </motion.div>
+
       {/* ── Judul ── */}
       <motion.div variants={item}>
-        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.26em] text-accent/85">
-          {DATA_SOURCES.slice(0, 3).join('  ·  ')}
-        </p>
-        <h2 className="mt-3 max-w-[13ch] font-sans text-[30px] font-semibold leading-[0.98] tracking-[-0.045em] text-text-primary">
+        <h2 className="max-w-[13ch] font-sans text-[30px] font-semibold leading-[0.98] tracking-[-0.045em] text-text-primary">
           {t('empty.title')}
         </h2>
         <p className="mt-3 max-w-[34ch] text-[13px] leading-[1.65] text-text-secondary">
@@ -240,74 +264,28 @@ function EmptyState() {
           <ArrowUpRight className="h-4 w-4 text-accent/80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </Button>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-text-muted">
+        <div className="panel-meta mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-text-muted">
           <span className="text-text-secondary">{t('empty.flowSelect')}</span>
           <ChevronRight className="h-3 w-3 text-accent/50" />
           <span className="text-text-secondary">{t('empty.flowRead')}</span>
           <ChevronRight className="h-3 w-3 text-accent/50" />
           <span className="text-text-secondary">{t('empty.flowDecide')}</span>
-          <span className="ml-auto normal-case tracking-normal">{t('empty.duration')}</span>
+          {/* Ponsel: durasi jadi baris sendiri agar baseline chip alur tak
+              berantakan saat wrap (kritik subagent #3). */}
+          <span className="ml-auto normal-case tracking-normal max-[639px]:ml-0 max-[639px]:basis-full max-[639px]:text-right">
+            {t('empty.duration')}
+          </span>
         </div>
       </motion.div>
 
-      {/* ── Lokasi contoh: jalur tercepat menuju hasil nyata ── */}
+      {/* ── Lokasi contoh: kanal instrumen (SiteChannelDeck) ── */}
       <motion.div variants={item} className="mt-7">
-        <h3 className="mb-1 flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
-          {t('empty.sampleLocations')}
-          <span className="h-px flex-1 bg-gradient-to-r from-accent/25 to-transparent" />
-        </h3>
-        <div className="flex flex-col">
-          {SAMPLE_SITES.map((site) => (
-            <button
-              key={site.label}
-              type="button"
-              onClick={() => processLocation(site.lat, site.lon)}
-              className="group flex min-h-[60px] items-center gap-3 border-b border-white/[0.07] py-2.5 text-left transition-colors hover:bg-white/[0.035]"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.035] transition-colors group-hover:border-accent/35 group-hover:bg-accent/10">
-                <MapPin className="h-3.5 w-3.5 text-text-secondary transition-colors group-hover:text-accent" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[12.5px] font-semibold leading-snug text-text-primary transition-colors group-hover:text-accent">
-                  {site.label}
-                </span>
-                <span className="mt-0.5 block text-[10.5px] text-text-secondary">
-                  {isEn ? site.subEn : site.subId}
-                </span>
-              </span>
-              <span className="shrink-0 text-right">
-                <span className="block font-mono text-[9.5px] leading-tight text-text-muted tabular-nums">
-                  {site.lat.toFixed(3)}
-                </span>
-                <span className="block font-mono text-[9.5px] leading-tight text-text-muted tabular-nums">
-                  {site.lon.toFixed(3)}
-                </span>
-              </span>
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-text-muted transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
-            </button>
-          ))}
-        </div>
+        <SampleLocationChannels />
       </motion.div>
 
-      {/* ── Apa yang dihasilkan satu audit ── */}
+      {/* ── Apa yang dihasilkan satu audit: pipeline vertikal ── */}
       <motion.div variants={item} className="mt-7">
-        <h3 className="mb-3 flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-text-secondary">
-          {t('empty.whatYouGet')}
-          <span className="h-px flex-1 bg-gradient-to-r from-risk-safe/25 to-transparent" />
-        </h3>
-        <ul className="flex flex-col gap-3">
-          {CAPABILITIES.map(({ icon: Icon, labelKey, descKey }) => (
-            <li key={labelKey} className="flex gap-3">
-              <span className="mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
-                <Icon className="h-3.5 w-3.5 text-accent/75" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[11.5px] font-semibold leading-snug text-text-primary">{t(labelKey)}</p>
-                <p className="mt-0.5 text-[10.5px] leading-snug text-text-secondary">{t(descKey)}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <CapabilityPipeline />
       </motion.div>
     </motion.div>
   );

@@ -1,0 +1,3645 @@
+{
+ "ascii-text": {
+  "slug": "ascii-text",
+  "category": "text-animations",
+  "name": "ASCIIText",
+  "url": "https://reactbits.dev/text-animations/ascii-text",
+  "description": "Renders text with an animated ASCII background for a retro feel.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js",
+   "canvas 2D"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "fdf9f3",
+   "fdf9f3",
+   "ff6188",
+   "fc9867",
+   "ffd866"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.798,
+  "prop_colors": [
+   [
+    "color",
+    "#fdf9f3"
+   ],
+   [
+    "textColor",
+    "#fdf9f3"
+   ]
+  ],
+  "code_chars": 17374,
+  "files": [
+   "ASCIIText.tsx"
+  ]
+ },
+ "acid-squares": {
+  "slug": "acid-squares",
+  "category": "backgrounds",
+  "name": "AcidSquares",
+  "url": "https://reactbits.dev/backgrounds/acid-squares",
+  "description": "A crystalline corridor of stacked squares receding into depth.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 2,
+  "hex_colors": [
+   "5227FF",
+   "A855F7",
+   "FFFFFF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.566,
+  "prop_colors": [
+   [
+    "color1",
+    "#5227FF"
+   ],
+   [
+    "color2",
+    "#A855F7"
+   ],
+   [
+    "color3",
+    "#FFFFFF"
+   ]
+  ],
+  "code_chars": 15225,
+  "files": [
+   "AcidSquares.css",
+   "AcidSquares.tsx"
+  ]
+ },
+ "animated-content": {
+  "slug": "animated-content",
+  "category": "animations",
+  "name": "AnimatedContent",
+  "url": "https://reactbits.dev/animations/animated-content",
+  "description": "Wrapper that animates any children on scroll or mount with configurable direction, distance, duration, easing and disappear options.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 3132,
+  "files": [
+   "AnimatedContent.tsx"
+  ]
+ },
+ "antigravity": {
+  "slug": "antigravity",
+  "category": "animations",
+  "name": "Antigravity",
+  "url": "https://reactbits.dev/animations/antigravity",
+  "description": "3D antigravity particle field that repels from the cursor with smooth motion.",
+  "deps": [
+   "@react-three/fiber@^9.3.0",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "FF9FFC"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.73,
+  "prop_colors": [
+   [
+    "color",
+    "#FF9FFC"
+   ]
+  ],
+  "code_chars": 6037,
+  "files": [
+   "Antigravity.tsx"
+  ]
+ },
+ "aurora": {
+  "slug": "aurora",
+  "category": "backgrounds",
+  "name": "Aurora",
+  "url": "https://reactbits.dev/backgrounds/aurora",
+  "description": "Flowing aurora gradient background.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "7cff67",
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.449,
+  "prop_colors": [],
+  "code_chars": 5839,
+  "files": [
+   "Aurora.css",
+   "Aurora.tsx"
+  ]
+ },
+ "balatro": {
+  "slug": "balatro",
+  "category": "backgrounds",
+  "name": "Balatro",
+  "url": "https://reactbits.dev/backgrounds/balatro",
+  "description": "The balatro shader, fully customizalbe and interactive.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "DE443B",
+   "006BB4",
+   "162325"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.29,
+  "prop_colors": [
+   [
+    "color1",
+    "#DE443B"
+   ],
+   [
+    "color2",
+    "#006BB4"
+   ],
+   [
+    "color3",
+    "#162325"
+   ]
+  ],
+  "code_chars": 6653,
+  "files": [
+   "Balatro.css",
+   "Balatro.tsx"
+  ]
+ },
+ "ballpit": {
+  "slug": "ballpit",
+  "category": "backgrounds",
+  "name": "Ballpit",
+  "url": "https://reactbits.dev/backgrounds/ballpit",
+  "description": "Physics ball pit simulation with bouncing colorful spheres.",
+  "deps": [
+   "gsap@^3.13.0",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js",
+   "GSAP"
+  ],
+  "has_glsl": true,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 28682,
+  "files": [
+   "Ballpit.tsx"
+  ]
+ },
+ "beams": {
+  "slug": "beams",
+  "category": "backgrounds",
+  "name": "Beams",
+  "url": "https://reactbits.dev/backgrounds/beams",
+  "description": "Crossing animated ribbons with customizable properties.",
+  "deps": [
+   "three@^0.180.0",
+   "@react-three/fiber@^9.3.0",
+   "@react-three/drei@^10.7.4"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 0,
+  "hex_colors": [
+   "ffffff",
+   "000000",
+   "000000"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.333,
+  "prop_colors": [
+   [
+    "lightColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 12247,
+  "files": [
+   "Beams.css",
+   "Beams.tsx"
+  ]
+ },
+ "blob-cursor": {
+  "slug": "blob-cursor",
+  "category": "animations",
+  "name": "BlobCursor",
+  "url": "https://reactbits.dev/animations/blob-cursor",
+  "description": "Organic blob cursor that smoothly follows the pointer with inertia and elastic morphing.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.25,
+  "prop_colors": [
+   [
+    "fillColor",
+    "#5227FF"
+   ]
+  ],
+  "code_chars": 4097,
+  "files": [
+   "BlobCursor.css",
+   "BlobCursor.tsx"
+  ]
+ },
+ "blur-text": {
+  "slug": "blur-text",
+  "category": "text-animations",
+  "name": "BlurText",
+  "url": "https://reactbits.dev/text-animations/blur-text",
+  "description": "Text starts blurred then crisply resolves for a soft-focus reveal effect.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 3573,
+  "files": [
+   "BlurText.tsx"
+  ]
+ },
+ "circular-text": {
+  "slug": "circular-text",
+  "category": "text-animations",
+  "name": "CircularText",
+  "url": "https://reactbits.dev/text-animations/circular-text",
+  "description": "Layouts characters around a circle with optional rotation animation.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 3129,
+  "files": [
+   "CircularText.css",
+   "CircularText.tsx"
+  ]
+ },
+ "click-spark": {
+  "slug": "click-spark",
+  "category": "animations",
+  "name": "ClickSpark",
+  "url": "https://reactbits.dev/animations/click-spark",
+  "description": "Creates particle spark bursts at click position.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "fff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.114,
+  "prop_colors": [
+   [
+    "sparkColor",
+    "#fff"
+   ]
+  ],
+  "code_chars": 4256,
+  "files": [
+   "ClickSpark.tsx"
+  ]
+ },
+ "color-bends": {
+  "slug": "color-bends",
+  "category": "backgrounds",
+  "name": "ColorBends",
+  "url": "https://reactbits.dev/backgrounds/color-bends",
+  "description": "Vibrant color bends with smooth flowing animation.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 11183,
+  "files": [
+   "ColorBends.css",
+   "ColorBends.tsx"
+  ]
+ },
+ "count-up": {
+  "slug": "count-up",
+  "category": "text-animations",
+  "name": "CountUp",
+  "url": "https://reactbits.dev/text-animations/count-up",
+  "description": "Animated number counter supporting formatting and decimals.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 2921,
+  "files": [
+   "CountUp.tsx"
+  ]
+ },
+ "crosshair": {
+  "slug": "crosshair",
+  "category": "animations",
+  "name": "Crosshair",
+  "url": "https://reactbits.dev/animations/crosshair",
+  "description": "Custom crosshair cursor with tracking, and link hover effects.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 6707,
+  "files": [
+   "Crosshair.tsx"
+  ]
+ },
+ "cubes": {
+  "slug": "cubes",
+  "category": "animations",
+  "name": "Cubes",
+  "url": "https://reactbits.dev/animations/cubes",
+  "description": "3D rotating cube cluster. Supports auto-rotation or hover interaction.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "fff",
+   "120F17",
+   "fff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.097,
+  "prop_colors": [
+   [
+    "faceColor",
+    "#120F17"
+   ],
+   [
+    "rippleColor",
+    "#fff"
+   ]
+  ],
+  "code_chars": 10202,
+  "files": [
+   "Cubes.css",
+   "Cubes.tsx"
+  ]
+ },
+ "cursor-grid": {
+  "slug": "cursor-grid",
+  "category": "animations",
+  "name": "CursorGrid",
+  "url": "https://reactbits.dev/animations/cursor-grid",
+  "description": "Canvas grid whose cells light up around the cursor with configurable radius, falloff and click pulses.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "D946EF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.445,
+  "prop_colors": [
+   [
+    "color",
+    "#D946EF"
+   ]
+  ],
+  "code_chars": 9943,
+  "files": [
+   "CursorGrid.css",
+   "CursorGrid.tsx"
+  ]
+ },
+ "curved-loop": {
+  "slug": "curved-loop",
+  "category": "text-animations",
+  "name": "CurvedLoop",
+  "url": "https://reactbits.dev/text-animations/curved-loop",
+  "description": "Flowing looping text path along a customizable curve with drag interaction.",
+  "deps": [],
+  "tech": [
+   "SVG/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 4535,
+  "files": [
+   "CurvedLoop.css",
+   "CurvedLoop.tsx"
+  ]
+ },
+ "dark-veil": {
+  "slug": "dark-veil",
+  "category": "backgrounds",
+  "name": "DarkVeil",
+  "url": "https://reactbits.dev/backgrounds/dark-veil",
+  "description": "Subtle dark background with a smooth animation and postprocessing.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 12078,
+  "files": [
+   "DarkVeil.css",
+   "DarkVeil.tsx"
+  ]
+ },
+ "decrypted-text": {
+  "slug": "decrypted-text",
+  "category": "text-animations",
+  "name": "DecryptedText",
+  "url": "https://reactbits.dev/text-animations/decrypted-text",
+  "description": "Hacker-style decryption cycling random glyphs until resolving to real text.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 12216,
+  "files": [
+   "DecryptedText.tsx"
+  ]
+ },
+ "depth-text": {
+  "slug": "depth-text",
+  "category": "text-animations",
+  "name": "DepthText",
+  "url": "https://reactbits.dev/text-animations/depth-text",
+  "description": "Layered extruded type with parallax that shifts against the pointer.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "f8fafc",
+   "7c3aed"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.656,
+  "prop_colors": [
+   [
+    "faceColor",
+    "#f8fafc"
+   ],
+   [
+    "depthColor",
+    "#7c3aed"
+   ]
+  ],
+  "code_chars": 6372,
+  "files": [
+   "DepthText.css",
+   "DepthText.tsx"
+  ]
+ },
+ "dither": {
+  "slug": "dither",
+  "category": "backgrounds",
+  "name": "Dither",
+  "url": "https://reactbits.dev/backgrounds/dither",
+  "description": "Retro dithered noise shader background.",
+  "deps": [
+   "@react-three/fiber@^9.3.0",
+   "@react-three/postprocessing@^3.0.4",
+   "postprocessing@^6.36.0",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 10438,
+  "files": [
+   "Dither.css",
+   "Dither.tsx"
+  ]
+ },
+ "dot-field": {
+  "slug": "dot-field",
+  "category": "backgrounds",
+  "name": "DotField",
+  "url": "https://reactbits.dev/backgrounds/dot-field",
+  "description": "Interactive dot grid with cursor bulge, glow, sparkle, and wave effects.",
+  "deps": [],
+  "tech": [
+   "canvas?"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "120F17"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.064,
+  "prop_colors": [
+   [
+    "glowColor",
+    "#120F17"
+   ]
+  ],
+  "code_chars": 8812,
+  "files": [
+   "DotField.css",
+   "DotField.tsx"
+  ]
+ },
+ "dot-grid": {
+  "slug": "dot-grid",
+  "category": "backgrounds",
+  "name": "DotGrid",
+  "url": "https://reactbits.dev/backgrounds/dot-grid",
+  "description": "Animated dot grid with cursor interactions.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP",
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "5227FF",
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.25,
+  "prop_colors": [
+   [
+    "baseColor",
+    "#5227FF"
+   ],
+   [
+    "activeColor",
+    "#5227FF"
+   ]
+  ],
+  "code_chars": 8370,
+  "files": [
+   "DotGrid.css",
+   "DotGrid.tsx"
+  ]
+ },
+ "echo-text": {
+  "slug": "echo-text",
+  "category": "text-animations",
+  "name": "EchoText",
+  "url": "https://reactbits.dev/text-animations/echo-text",
+  "description": "Ghosted copies trail behind the text and settle into a single word.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "7dd3fc",
+   "f8fafc"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.873,
+  "prop_colors": [
+   [
+    "tint",
+    "#7dd3fc"
+   ],
+   [
+    "color",
+    "#f8fafc"
+   ]
+  ],
+  "code_chars": 9479,
+  "files": [
+   "EchoText.css",
+   "EchoText.tsx"
+  ]
+ },
+ "elastic-mesh": {
+  "slug": "elastic-mesh",
+  "category": "animations",
+  "name": "ElasticMesh",
+  "url": "https://reactbits.dev/animations/elastic-mesh",
+  "description": "Spring-mesh surface that stretches under the pointer and settles back with damped physics.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "B19EEF",
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.727,
+  "prop_colors": [
+   [
+    "color1",
+    "#5227FF"
+   ],
+   [
+    "color2",
+    "#B19EEF"
+   ],
+   [
+    "highlight",
+    "#ffffff"
+   ],
+   [
+    "gridColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 17865,
+  "files": [
+   "ElasticMesh.css",
+   "ElasticMesh.tsx"
+  ]
+ },
+ "electric-border": {
+  "slug": "electric-border",
+  "category": "animations",
+  "name": "ElectricBorder",
+  "url": "https://reactbits.dev/animations/electric-border",
+  "description": "Jittery electric energy border with animated arcs, glow and adjustable intensity.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.25,
+  "prop_colors": [
+   [
+    "color",
+    "#5227FF"
+   ]
+  ],
+  "code_chars": 9338,
+  "files": [
+   "ElectricBorder.css",
+   "ElectricBorder.tsx"
+  ]
+ },
+ "evil-eye": {
+  "slug": "evil-eye",
+  "category": "backgrounds",
+  "name": "EvilEye",
+  "url": "https://reactbits.dev/backgrounds/evil-eye",
+  "description": "Procedural evil eye shader with animated iris, slit pupil, and fiery outer glow.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "FF6F37",
+   "000000"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.27,
+  "prop_colors": [
+   [
+    "eyeColor",
+    "#FF6F37"
+   ],
+   [
+    "backgroundColor",
+    "#000000"
+   ]
+  ],
+  "code_chars": 8620,
+  "files": [
+   "EvilEye.css",
+   "EvilEye.tsx"
+  ]
+ },
+ "fade-content": {
+  "slug": "fade-content",
+  "category": "animations",
+  "name": "FadeContent",
+  "url": "https://reactbits.dev/animations/fade-content",
+  "description": "Simple directional fade / slide entrance / exit wrapper with threshold-based activation.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 2711,
+  "files": [
+   "FadeContent.tsx"
+  ]
+ },
+ "falling-text": {
+  "slug": "falling-text",
+  "category": "text-animations",
+  "name": "FallingText",
+  "url": "https://reactbits.dev/text-animations/falling-text",
+  "description": "Characters fall with gravity + bounce creating a playful entrance.",
+  "deps": [
+   "matter-js@^0.20.0"
+  ],
+  "tech": [
+   "matter-js"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 6045,
+  "files": [
+   "FallingText.css",
+   "FallingText.tsx"
+  ]
+ },
+ "faulty-terminal": {
+  "slug": "faulty-terminal",
+  "category": "backgrounds",
+  "name": "FaultyTerminal",
+  "url": "https://reactbits.dev/backgrounds/faulty-terminal",
+  "description": "Terminal CRT scanline squares effect with flicker + noise.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "tint",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 11700,
+  "files": [
+   "FaultyTerminal.css",
+   "FaultyTerminal.tsx"
+  ]
+ },
+ "ferrofluid": {
+  "slug": "ferrofluid",
+  "category": "backgrounds",
+  "name": "Ferrofluid",
+  "url": "https://reactbits.dev/backgrounds/ferrofluid",
+  "description": "A churning magnetic fluid traced by glowing contour lines, with a cursor magnet.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "4F46E5",
+   "06B6D4",
+   "E0F2FE",
+   "ffffff",
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.807,
+  "prop_colors": [],
+  "code_chars": 11315,
+  "files": [
+   "Ferrofluid.css",
+   "Ferrofluid.tsx"
+  ]
+ },
+ "floating-lines": {
+  "slug": "floating-lines",
+  "category": "backgrounds",
+  "name": "FloatingLines",
+  "url": "https://reactbits.dev/backgrounds/floating-lines",
+  "description": "3D floating lines that react to cursor movement.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 2,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 14367,
+  "files": [
+   "FloatingLines.css",
+   "FloatingLines.tsx"
+  ]
+ },
+ "fold-text": {
+  "slug": "fold-text",
+  "category": "text-animations",
+  "name": "FoldText",
+  "url": "https://reactbits.dev/text-animations/fold-text",
+  "description": "Lines unfold into place like creased paper opening flat.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "f7f2e8"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.95,
+  "prop_colors": [
+   [
+    "color",
+    "#f7f2e8"
+   ]
+  ],
+  "code_chars": 6735,
+  "files": [
+   "FoldText.css",
+   "FoldText.tsx"
+  ]
+ },
+ "fuzzy-text": {
+  "slug": "fuzzy-text",
+  "category": "text-animations",
+  "name": "FuzzyText",
+  "url": "https://reactbits.dev/text-animations/fuzzy-text",
+  "description": "Vibrating fuzzy text with controllable hover intensity.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "fff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.114,
+  "prop_colors": [
+   [
+    "color",
+    "#fff"
+   ]
+  ],
+  "code_chars": 10619,
+  "files": [
+   "FuzzyText.tsx"
+  ]
+ },
+ "galaxy": {
+  "slug": "galaxy",
+  "category": "backgrounds",
+  "name": "Galaxy",
+  "url": "https://reactbits.dev/backgrounds/galaxy",
+  "description": "Parallax realistic starfield with pointer interactions.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 1,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 10352,
+  "files": [
+   "Galaxy.css",
+   "Galaxy.tsx"
+  ]
+ },
+ "ghost-cursor": {
+  "slug": "ghost-cursor",
+  "category": "animations",
+  "name": "GhostCursor",
+  "url": "https://reactbits.dev/animations/ghost-cursor",
+  "description": "Semi-transparent ghost cursor that smoothly follows the real cursor with a trailing effect.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 3,
+  "hex_colors": [
+   "B497CF"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.632,
+  "prop_colors": [
+   [
+    "color",
+    "#B497CF"
+   ]
+  ],
+  "code_chars": 17078,
+  "files": [
+   "GhostCursor.css",
+   "GhostCursor.tsx"
+  ]
+ },
+ "glare-hover": {
+  "slug": "glare-hover",
+  "category": "animations",
+  "name": "GlareHover",
+  "url": "https://reactbits.dev/animations/glare-hover",
+  "description": "Adds a realistic moving glare highlight on hover over any element.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "000",
+   "333",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.341,
+  "prop_colors": [
+   [
+    "background",
+    "#000"
+   ],
+   [
+    "borderColor",
+    "#333"
+   ],
+   [
+    "glareColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 1894,
+  "files": [
+   "GlareHover.css",
+   "GlareHover.tsx"
+  ]
+ },
+ "glitch-text": {
+  "slug": "glitch-text",
+  "category": "text-animations",
+  "name": "GlitchText",
+  "url": "https://reactbits.dev/text-animations/glitch-text",
+  "description": "RGB split and distortion glitch effect with jitter effects.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 1029,
+  "files": [
+   "GlitchText.css",
+   "GlitchText.tsx"
+  ]
+ },
+ "gradient-blinds": {
+  "slug": "gradient-blinds",
+  "category": "backgrounds",
+  "name": "GradientBlinds",
+  "url": "https://reactbits.dev/backgrounds/gradient-blinds",
+  "description": "Layered gradient blinds with spotlight and noise distortion.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "FF9FFC",
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.49,
+  "prop_colors": [],
+  "code_chars": 11897,
+  "files": [
+   "GradientBlinds.css",
+   "GradientBlinds.tsx"
+  ]
+ },
+ "gradient-text": {
+  "slug": "gradient-text",
+  "category": "text-animations",
+  "name": "GradientText",
+  "url": "https://reactbits.dev/text-animations/gradient-text",
+  "description": "Animated gradient sweep across live text with speed and color control.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC",
+   "B497CF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.537,
+  "prop_colors": [],
+  "code_chars": 3351,
+  "files": [
+   "GradientText.css",
+   "GradientText.tsx"
+  ]
+ },
+ "gradient-waves": {
+  "slug": "gradient-waves",
+  "category": "backgrounds",
+  "name": "GradientWaves",
+  "url": "https://reactbits.dev/backgrounds/gradient-waves",
+  "description": "Raymarched sine waves rolling toward a soft, hazy horizon.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC",
+   "FFFFFF"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.66,
+  "prop_colors": [
+   [
+    "horizonColor",
+    "#5227FF"
+   ],
+   [
+    "waveColor",
+    "#FF9FFC"
+   ],
+   [
+    "crestColor",
+    "#FFFFFF"
+   ]
+  ],
+  "code_chars": 11558,
+  "files": [
+   "GradientWaves.css",
+   "GradientWaves.tsx"
+  ]
+ },
+ "gradual-blur": {
+  "slug": "gradual-blur",
+  "category": "animations",
+  "name": "GradualBlur",
+  "url": "https://reactbits.dev/animations/gradual-blur",
+  "description": "Progressively un-blurs content based on scroll or trigger creating a cinematic reveal.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 10058,
+  "files": [
+   "GradualBlur.css",
+   "GradualBlur.tsx"
+  ]
+ },
+ "grainient": {
+  "slug": "grainient",
+  "category": "backgrounds",
+  "name": "Grainient",
+  "url": "https://reactbits.dev/backgrounds/grainient",
+  "description": "Grainy gradient swirls with soft wave distortion.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "FF9FFC",
+   "5227FF",
+   "B497CF"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.537,
+  "prop_colors": [
+   [
+    "color1",
+    "#FF9FFC"
+   ],
+   [
+    "color2",
+    "#5227FF"
+   ],
+   [
+    "color3",
+    "#B497CF"
+   ]
+  ],
+  "code_chars": 10098,
+  "files": [
+   "Grainient.css",
+   "Grainient.tsx"
+  ]
+ },
+ "grid-distortion": {
+  "slug": "grid-distortion",
+  "category": "backgrounds",
+  "name": "GridDistortion",
+  "url": "https://reactbits.dev/backgrounds/grid-distortion",
+  "description": "Warped grid mesh distorts smoothly reacting to cursor.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 7951,
+  "files": [
+   "GridDistortion.css",
+   "GridDistortion.tsx"
+  ]
+ },
+ "grid-motion": {
+  "slug": "grid-motion",
+  "category": "backgrounds",
+  "name": "GridMotion",
+  "url": "https://reactbits.dev/backgrounds/grid-motion",
+  "description": "Perspective moving grid lines based on cusror position.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "111"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.008,
+  "prop_colors": [],
+  "code_chars": 3228,
+  "files": [
+   "GridMotion.css",
+   "GridMotion.tsx"
+  ]
+ },
+ "grid-scan": {
+  "slug": "grid-scan",
+  "category": "backgrounds",
+  "name": "GridScan",
+  "url": "https://reactbits.dev/backgrounds/grid-scan",
+  "description": "Animated grid room 3D scan effect and cool interactions.",
+  "deps": [
+   "face-api.js@^0.22.2",
+   "postprocessing@^6.36.0",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "2F293A",
+   "FF9FFC"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.45,
+  "prop_colors": [
+   [
+    "linesColor",
+    "#2F293A"
+   ],
+   [
+    "scanColor",
+    "#FF9FFC"
+   ]
+  ],
+  "code_chars": 30093,
+  "files": [
+   "GridScan.css",
+   "GridScan.tsx"
+  ]
+ },
+ "halftone-reveal": {
+  "slug": "halftone-reveal",
+  "category": "animations",
+  "name": "HalftoneReveal",
+  "url": "https://reactbits.dev/animations/halftone-reveal",
+  "description": "Print-style halftone dot matrix that resolves into sharp content around the cursor.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "141414",
+   "fff7e6"
+  ],
+  "vec3_count": 8,
+  "mean_lum": 0.524,
+  "prop_colors": [
+   [
+    "inkColor",
+    "#141414"
+   ],
+   [
+    "paperColor",
+    "#fff7e6"
+   ]
+  ],
+  "code_chars": 11895,
+  "files": [
+   "HalftoneReveal.css",
+   "HalftoneReveal.tsx"
+  ]
+ },
+ "hyperspeed": {
+  "slug": "hyperspeed",
+  "category": "backgrounds",
+  "name": "Hyperspeed",
+  "url": "https://reactbits.dev/backgrounds/hyperspeed",
+  "description": "Animated lines continuously moving to simulate hyperspace travel on click hold.",
+  "deps": [
+   "postprocessing@^6.36.0",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 3,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 39978,
+  "files": [
+   "HyperSpeedPresets.ts",
+   "Hyperspeed.css",
+   "Hyperspeed.tsx"
+  ]
+ },
+ "image-trail": {
+  "slug": "image-trail",
+  "category": "animations",
+  "name": "ImageTrail",
+  "url": "https://reactbits.dev/animations/image-trail",
+  "description": "Cursor-based image trail with several built-in variants.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 37766,
+  "files": [
+   "ImageTrail.css",
+   "ImageTrail.tsx"
+  ]
+ },
+ "iridescence": {
+  "slug": "iridescence",
+  "category": "backgrounds",
+  "name": "Iridescence",
+  "url": "https://reactbits.dev/backgrounds/iridescence",
+  "description": "Slick iridescent shader with shifting waves.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 3728,
+  "files": [
+   "Iridescence.css",
+   "Iridescence.tsx"
+  ]
+ },
+ "laser-flow": {
+  "slug": "laser-flow",
+  "category": "animations",
+  "name": "LaserFlow",
+  "url": "https://reactbits.dev/animations/laser-flow",
+  "description": "Dynamic laser light that flows onto a surface, customizable effect.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "FF79C6",
+   "FFFFFF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.804,
+  "prop_colors": [
+   [
+    "color",
+    "#FF79C6"
+   ]
+  ],
+  "code_chars": 20904,
+  "files": [
+   "LaserFlow.css",
+   "LaserFlow.tsx"
+  ]
+ },
+ "letter-glitch": {
+  "slug": "letter-glitch",
+  "category": "backgrounds",
+  "name": "LetterGlitch",
+  "url": "https://reactbits.dev/backgrounds/letter-glitch",
+  "description": "Matrix style letter animation.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "2b4539",
+   "61dca3",
+   "61b3dc",
+   "000000"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.409,
+  "prop_colors": [],
+  "code_chars": 7250,
+  "files": [
+   "LetterGlitch.tsx"
+  ]
+ },
+ "light-pillar": {
+  "slug": "light-pillar",
+  "category": "backgrounds",
+  "name": "LightPillar",
+  "url": "https://reactbits.dev/backgrounds/light-pillar",
+  "description": "Vertical pillar of light with glow effects.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.49,
+  "prop_colors": [
+   [
+    "topColor",
+    "#5227FF"
+   ],
+   [
+    "bottomColor",
+    "#FF9FFC"
+   ]
+  ],
+  "code_chars": 13306,
+  "files": [
+   "LightPillar.css",
+   "LightPillar.tsx"
+  ]
+ },
+ "light-rays": {
+  "slug": "light-rays",
+  "category": "backgrounds",
+  "name": "LightRays",
+  "url": "https://reactbits.dev/backgrounds/light-rays",
+  "description": "Volumetric light rays/beams with customizable direction.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "DEFAULT_COLOR",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 13089,
+  "files": [
+   "LightRays.css",
+   "LightRays.tsx"
+  ]
+ },
+ "light-tunnel": {
+  "slug": "light-tunnel",
+  "category": "backgrounds",
+  "name": "LightTunnel",
+  "url": "https://reactbits.dev/backgrounds/light-tunnel",
+  "description": "A radial fibre-optic tunnel with light pulses racing into depth.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "A855F7",
+   "A855F7",
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.382,
+  "prop_colors": [
+   [
+    "cableColor",
+    "#A855F7"
+   ],
+   [
+    "pulseColor",
+    "#A855F7"
+   ],
+   [
+    "tunnelColor",
+    "#5227FF"
+   ]
+  ],
+  "code_chars": 13280,
+  "files": [
+   "LightTunnel.css",
+   "LightTunnel.tsx"
+  ]
+ },
+ "lightfall": {
+  "slug": "lightfall",
+  "category": "backgrounds",
+  "name": "Lightfall",
+  "url": "https://reactbits.dev/backgrounds/lightfall",
+  "description": "Colorful light streaks raining down a glowing tunnel with a cursor light.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "A6C8FF",
+   "5227FF",
+   "FF9FFC",
+   "A6C8FF",
+   "5227FF",
+   "FF9FFC",
+   "0A29FF"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.528,
+  "prop_colors": [
+   [
+    "backgroundColor",
+    "#0A29FF"
+   ]
+  ],
+  "code_chars": 11095,
+  "files": [
+   "Lightfall.css",
+   "Lightfall.tsx"
+  ]
+ },
+ "lightning": {
+  "slug": "lightning",
+  "category": "backgrounds",
+  "name": "Lightning",
+  "url": "https://reactbits.dev/backgrounds/lightning",
+  "description": "Procedural lightning bolts with branching and glow flicker.",
+  "deps": [],
+  "tech": [
+   "canvas?"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 1,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 6241,
+  "files": [
+   "Lightning.css",
+   "Lightning.tsx"
+  ]
+ },
+ "line-waves": {
+  "slug": "line-waves",
+  "category": "backgrounds",
+  "name": "LineWaves",
+  "url": "https://reactbits.dev/backgrounds/line-waves",
+  "description": "Animated line wave pattern with colorful warped distortion.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff",
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "color1",
+    "#ffffff"
+   ],
+   [
+    "color2",
+    "#ffffff"
+   ],
+   [
+    "color3",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 8194,
+  "files": [
+   "LineWaves.css",
+   "LineWaves.tsx"
+  ]
+ },
+ "liquid-chrome": {
+  "slug": "liquid-chrome",
+  "category": "backgrounds",
+  "name": "LiquidChrome",
+  "url": "https://reactbits.dev/backgrounds/liquid-chrome",
+  "description": "Liquid metallic chrome shader with flowing reflective surface.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 5569,
+  "files": [
+   "LiquidChrome.css",
+   "LiquidChrome.tsx"
+  ]
+ },
+ "liquid-ether": {
+  "slug": "liquid-ether",
+  "category": "backgrounds",
+  "name": "LiquidEther",
+  "url": "https://reactbits.dev/backgrounds/liquid-ether",
+  "description": "Interactive liquid shader with flowing distortion and customizable colors.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 7,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC",
+   "B497CF",
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.722,
+  "prop_colors": [],
+  "code_chars": 40492,
+  "files": [
+   "LiquidEther.css",
+   "LiquidEther.tsx"
+  ]
+ },
+ "logo-loop": {
+  "slug": "logo-loop",
+  "category": "animations",
+  "name": "LogoLoop",
+  "url": "https://reactbits.dev/animations/logo-loop",
+  "description": "Continuously looping marquee of brand or tech logos with seamless repeat and hover pause.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 11996,
+  "files": [
+   "LogoLoop.css",
+   "LogoLoop.tsx"
+  ]
+ },
+ "magic-rings": {
+  "slug": "magic-rings",
+  "category": "animations",
+  "name": "MagicRings",
+  "url": "https://reactbits.dev/animations/magic-rings",
+  "description": "Interactive magic rings effect with customizable parameters.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "fc42ff",
+   "42fcff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.651,
+  "prop_colors": [
+   [
+    "color",
+    "#fc42ff"
+   ],
+   [
+    "colorTwo",
+    "#42fcff"
+   ]
+  ],
+  "code_chars": 9637,
+  "files": [
+   "MagicRings.css",
+   "MagicRings.tsx"
+  ]
+ },
+ "magnet": {
+  "slug": "magnet",
+  "category": "animations",
+  "name": "Magnet",
+  "url": "https://reactbits.dev/animations/magnet",
+  "description": "Elements magnetically ease toward the cursor then settle back with spring physics.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 2403,
+  "files": [
+   "Magnet.tsx"
+  ]
+ },
+ "magnet-lines": {
+  "slug": "magnet-lines",
+  "category": "animations",
+  "name": "MagnetLines",
+  "url": "https://reactbits.dev/animations/magnet-lines",
+  "description": "Animated field lines bend toward the cursor.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "efefef"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.937,
+  "prop_colors": [
+   [
+    "lineColor",
+    "#efefef"
+   ]
+  ],
+  "code_chars": 2530,
+  "files": [
+   "MagnetLines.css",
+   "MagnetLines.tsx"
+  ]
+ },
+ "masked-heading": {
+  "slug": "masked-heading",
+  "category": "text-animations",
+  "name": "MaskedHeading",
+  "url": "https://reactbits.dev/text-animations/masked-heading",
+  "description": "A large headline with a drifting colour mesh or image showing through the glyphs, revealed word by word.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 10630,
+  "files": [
+   "MaskedHeading.css",
+   "MaskedHeading.tsx"
+  ]
+ },
+ "meta-balls": {
+  "slug": "meta-balls",
+  "category": "animations",
+  "name": "MetaBalls",
+  "url": "https://reactbits.dev/animations/meta-balls",
+  "description": "Liquid metaball blobs that merge and separate with smooth implicit surface animation.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 0,
+  "hex_colors": [
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "color",
+    "#ffffff"
+   ],
+   [
+    "cursorBallColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 9243,
+  "files": [
+   "MetaBalls.css",
+   "MetaBalls.tsx"
+  ]
+ },
+ "metallic-paint": {
+  "slug": "metallic-paint",
+  "category": "animations",
+  "name": "MetallicPaint",
+  "url": "https://reactbits.dev/animations/metallic-paint",
+  "description": "Liquid metallic paint shader which can be applied to SVG elements.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": true,
+  "shader_count": 0,
+  "hex_colors": [
+   "ffffff",
+   "000000",
+   "feb3ff"
+  ],
+  "vec3_count": 4,
+  "mean_lum": 0.595,
+  "prop_colors": [
+   [
+    "lightColor",
+    "#ffffff"
+   ],
+   [
+    "darkColor",
+    "#000000"
+   ],
+   [
+    "tintColor",
+    "#feb3ff"
+   ]
+  ],
+  "code_chars": 16175,
+  "files": [
+   "MetallicPaint.css",
+   "MetallicPaint.tsx"
+  ]
+ },
+ "molten-metal": {
+  "slug": "molten-metal",
+  "category": "backgrounds",
+  "name": "MoltenMetal",
+  "url": "https://reactbits.dev/backgrounds/molten-metal",
+  "description": "Swirling caustic plasma filaments with molten, white-hot cores.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC",
+   "FFFFFF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.66,
+  "prop_colors": [
+   [
+    "color1",
+    "#5227FF"
+   ],
+   [
+    "color2",
+    "#FF9FFC"
+   ],
+   [
+    "color3",
+    "#FFFFFF"
+   ]
+  ],
+  "code_chars": 9800,
+  "files": [
+   "MoltenMetal.css",
+   "MoltenMetal.tsx"
+  ]
+ },
+ "noise": {
+  "slug": "noise",
+  "category": "animations",
+  "name": "Noise",
+  "url": "https://reactbits.dev/animations/noise",
+  "description": "Animated film grain / noise overlay adding subtle texture and motion.",
+  "deps": [],
+  "tech": [
+   "canvas?"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 1930,
+  "files": [
+   "Noise.css",
+   "Noise.tsx"
+  ]
+ },
+ "orb": {
+  "slug": "orb",
+  "category": "backgrounds",
+  "name": "Orb",
+  "url": "https://reactbits.dev/backgrounds/orb",
+  "description": "Floating energy orb with customizable hover effect.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "000000"
+  ],
+  "vec3_count": 6,
+  "mean_lum": 0.0,
+  "prop_colors": [
+   [
+    "backgroundColor",
+    "#000000"
+   ]
+  ],
+  "code_chars": 10725,
+  "files": [
+   "Orb.css",
+   "Orb.tsx"
+  ]
+ },
+ "orbit-images": {
+  "slug": "orbit-images",
+  "category": "animations",
+  "name": "OrbitImages",
+  "url": "https://reactbits.dev/animations/orbit-images",
+  "description": "SVG Path customizable orbiting images effect",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 9739,
+  "files": [
+   "OrbitImages.css",
+   "OrbitImages.tsx"
+  ]
+ },
+ "particle-text": {
+  "slug": "particle-text",
+  "category": "text-animations",
+  "name": "ParticleText",
+  "url": "https://reactbits.dev/text-animations/particle-text",
+  "description": "Text assembles from drifting particles that scatter and reform on demand.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "ffffff",
+   "8b5cf6",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.815,
+  "prop_colors": [
+   [
+    "color",
+    "#ffffff"
+   ],
+   [
+    "highlightColor",
+    "#8b5cf6"
+   ],
+   [
+    "fillStyle",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 15084,
+  "files": [
+   "ParticleText.css",
+   "ParticleText.tsx"
+  ]
+ },
+ "particles": {
+  "slug": "particles",
+  "category": "backgrounds",
+  "name": "Particles",
+  "url": "https://reactbits.dev/backgrounds/particles",
+  "description": "Configurable particle system.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff",
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [],
+  "code_chars": 7338,
+  "files": [
+   "Particles.css",
+   "Particles.tsx"
+  ]
+ },
+ "pixel-blast": {
+  "slug": "pixel-blast",
+  "category": "backgrounds",
+  "name": "PixelBlast",
+  "url": "https://reactbits.dev/backgrounds/pixel-blast",
+  "description": "Exploding pixel particle bursts with optional liquid postprocessing.",
+  "deps": [
+   "postprocessing@^6.36.0",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js",
+   "canvas 2D"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "B497CF"
+  ],
+  "vec3_count": 16,
+  "mean_lum": 0.632,
+  "prop_colors": [
+   [
+    "color",
+    "#B497CF"
+   ]
+  ],
+  "code_chars": 22998,
+  "files": [
+   "PixelBlast.css",
+   "PixelBlast.tsx"
+  ]
+ },
+ "pixel-snow": {
+  "slug": "pixel-snow",
+  "category": "backgrounds",
+  "name": "PixelSnow",
+  "url": "https://reactbits.dev/backgrounds/pixel-snow",
+  "description": "Falling pixelated snow effect with customizable density and speed.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff"
+  ],
+  "vec3_count": 3,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "color",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 11270,
+  "files": [
+   "PixelSnow.css",
+   "PixelSnow.tsx"
+  ]
+ },
+ "pixel-swap": {
+  "slug": "pixel-swap",
+  "category": "animations",
+  "name": "PixelSwap",
+  "url": "https://reactbits.dev/animations/pixel-swap",
+  "description": "Pixel fragments assemble into a full cover, swap arbitrary content, then dissolve away with reversible colors and triggers.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 14256,
+  "files": [
+   "PixelSwap.css",
+   "PixelSwap.tsx"
+  ]
+ },
+ "pixel-trail": {
+  "slug": "pixel-trail",
+  "category": "animations",
+  "name": "PixelTrail",
+  "url": "https://reactbits.dev/animations/pixel-trail",
+  "description": "Pixelated cursor trail emitting fading squares with retro digital feel.",
+  "deps": [
+   "@react-three/fiber@^9.3.0",
+   "@react-three/drei@^10.7.4",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "color",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 4640,
+  "files": [
+   "PixelTrail.css",
+   "PixelTrail.tsx"
+  ]
+ },
+ "pixel-transition": {
+  "slug": "pixel-transition",
+  "category": "animations",
+  "name": "PixelTransition",
+  "url": "https://reactbits.dev/animations/pixel-transition",
+  "description": "Pixel dissolve transition for content reveal on hover.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 4111,
+  "files": [
+   "PixelTransition.css",
+   "PixelTransition.tsx"
+  ]
+ },
+ "plasma": {
+  "slug": "plasma",
+  "category": "backgrounds",
+  "name": "Plasma",
+  "url": "https://reactbits.dev/backgrounds/plasma",
+  "description": "Organic plasma gradients swirl + morph with smooth turbulence.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "color",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 10725,
+  "files": [
+   "Plasma.css",
+   "Plasma.tsx"
+  ]
+ },
+ "plasma-wave": {
+  "slug": "plasma-wave",
+  "category": "backgrounds",
+  "name": "PlasmaWave",
+  "url": "https://reactbits.dev/backgrounds/plasma-wave",
+  "description": "Raymarched plasma waves with dual-wave interference and OGL.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "A855F7",
+   "06B6D4",
+   "A855F7",
+   "06B6D4"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.512,
+  "prop_colors": [],
+  "code_chars": 6717,
+  "files": [
+   "PlasmaWave.css",
+   "PlasmaWave.tsx"
+  ]
+ },
+ "prism": {
+  "slug": "prism",
+  "category": "backgrounds",
+  "name": "Prism",
+  "url": "https://reactbits.dev/backgrounds/prism",
+  "description": "Rotating prism with configurable intensity, size, and colors.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 1,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 13073,
+  "files": [
+   "Prism.css",
+   "Prism.tsx"
+  ]
+ },
+ "prismatic-burst": {
+  "slug": "prismatic-burst",
+  "category": "backgrounds",
+  "name": "PrismaticBurst",
+  "url": "https://reactbits.dev/backgrounds/prismatic-burst",
+  "description": "Burst of light rays with controllable color, distortion, amount.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 14324,
+  "files": [
+   "PrismaticBurst.css",
+   "PrismaticBurst.tsx"
+  ]
+ },
+ "radar": {
+  "slug": "radar",
+  "category": "backgrounds",
+  "name": "Radar",
+  "url": "https://reactbits.dev/backgrounds/radar",
+  "description": "Radar sweep effect with concentric rings, radial spokes, and a rotating beam.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "9f29ff",
+   "000000"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.16,
+  "prop_colors": [
+   [
+    "color",
+    "#9f29ff"
+   ],
+   [
+    "backgroundColor",
+    "#000000"
+   ]
+  ],
+  "code_chars": 6718,
+  "files": [
+   "Radar.css",
+   "Radar.tsx"
+  ]
+ },
+ "ribbons": {
+  "slug": "ribbons",
+  "category": "animations",
+  "name": "Ribbons",
+  "url": "https://reactbits.dev/animations/ribbons",
+  "description": "Flowing responsive ribbons/cursor trail driven by physics and pointer motion.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ff9346",
+   "7cff67",
+   "ffee51",
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.661,
+  "prop_colors": [],
+  "code_chars": 8069,
+  "files": [
+   "Ribbons.css",
+   "Ribbons.tsx"
+  ]
+ },
+ "ripple-distortion": {
+  "slug": "ripple-distortion",
+  "category": "animations",
+  "name": "RippleDistortion",
+  "url": "https://reactbits.dev/animations/ripple-distortion",
+  "description": "Pointer-driven water displacement that warps content and leaves a decaying wake.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 2,
+  "hex_colors": [
+   "a855f7",
+   "ffffff"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.724,
+  "prop_colors": [
+   [
+    "tint",
+    "#a855f7"
+   ],
+   [
+    "highlightColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 14992,
+  "files": [
+   "RippleDistortion.css",
+   "RippleDistortion.tsx"
+  ]
+ },
+ "ripple-grid": {
+  "slug": "ripple-grid",
+  "category": "backgrounds",
+  "name": "RippleGrid",
+  "url": "https://reactbits.dev/backgrounds/ripple-grid",
+  "description": "A grid that continuously animates with a ripple effect.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "gridColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 9459,
+  "files": [
+   "RippleGrid.css",
+   "RippleGrid.tsx"
+  ]
+ },
+ "rotating-text": {
+  "slug": "rotating-text",
+  "category": "text-animations",
+  "name": "RotatingText",
+  "url": "https://reactbits.dev/text-animations/rotating-text",
+  "description": "Cycles through multiple phrases with 3D rotate / flip transitions.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 7188,
+  "files": [
+   "RotatingText.css",
+   "RotatingText.tsx"
+  ]
+ },
+ "scanner": {
+  "slug": "scanner",
+  "category": "backgrounds",
+  "name": "Scanner",
+  "url": "https://reactbits.dev/backgrounds/scanner",
+  "description": "Calm interference bands sweeping across the screen like an oscilloscope.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC",
+   "FFFFFF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.66,
+  "prop_colors": [
+   [
+    "color1",
+    "#5227FF"
+   ],
+   [
+    "color2",
+    "#FF9FFC"
+   ],
+   [
+    "color3",
+    "#FFFFFF"
+   ]
+  ],
+  "code_chars": 12816,
+  "files": [
+   "Scanner.css",
+   "Scanner.tsx"
+  ]
+ },
+ "scrambled-text": {
+  "slug": "scrambled-text",
+  "category": "text-animations",
+  "name": "ScrambledText",
+  "url": "https://reactbits.dev/text-animations/scrambled-text",
+  "description": "Detects cursor position and applies a distortion effect to text.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 2211,
+  "files": [
+   "ScrambledText.css",
+   "ScrambledText.tsx"
+  ]
+ },
+ "scroll-expand": {
+  "slug": "scroll-expand",
+  "category": "animations",
+  "name": "ScrollExpand",
+  "url": "https://reactbits.dev/animations/scroll-expand",
+  "description": "A rounded media frame that grows to full bleed as it scrolls through the viewport.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 7872,
+  "files": [
+   "ScrollExpand.css",
+   "ScrollExpand.tsx"
+  ]
+ },
+ "scroll-float": {
+  "slug": "scroll-float",
+  "category": "text-animations",
+  "name": "ScrollFloat",
+  "url": "https://reactbits.dev/text-animations/scroll-float",
+  "description": "Text gently floats / parallax shifts on scroll.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 2218,
+  "files": [
+   "ScrollFloat.css",
+   "ScrollFloat.tsx"
+  ]
+ },
+ "scroll-reveal": {
+  "slug": "scroll-reveal",
+  "category": "text-animations",
+  "name": "ScrollReveal",
+  "url": "https://reactbits.dev/text-animations/scroll-reveal",
+  "description": "Text gently unblurs and reveals on scroll.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 2962,
+  "files": [
+   "ScrollReveal.css",
+   "ScrollReveal.tsx"
+  ]
+ },
+ "scroll-velocity": {
+  "slug": "scroll-velocity",
+  "category": "text-animations",
+  "name": "ScrollVelocity",
+  "url": "https://reactbits.dev/text-animations/scroll-velocity",
+  "description": "Text marquee animatio - speed and distortion scale with user's scroll velocity.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 4726,
+  "files": [
+   "ScrollVelocity.css",
+   "ScrollVelocity.tsx"
+  ]
+ },
+ "shape-blur": {
+  "slug": "shape-blur",
+  "category": "animations",
+  "name": "ShapeBlur",
+  "url": "https://reactbits.dev/animations/shape-blur",
+  "description": "Morphing blurred geometric shape. The effect occurs on hover.",
+  "deps": [
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 7903,
+  "files": [
+   "ShapeBlur.tsx"
+  ]
+ },
+ "shape-grid": {
+  "slug": "shape-grid",
+  "category": "backgrounds",
+  "name": "ShapeGrid",
+  "url": "https://reactbits.dev/backgrounds/shape-grid",
+  "description": "Animated grid with shape variants (square, hexagon, circle, triangle) + direction customization.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "999",
+   "222",
+   "120F17"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.049,
+  "prop_colors": [
+   [
+    "borderColor",
+    "#999"
+   ],
+   [
+    "hoverFillColor",
+    "#222"
+   ]
+  ],
+  "code_chars": 15649,
+  "files": [
+   "ShapeGrid.css",
+   "ShapeGrid.tsx"
+  ]
+ },
+ "shiny-text": {
+  "slug": "shiny-text",
+  "category": "text-animations",
+  "name": "ShinyText",
+  "url": "https://reactbits.dev/text-animations/shiny-text",
+  "description": "Metallic sheen sweeps across text producing a reflective highlight.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "b5b5b5",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.855,
+  "prop_colors": [
+   [
+    "color",
+    "#b5b5b5"
+   ],
+   [
+    "shineColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 3971,
+  "files": [
+   "ShinyText.css",
+   "ShinyText.tsx"
+  ]
+ },
+ "shuffle": {
+  "slug": "shuffle",
+  "category": "text-animations",
+  "name": "Shuffle",
+  "url": "https://reactbits.dev/text-animations/shuffle",
+  "description": "Animated text reveal where characters shuffle before settling.",
+  "deps": [
+   "gsap@^3.13.0",
+   "@gsap/react@^2.1.2"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 13518,
+  "files": [
+   "Shuffle.css",
+   "Shuffle.tsx"
+  ]
+ },
+ "side-rays": {
+  "slug": "side-rays",
+  "category": "backgrounds",
+  "name": "SideRays",
+  "url": "https://reactbits.dev/backgrounds/side-rays",
+  "description": "Animated light rays emanating from the side with customizable colors and speed.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "EAB308",
+   "96c8ff"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.729,
+  "prop_colors": [
+   [
+    "rayColor1",
+    "#EAB308"
+   ],
+   [
+    "rayColor2",
+    "#96c8ff"
+   ]
+  ],
+  "code_chars": 8884,
+  "files": [
+   "SideRays.css",
+   "SideRays.tsx"
+  ]
+ },
+ "silk": {
+  "slug": "silk",
+  "category": "backgrounds",
+  "name": "Silk",
+  "url": "https://reactbits.dev/backgrounds/silk",
+  "description": "Smooth waves background with soft lighting.",
+  "deps": [
+   "@react-three/fiber@^9.3.0",
+   "three@^0.180.0"
+  ],
+  "tech": [
+   "three.js"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "7B7481"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.464,
+  "prop_colors": [
+   [
+    "color",
+    "#7B7481"
+   ]
+  ],
+  "code_chars": 4375,
+  "files": [
+   "Silk.tsx"
+  ]
+ },
+ "sliced-waves": {
+  "slug": "sliced-waves",
+  "category": "backgrounds",
+  "name": "SlicedWaves",
+  "url": "https://reactbits.dev/backgrounds/sliced-waves",
+  "description": "A grid of soft glowing bars rippling like a slatted equalizer.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "FF9FFC",
+   "5227FF",
+   "B497CF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.537,
+  "prop_colors": [
+   [
+    "color1",
+    "#FF9FFC"
+   ],
+   [
+    "color2",
+    "#5227FF"
+   ],
+   [
+    "color3",
+    "#B497CF"
+   ]
+  ],
+  "code_chars": 11023,
+  "files": [
+   "SlicedWaves.css",
+   "SlicedWaves.tsx"
+  ]
+ },
+ "soft-aurora": {
+  "slug": "soft-aurora",
+  "category": "backgrounds",
+  "name": "SoftAurora",
+  "url": "https://reactbits.dev/backgrounds/soft-aurora",
+  "description": "Soft aurora borealis shader with 3D Perlin noise and cosine gradient palettes.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "f7f7f7",
+   "e100ff"
+  ],
+  "vec3_count": 6,
+  "mean_lum": 0.614,
+  "prop_colors": [
+   [
+    "color1",
+    "#f7f7f7"
+   ],
+   [
+    "color2",
+    "#e100ff"
+   ]
+  ],
+  "code_chars": 8579,
+  "files": [
+   "SoftAurora.css",
+   "SoftAurora.tsx"
+  ]
+ },
+ "splash-cursor": {
+  "slug": "splash-cursor",
+  "category": "animations",
+  "name": "SplashCursor",
+  "url": "https://reactbits.dev/animations/splash-cursor",
+  "description": "Liquid splash burst at cursor with curling ripples and waves.",
+  "deps": [],
+  "tech": [
+   "canvas?"
+  ],
+  "has_glsl": true,
+  "shader_count": 10,
+  "hex_colors": [
+   "ff0000"
+  ],
+  "vec3_count": 1,
+  "mean_lum": 0.213,
+  "prop_colors": [
+   [
+    "COLOR",
+    "#ff0000"
+   ]
+  ],
+  "code_chars": 41392,
+  "files": [
+   "SplashCursor.tsx"
+  ]
+ },
+ "split-flap-text": {
+  "slug": "split-flap-text",
+  "category": "text-animations",
+  "name": "SplitFlapText",
+  "url": "https://reactbits.dev/text-animations/split-flap-text",
+  "description": "Mechanical split-flap departure board that clacks through to each new phrase.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "111827",
+   "f8fafc"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.536,
+  "prop_colors": [
+   [
+    "tileColor",
+    "#111827"
+   ],
+   [
+    "textColor",
+    "#f8fafc"
+   ]
+  ],
+  "code_chars": 10692,
+  "files": [
+   "SplitFlapText.css",
+   "SplitFlapText.tsx"
+  ]
+ },
+ "split-text": {
+  "slug": "split-text",
+  "category": "text-animations",
+  "name": "SplitText",
+  "url": "https://reactbits.dev/text-animations/split-text",
+  "description": "Splits text into characters / words for staggered entrance animation.",
+  "deps": [
+   "gsap@^3.13.0",
+   "@gsap/react@^2.1.2"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 5165,
+  "files": [
+   "SplitText.tsx"
+  ]
+ },
+ "star-border": {
+  "slug": "star-border",
+  "category": "animations",
+  "name": "StarBorder",
+  "url": "https://reactbits.dev/animations/star-border",
+  "description": "Animated star / sparkle border orbiting content with twinkle pulses.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 1250,
+  "files": [
+   "StarBorder.css",
+   "StarBorder.tsx"
+  ]
+ },
+ "sticker-peel": {
+  "slug": "sticker-peel",
+  "category": "animations",
+  "name": "StickerPeel",
+  "url": "https://reactbits.dev/animations/sticker-peel",
+  "description": "Sticker corner lift + peel interaction using 3D transform and shadow depth.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 9162,
+  "files": [
+   "StickerPeel.css",
+   "StickerPeel.tsx"
+  ]
+ },
+ "strands": {
+  "slug": "strands",
+  "category": "animations",
+  "name": "Strands",
+  "url": "https://reactbits.dev/animations/strands",
+  "description": "Glowing ribbon-like strands that ripple and weave across a transparent canvas.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 2,
+  "hex_colors": [
+   "ffffff",
+   "FF4242",
+   "7C3AED",
+   "06B6D4",
+   "EAB308"
+  ],
+  "vec3_count": 2,
+  "mean_lum": 0.605,
+  "prop_colors": [],
+  "code_chars": 10996,
+  "files": [
+   "Strands.css",
+   "Strands.tsx"
+  ]
+ },
+ "stroke-text": {
+  "slug": "stroke-text",
+  "category": "text-animations",
+  "name": "StrokeText",
+  "url": "https://reactbits.dev/text-animations/stroke-text",
+  "description": "Outlined letterforms draw themselves on, then flood with fill.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "A78BFA",
+   "F8FAFC"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.79,
+  "prop_colors": [
+   [
+    "strokeColor",
+    "#A78BFA"
+   ],
+   [
+    "fillColor",
+    "#F8FAFC"
+   ]
+  ],
+  "code_chars": 8139,
+  "files": [
+   "StrokeText.css",
+   "StrokeText.tsx"
+  ]
+ },
+ "swarm-cursor": {
+  "slug": "swarm-cursor",
+  "category": "animations",
+  "name": "SwarmCursor",
+  "url": "https://reactbits.dev/animations/swarm-cursor",
+  "description": "Flocking particle swarm that chases the pointer, jostles for space and drifts apart at rest.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 2,
+  "hex_colors": [
+   "ffffff",
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "color",
+    "#ffffff"
+   ],
+   [
+    "accentColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 18921,
+  "files": [
+   "SwarmCursor.css",
+   "SwarmCursor.tsx"
+  ]
+ },
+ "target-cursor": {
+  "slug": "target-cursor",
+  "category": "animations",
+  "name": "TargetCursor",
+  "url": "https://reactbits.dev/animations/target-cursor",
+  "description": "A cursor follow animation with 4 corners that lock onto targets.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "ffffff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 1.0,
+  "prop_colors": [
+   [
+    "cursorColor",
+    "#ffffff"
+   ]
+  ],
+  "code_chars": 14609,
+  "files": [
+   "TargetCursor.css",
+   "TargetCursor.tsx"
+  ]
+ },
+ "text-cursor": {
+  "slug": "text-cursor",
+  "category": "text-animations",
+  "name": "TextCursor",
+  "url": "https://reactbits.dev/text-animations/text-cursor",
+  "description": "Make any text element follow your cursor, leaving a trail of copies behind it.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 4607,
+  "files": [
+   "TextCursor.css",
+   "TextCursor.tsx"
+  ]
+ },
+ "text-loop": {
+  "slug": "text-loop",
+  "category": "text-animations",
+  "name": "TextLoop",
+  "url": "https://reactbits.dev/text-animations/text-loop",
+  "description": "A seamless text marquee that flows along curved SVG paths.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "ffffff",
+   "5227FF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.625,
+  "prop_colors": [
+   [
+    "color",
+    "#ffffff"
+   ],
+   [
+    "ribbonColor",
+    "#5227FF"
+   ]
+  ],
+  "code_chars": 7339,
+  "files": [
+   "TextLoop.css",
+   "TextLoop.tsx"
+  ]
+ },
+ "text-pressure": {
+  "slug": "text-pressure",
+  "category": "text-animations",
+  "name": "TextPressure",
+  "url": "https://reactbits.dev/text-animations/text-pressure",
+  "description": "Characters scale / warp interactively based on pointer pressure zone.",
+  "deps": [],
+  "tech": [
+   "CSS/DOM"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [
+   "FFFFFF",
+   "FF0000"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.606,
+  "prop_colors": [
+   [
+    "textColor",
+    "#FFFFFF"
+   ],
+   [
+    "strokeColor",
+    "#FF0000"
+   ]
+  ],
+  "code_chars": 7434,
+  "files": [
+   "TextPressure.tsx"
+  ]
+ },
+ "text-type": {
+  "slug": "text-type",
+  "category": "text-animations",
+  "name": "TextType",
+  "url": "https://reactbits.dev/text-animations/text-type",
+  "description": "Typewriter effect with blinking cursor and adjustable typing cadence.",
+  "deps": [
+   "gsap@^3.13.0"
+  ],
+  "tech": [
+   "GSAP"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 5503,
+  "files": [
+   "TextType.css",
+   "TextType.tsx"
+  ]
+ },
+ "threads": {
+  "slug": "threads",
+  "category": "backgrounds",
+  "name": "Threads",
+  "url": "https://reactbits.dev/backgrounds/threads",
+  "description": "Animated pattern of lines forming a fabric-like motion.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 8772,
+  "files": [
+   "Threads.css",
+   "Threads.tsx"
+  ]
+ },
+ "topography": {
+  "slug": "topography",
+  "category": "backgrounds",
+  "name": "Topography",
+  "url": "https://reactbits.dev/backgrounds/topography",
+  "description": "A living contour map with glowing, elevation-tinted lines.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC",
+   "FFFFFF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.66,
+  "prop_colors": [
+   [
+    "lowColor",
+    "#5227FF"
+   ],
+   [
+    "midColor",
+    "#FF9FFC"
+   ],
+   [
+    "highColor",
+    "#FFFFFF"
+   ]
+  ],
+  "code_chars": 12281,
+  "files": [
+   "Topography.css",
+   "Topography.tsx"
+  ]
+ },
+ "true-focus": {
+  "slug": "true-focus",
+  "category": "text-animations",
+  "name": "TrueFocus",
+  "url": "https://reactbits.dev/text-animations/true-focus",
+  "description": "Applies dynamic blur / clarity based over a series of words in order.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 4156,
+  "files": [
+   "TrueFocus.css",
+   "TrueFocus.tsx"
+  ]
+ },
+ "variable-proximity": {
+  "slug": "variable-proximity",
+  "category": "text-animations",
+  "name": "VariableProximity",
+  "url": "https://reactbits.dev/text-animations/variable-proximity",
+  "description": "Letter styling changes continuously with pointer distance mapping.",
+  "deps": [
+   "motion@^12.23.12"
+  ],
+  "tech": [
+   "Motion(framer)"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 6246,
+  "files": [
+   "VariableProximity.css",
+   "VariableProximity.tsx"
+  ]
+ },
+ "warp-text": {
+  "slug": "warp-text",
+  "category": "text-animations",
+  "name": "WarpText",
+  "url": "https://reactbits.dev/text-animations/warp-text",
+  "description": "WebGL warp that bends and refracts the text around the pointer.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl",
+   "canvas 2D"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "f8f5ff"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.966,
+  "prop_colors": [
+   [
+    "color",
+    "#f8f5ff"
+   ]
+  ],
+  "code_chars": 17477,
+  "files": [
+   "WarpText.css",
+   "WarpText.tsx"
+  ]
+ },
+ "waves": {
+  "slug": "waves",
+  "category": "backgrounds",
+  "name": "Waves",
+  "url": "https://reactbits.dev/backgrounds/waves",
+  "description": "Layered lines that form smooth wave patterns with animation.",
+  "deps": [],
+  "tech": [
+   "canvas 2D"
+  ],
+  "has_glsl": false,
+  "shader_count": 0,
+  "hex_colors": [],
+  "vec3_count": 0,
+  "mean_lum": null,
+  "prop_colors": [],
+  "code_chars": 11604,
+  "files": [
+   "Waves.css",
+   "Waves.tsx"
+  ]
+ },
+ "web-threads": {
+  "slug": "web-threads",
+  "category": "backgrounds",
+  "name": "WebThreads",
+  "url": "https://reactbits.dev/backgrounds/web-threads",
+  "description": "Glowing sine threads woven through a luminous convergence point.",
+  "deps": [
+   "ogl@^1.0.11"
+  ],
+  "tech": [
+   "ogl"
+  ],
+  "has_glsl": true,
+  "shader_count": 1,
+  "hex_colors": [
+   "5227FF",
+   "FF9FFC",
+   "FFFFFF"
+  ],
+  "vec3_count": 0,
+  "mean_lum": 0.66,
+  "prop_colors": [
+   [
+    "color1",
+    "#5227FF"
+   ],
+   [
+    "color2",
+    "#FF9FFC"
+   ],
+   [
+    "color3",
+    "#FFFFFF"
+   ]
+  ],
+  "code_chars": 11789,
+  "files": [
+   "WebThreads.css",
+   "WebThreads.tsx"
+  ]
+ }
+}

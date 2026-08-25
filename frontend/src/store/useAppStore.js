@@ -10,6 +10,10 @@ const INITIAL_OVERLAYS = Object.fromEntries(
   MAP_OVERLAY_KEYS.map((key) => [key, false])
 );
 
+// Catatan: opasitas `faults` dipetakan ke "penekanan" garis di
+// FaultOverlay (0.34 default ≈ 70% kekuatan visual), bukan alpha mentah.
+// Kalau suatu saat ada slider generik, jangan labeli "Opasitas" untuk
+// faults — beri label tersendiri ("Penekanan").
 const INITIAL_OVERLAY_OPACITIES = Object.fromEntries(
   MAP_OVERLAY_KEYS.map((key) => [key, key === 'faults' ? 0.34 : 0.65])
 );
@@ -99,6 +103,9 @@ export const useAppStore = create(
       hasSeenOnboarding: false,
       onboardingActive: false,
       onboardingStep: 0,
+      // Panel kiri menampilkan contoh laporan selama tur menyorotnya.
+      // Transien — sengaja tidak masuk partialize.
+      tourMockPanel: false,
 
       // ─── Persisted state ───────────────────────────────────────
       recentSearches: [],
@@ -238,10 +245,21 @@ export const useAppStore = create(
         set({ uploadedDocuments: [] }),
 
       // ─── Onboarding actions ────────────────────────────────────
-      startOnboarding: () => set({ onboardingActive: true, onboardingStep: 0 }),
-      stopOnboarding: () => set({ onboardingActive: false, onboardingStep: 0, hasSeenOnboarding: true }),
+      startOnboarding: () => set({
+        onboardingActive: true,
+        onboardingStep: 0,
+        // Permukaan lain tidak boleh menutupi target yang disorot tur.
+        cmdPaletteOpen: false,
+        auditDrawerOpen: false,
+        mapLayersOpen: false,
+      }),
+      stopOnboarding: () => set({ onboardingActive: false, onboardingStep: 0, hasSeenOnboarding: true, tourMockPanel: false }),
       nextOnboardingStep: () => set((s) => ({ onboardingStep: s.onboardingStep + 1 })),
       prevOnboardingStep: () => set((s) => ({ onboardingStep: Math.max(0, s.onboardingStep - 1) })),
+      // Lompatan atomik dari progress dots — satu set, bukan N langkah.
+      // Batas atas divalidasi di komponen (jumlah langkah di tangan sana).
+      jumpToOnboardingStep: (index) => set({ onboardingStep: Math.max(0, Math.floor(index)) }),
+      setTourMockPanel: (tourMockPanel) => set({ tourMockPanel: Boolean(tourMockPanel) }),
 
       // ─── Persisted actions ─────────────────────────────────────
       addRecentSearch: (entry) =>

@@ -66,20 +66,47 @@ export function MapLegend() {
             <div className="h-px bg-white/6" />
           )}
 
-          {/* Fault reference legend */}
+          {/* Fault reference legend — swatch SVG mini mencerminkan
+              kartografi peta: inti solid resmi + koridor titik referensi */}
           {showFaultLegend && (
             <div data-testid="fault-layer-legend" className="flex flex-col gap-1.5">
               <div className="flex items-center gap-1">
                 <GitBranch size={10} className="text-[#d28a7b]" />
                 <span className="text-[10px] font-bold text-text-primary">{t('panel.faultLegend')}</span>
               </div>
-              <div className="flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2 py-1.5">
-                <span
-                  className={`w-7 border-t-2 border-[#b86f63] ${faultLayerSource === 'official' ? '' : 'border-dashed'}`}
-                />
-                <span className="text-[10px] leading-relaxed text-text-secondary">
-                  {t(faultLegendKey)}
-                </span>
+              <div className="flex flex-col gap-1 rounded bg-white/[0.02] border border-white/5 px-2 py-1.5">
+                {faultLayerSource === 'official' ? (
+                  <div className="flex items-center gap-2">
+                    <svg width="34" height="10" aria-hidden="true">
+                      <line x1="1" y1="5" x2="33" y2="5" stroke="var(--fault-casing)" strokeWidth="5" strokeLinecap="round" />
+                      <line x1="1" y1="5" x2="33" y2="5" stroke="var(--fault-core)" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    <span className="text-[10px] leading-relaxed text-text-secondary">
+                      {t('panel.faultLegendDescription')}
+                    </span>
+                  </div>
+                ) : faultLayerSource === 'loading' ? (
+                  <div className="flex items-center gap-2">
+                    <svg width="34" height="10" aria-hidden="true" className="animate-pulse">
+                      <line x1="1" y1="5" x2="33" y2="5" stroke="var(--fault-fallback)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+                    </svg>
+                    <span className="text-[10px] leading-relaxed text-text-muted">
+                      {t('panel.faultsLoadingDescription')}
+                    </span>
+                  </div>
+                ) : null}
+                <div className="flex items-center gap-2">
+                  <svg width="34" height="10" aria-hidden="true">
+                    <line
+                      x1="1" y1="5" x2="33" y2="5"
+                      stroke="var(--fault-fallback)" strokeWidth="1.2"
+                      strokeDasharray="2 7" strokeLinecap="round" opacity="0.55"
+                    />
+                  </svg>
+                  <span className="text-[10px] leading-relaxed text-text-secondary">
+                    {t('panel.faultFallbackLegendDescription')}
+                  </span>
+                </div>
               </div>
               <p className="text-[9px] leading-relaxed text-text-muted">{t('panel.faultSource')}</p>
             </div>

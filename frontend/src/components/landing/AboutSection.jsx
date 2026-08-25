@@ -68,7 +68,7 @@ export default function AboutSection({ t }) {
           {/* New Custom Geological strata image */}
           <div className="mt-8 rounded-xl border border-accent/20 overflow-hidden relative aspect-[16/10] w-full bg-[#0c0806] group shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
             <img 
-              src="/geological_hazard.png" 
+              src="/landing/landscape-break.jpg" 
               alt="Geological Strata Model" 
               className="w-full h-full object-cover opacity-75 group-hover:opacity-95 transition-all duration-700 scale-[1.01] group-hover:scale-105"
             />

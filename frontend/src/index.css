@@ -312,6 +312,52 @@
     border: 1px solid rgba(255, 210, 170, 0.06);
   }
 
+  /* Kartu panel adaptif tema (lokasi contoh, kapabilitas): overlay putih
+     statis menghilang di atas kertas terang, jadi latar & garisnya ikut
+     data-theme — hangat di gelap, tinta cokelat tipis di terang. */
+  .panel-card {
+    background: rgba(255, 210, 170, 0.03);
+    border: 1px solid rgba(255, 210, 170, 0.08);
+  }
+
+  html[data-theme='light'] .panel-card {
+    background: rgba(91, 67, 48, 0.045);
+    border-color: rgba(91, 67, 48, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Metadata mono kecil di panel (strip sumber, alur, koordinat, nomor kartu):
+     di kertas terang token muted global masih di bawah 4.5:1 untuk teks 8-10px,
+     jadi versi light memakai tinta lebih pekat. Dark memakai token biasa. */
+  .panel-meta {
+    color: hsl(var(--safe-text-muted));
+  }
+
+  html[data-theme='light'] .panel-meta {
+    color: hsl(25 22% 32%);
+  }
+
+  /* ══ Lokasi contoh + chip laporan (SiteChannelDeck) ═════════════════
+     v5 sederhana: baris skor·nama·panah tanpa ornamen. */
+  .cf-note {
+    font-size: 9.5px;
+    line-height: 1.5;
+    color: hsl(var(--safe-text-muted));
+  }
+
+  .cf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.28rem 0.6rem;
+    font-size: 10px;
+    font-weight: 500;
+    color: hsl(var(--safe-text-secondary));
+  }
+
   /* Kinetic press feedback for buttons */
   .btn-press {
     transition: transform 150ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -332,6 +378,103 @@
     );
     background-size: 1000px 100%;
     animation: shimmer 2s linear infinite;
+  }
+
+  /* Brand splash — loading screen berlogo (fallback route lazy) */
+  .splash-ring {
+    position: absolute;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(212, 149, 106, 0.35);
+    opacity: 0;
+    animation: splash-ring 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  .splash-ring-delay-1 {
+    animation-delay: 0.8s;
+  }
+
+  .splash-ring-delay-2 {
+    animation-delay: 1.6s;
+  }
+
+  .splash-logo {
+    animation: splash-breathe 2.4s ease-in-out infinite;
+  }
+
+  .splash-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--safe-accent);
+    animation: splash-dot 1.2s ease-in-out infinite;
+  }
+
+  .splash-dot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .splash-dot:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes splash-ring {
+    0% {
+      transform: scale(0.35);
+      opacity: 0;
+    }
+    18% {
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  @keyframes splash-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.88;
+    }
+    50% {
+      transform: scale(1.015);
+      opacity: 1;
+    }
+  }
+
+  @keyframes splash-dot {
+    0%,
+    100% {
+      opacity: 0.25;
+      transform: translateY(0);
+    }
+    40% {
+      opacity: 1;
+      transform: translateY(-4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .splash-ring,
+    .splash-logo,
+    .splash-dot {
+      animation: none;
+    }
+
+    .splash-ring {
+      opacity: 0.12;
+    }
+
+    .splash-logo {
+      opacity: 1;
+    }
+
+    .splash-dot {
+      opacity: 0.6;
+    }
   }
 
   /* Pulse dot */
@@ -1909,3 +2052,141 @@ html[data-theme='light'] .btl-gauge-well {
     font-size: 7rem;
   }
 }
+
+/* ═══ Sesar Aktif (FaultOverlay) — kartografi instrumen ═══════════════════
+   Token warna via CSS var supaya tema terang/gelap cukup satu blok. Inti
+   resmi = solid hangat; koridor referensi = titik redup. */
+:root {
+  --fault-core: #dfa077;
+  --fault-casing: #1c130d;
+  --fault-fallback: #9c7568;
+  --fault-hover: #f4c096;
+  --fault-halo: rgba(212, 149, 106, 0.13);
+  --fault-accent: #d4956a;
+  --fault-accent-dim: #9c7568;
+  --ftt-divider: rgba(255, 210, 170, 0.1);
+  --ftt-label: rgba(240, 228, 204, 0.55);
+}
+
+html[data-theme='light'] {
+  --fault-core: #8f4a33;
+  /* Casing taupe gelap — krem hampir identik dengan tile jalan terang,
+     tidak memisahkan apa pun; gelap kontras dengan keduanya. */
+  --fault-casing: rgba(74, 52, 40, 0.5);
+  --fault-fallback: #a06a54;
+  --fault-hover: #6f3524;
+  --fault-halo: rgba(143, 74, 51, 0.10);
+  --fault-accent: #8f4a33;
+  --fault-accent-dim: #a06a54;
+  --ftt-divider: rgba(90, 60, 40, 0.16);
+  --ftt-label: rgba(36, 26, 18, 0.55);
+}
+
+.fault-pane {
+  cursor: crosshair;
+}
+
+/* Hover: inti menyala singkat — geologi statis, tanpa animasi idle.
+   Kelas is-hover dipasang di lintasan hit (transparan) dan mewarnai
+   lintasan inti lewat pemetaan feature → layer. */
+.fault-pane path {
+  transition: stroke 120ms ease;
+}
+
+.fault-pane path.is-hover {
+  stroke: var(--fault-hover) !important;
+}
+
+/* ── Tooltip kartu instrumen ── */
+.fault-tooltip.leaflet-tooltip {
+  background: rgba(15, 11, 8, 0.94);
+  border: 1px solid rgba(255, 210, 170, 0.16);
+  border-radius: 10px;
+  color: #f0e4cc;
+  box-shadow: 0 12px 32px rgba(8, 6, 4, 0.5);
+  padding: 9px 11px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  white-space: normal;
+}
+
+html[data-theme='light'] .fault-tooltip.leaflet-tooltip {
+  background: rgba(249, 244, 236, 0.98);
+  border-color: rgba(90, 60, 40, 0.22);
+  color: #241a12;
+  box-shadow: 0 12px 32px rgba(60, 40, 25, 0.18);
+}
+
+.fault-tooltip.leaflet-tooltip-top::before {
+  border-top-color: rgba(255, 210, 170, 0.16);
+}
+
+html[data-theme='light'] .fault-tooltip.leaflet-tooltip-top::before {
+  border-top-color: rgba(90, 60, 40, 0.22);
+}
+
+.ftt {
+  position: relative;
+  min-width: 168px;
+  max-width: 240px;
+}
+
+/* Ponsel sempit: kartu tidak boleh terpotong tepi layar — jejak sesar
+   kerap memeluk garis pantai, tepat di tempat tap terjadi. */
+@media (max-width: 420px) {
+  .ftt {
+    min-width: 132px;
+    max-width: min(240px, calc(100vw - 24px));
+  }
+}
+
+.ftt-corner {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 0 solid var(--fault-accent);
+  pointer-events: none;
+}
+
+.ftt-tl { top: -1px; left: -1px; border-top-width: 1.5px; border-left-width: 1.5px; border-top-left-radius: 3px; }
+.ftt-tr { top: -1px; right: -1px; border-top-width: 1.5px; border-right-width: 1.5px; border-top-right-radius: 3px; }
+.ftt-bl { bottom: -1px; left: -1px; border-bottom-width: 1.5px; border-left-width: 1.5px; border-bottom-left-radius: 3px; }
+.ftt-br { bottom: -1px; right: -1px; border-bottom-width: 1.5px; border-right-width: 1.5px; border-bottom-right-radius: 3px; }
+
+.ftt-tag {
+  margin: 0 0 4px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--fault-accent);
+}
+
+.ftt-fallback .ftt-tag { color: var(--fault-accent-dim); }
+
+.ftt-name {
+  margin: 0 0 6px;
+  font-family: var(--font-display, inherit);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.ftt-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px solid var(--ftt-divider);
+  padding-top: 6px;
+}
+
+.ftt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ftt-row dt { color: var(--ftt-label); }
+.ftt-row dd { margin: 0; font-weight: 600; text-align: right; }
+
