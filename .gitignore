@@ -88,3 +88,8 @@ frontend/bisect/
 frontend/bisect-dist/
 
 .vercel
+
+# Hermes + dev probe artifacts
+.hermes/
+frontend/dev/
+.vercel

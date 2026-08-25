@@ -3,6 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/safe-icon.png" />
+    <meta name="theme-color" content="#12100d" />
+    <script>
+      // theme-color mengikuti toggle tema in-app (bukan hanya OS preference).
+      (() => {
+        const set = () => {
+          let m = document.querySelector('meta[name="theme-color"]');
+          if (!m) {
+            m = document.createElement('meta');
+            m.name = 'theme-color';
+            document.head.appendChild(m);
+          }
+          m.content =
+            document.documentElement.dataset.theme === 'light' ? '#f4efe6' : '#12100d';
+        };
+        set();
+        new MutationObserver(set).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['data-theme'],
+        });
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <script>
       try {
@@ -16,32 +37,33 @@
       }
     </script>
 
-    <!-- Primary meta — B2B: konsultan perizinan / PBG -->
-    <title>S.A.F.E House — Audit Risiko Geoteknik Properti</title>
+    <!-- Primary meta: B2B, konsultan perizinan / PBG, properti -->
+    <title>Cek Risiko Tanah Properti dari Alamat | S.A.F.E House</title>
     <meta
       name="description"
-      content="S.A.F.E House (Seismic Analysis for Foundation Evaluation) — Platform audit geospasial & geoteknik berbasis AI untuk parameter SNI 1726:2019, PGA desain, FS likuefaksi, dan bahaya banjir dari satu koordinat."
+      content="Ketik alamat properti, langsung dapat parameter SNI 1726:2019: kelas situs, PGA desain, risiko likuefaksi, dan banjir — dari data resmi BNPB &amp; PuSGeN. Gratis, tanpa akun."
     />
-    <meta name="keywords" content="kelas situs SNI 1726 2019, cara menghitung Vs30, PGA desain gempa Indonesia, penyelidikan tanah PBG, likuefaksi factor of safety, syarat PBG 2026, desk study geoteknik" />
+    <meta name="keywords" content="cek risiko tanah dari alamat, cek alamat properti rawan gempa, cek banjir alamat rumah, cek likuefaksi tanah lokasi properti, risiko gempa properti Indonesia, kelas situs SNI 1726 2019, PGA desain gempa Indonesia, penyelidikan tanah PBG, desk study geoteknik, aplikasi geoteknik online, audit risiko gempa properti, software geoteknik Indonesia, Building Indonesia Emergent" />
     <link rel="canonical" href="https://safehouse.web.id/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="S.A.F.E House" />
-    <meta property="og:title" content="S.A.F.E House — AI Geotechnical & Disaster Risk Platform" />
-    <meta property="og:description" content="Kelas situs SNI 1726:2019, PGA desain, FS likuefaksi, dan bahaya banjir dari satu koordinat. Untuk konsultan perizinan, developer, dan konsultan geoteknik." />
+    <meta property="og:title" content="S.A.F.E House — Cek Risiko Tanah Properti Cukup dari Alamat" />
+    <meta property="og:description" content="Risiko gempa, likuefaksi, dan banjir properti Anda, dihitung sesuai SNI 1726:2019 dari data resmi BNPB &amp; PuSGeN. Gratis, tanpa akun." />
     <meta property="og:locale" content="id_ID" />
     <meta property="og:url" content="https://safehouse.web.id/" />
-    <meta property="og:image" content="https://safehouse.web.id/og-default.png" />
+    <meta property="og:image" content="https://safehouse.web.id/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="S.A.F.E House — parameter SNI 1726:2019 siap-PBG dari satu koordinat" />
+    <meta property="og:image:alt" content="S.A.F.E House: audit geoteknik berbasis alamat properti sesuai SNI 1726:2019" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="S.A.F.E House — Parameter Gempa & Tanah untuk PBG" />
-    <meta name="twitter:description" content="Desk study geoteknik SNI 1726:2019 dari satu koordinat, dalam dua menit." />
-    <meta name="twitter:image" content="https://safehouse.web.id/og-default.png" />
+    <meta name="twitter:title" content="S.A.F.E House — Cek Risiko Tanah Properti Cukup dari Alamat" />
+    <meta name="twitter:description" content="Risiko gempa, likuefaksi, dan banjir properti Anda, dihitung sesuai SNI 1726:2019 dari data resmi BNPB &amp; PuSGeN. Gratis, tanpa akun." />
+    <meta name="twitter:image" content="https://safehouse.web.id/og-image.png" />
+    <meta name="twitter:image:alt" content="S.A.F.E House: audit geoteknik berbasis alamat properti sesuai SNI 1726:2019" />
 
     <!-- Structured data: SoftwareApplication -->
     <script type="application/ld+json">
@@ -49,9 +71,11 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "S.A.F.E House",
+      "url": "https://safehouse.web.id/",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
-      "description": "Desk study geoteknik untuk perizinan bangunan (PBG): kelas situs SNI 1726:2019, PGA desain, factor of safety likuefaksi, dan bahaya banjir dari satu titik koordinat.",
+      "isAccessibleForFree": true,
+      "description": "Aplikasi web untuk memeriksa risiko gempa, likuefaksi, dan banjir sebuah properti dari alamat atau koordinat, sesuai SNI 1726:2019, memakai data InaRISK BNPB, PuSGeN, USGS, dan Open-Meteo.",
       "inLanguage": "id-ID",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "IDR" },
       "creator": { "@type": "Organization", "name": "S.A.F.E House" },
@@ -60,14 +84,15 @@
         "PGA desain PuSGeN",
         "Factor of Safety likuefaksi (Seed & Idriss)",
         "Bahaya banjir InaRISK BNPB",
-        "Deteksi kedekatan sesar aktif"
+        "Deteksi kedekatan sesar aktif",
+        "Laporan desk study siap lampiran pengajuan PBG"
       ]
     }
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Archivo:wght@400;700;800;900&family=Red+Hat+Display:wght@400;600;700&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;800&family=Azeret+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

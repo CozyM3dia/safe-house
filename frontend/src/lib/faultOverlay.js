@@ -108,14 +108,105 @@ export const FAULT_TRACE_SEGMENTS = [
   ]),
 ];
 
-export const FAULT_OVERLAY_STYLE = {
-  color: '#b86f63',
-  weight: 3,
-  opacity: 0.85,
-  dashArray: '6, 6',
-  lineCap: 'round',
-  lineJoin: 'round',
+/**
+ * Kartografi layer sesar aktif.
+ *
+ * Tiga lintasan (halo → casing → core) memberi garis sesar pembacaan
+ * "instrumen": inti hangat yang terpisah jelas dari raster bahaya dan jalan
+ * tile. Geometri resmi PuSGeN = garis solid; koridor referensi lokal =
+ * titik-titik redup — kontrak visual yang dijanjikan legenda benar-benar
+ * digambar, bukan cuma ditulis.
+ */
+
+// Warna via CSS var (didefinisikan di index.css, berganti per tema).
+export const FAULT_COLORS = {
+  halo: 'var(--fault-halo)',
+  casing: 'var(--fault-casing)',
+  core: 'var(--fault-core)',
+  fallback: 'var(--fault-fallback)',
+  hover: 'var(--fault-hover)',
 };
+
+/** Bobot inti resmi per bucket zoom (nasional → parcela). */
+const CORE_WEIGHT_BY_ZOOM = [1.5, 2, 2.5, 3.2];
+const CASING_WEIGHT_BY_ZOOM = [4.5, 5.5, 6.5, 8];
+const HALO_WEIGHT_BY_ZOOM = [0, 7, 8, 10];
+
+export function zoomBucket(zoom) {
+  if (zoom <= 6) return 0;
+  if (zoom <= 8) return 1;
+  // Bucket 3 ditarik ke ≥14: zoom kota di ponsel (12–13) tidak bokeh
+  // menerima pita 20px+ di atas konteks jalan yang justru dibutuhkan.
+  if (zoom <= 13) return 2;
+  return 3;
+}
+
+/**
+ * Laju slip (mm/th) dienkode sebagai tebal inti — bukan hue kedua, supaya
+ * warna tetap berarti "ini layer sesar". Palu-Koro kelas ≥20 mm/th tampak
+ * lebih berotot tanpa memecah semantik warna.
+ */
+export function slipTier(sliprate) {
+  if (sliprate == null) return 1;
+  if (sliprate >= 20) return 1.35;
+  if (sliprate >= 5) return 1.15;
+  return 1;
+}
+
+export const FAULT_LINE_CAP = 'round';
+export const FAULT_LINE_JOIN = 'round';
+export const FAULT_SMOOTH_FACTOR = 1.2;
+
+/** Gaya inti geometri resmi — solid. */
+export function officialCoreStyle(zoom, sliprate) {
+  return {
+    color: FAULT_COLORS.core,
+    weight: CORE_WEIGHT_BY_ZOOM[zoomBucket(zoom)] * slipTier(sliprate),
+    opacity: 0.92,
+    lineCap: FAULT_LINE_CAP,
+    lineJoin: FAULT_LINE_JOIN,
+    smoothFactor: FAULT_SMOOTH_FACTOR,
+  };
+}
+
+/** Gaya koridor referensi lokal — titik-titik redup, jelas bukan geometri resmi. */
+export function fallbackCoreStyle(zoom) {
+  return {
+    color: FAULT_COLORS.fallback,
+    weight: Math.max(1.2, CORE_WEIGHT_BY_ZOOM[zoomBucket(zoom)] - 0.6),
+    opacity: 0.55,
+    dashArray: '2, 7',
+    lineCap: FAULT_LINE_CAP,
+    lineJoin: FAULT_LINE_JOIN,
+    smoothFactor: FAULT_SMOOTH_FACTOR,
+  };
+}
+
+export function casingStyle(zoom) {
+  // Bucket 0 (nasional): casing warna basemap gelap hanya jadi smear di
+  // atas ratusan garis rapat — matikan seperti halo.
+  const bucket = zoomBucket(zoom);
+  return {
+    color: FAULT_COLORS.casing,
+    weight: bucket === 0 ? 0 : CASING_WEIGHT_BY_ZOOM[bucket],
+    opacity: bucket === 0 ? 0 : 0.9,
+    lineCap: FAULT_LINE_CAP,
+    lineJoin: FAULT_LINE_JOIN,
+    smoothFactor: FAULT_SMOOTH_FACTOR,
+  };
+}
+
+export function haloStyle(zoom) {
+  const weight = HALO_WEIGHT_BY_ZOOM[zoomBucket(zoom)];
+  return {
+    color: FAULT_COLORS.halo,
+    weight,
+    opacity: weight > 0 ? 1 : 0,
+    lineCap: FAULT_LINE_CAP,
+    lineJoin: FAULT_LINE_JOIN,
+    smoothFactor: FAULT_SMOOTH_FACTOR,
+  };
+}
 
 // Keep the reference traces above hazard polygons, while leaving markers and
 // the HTML control surfaces readable and interactive.
@@ -128,7 +219,21 @@ export const OFFICIAL_FAULT_SOURCE = {
   serviceUrl: 'https://gis.bnpb.go.id/server/rest/services/inarisk/Faults_new/MapServer/1',
 };
 
-export const OFFICIAL_FAULT_GEOJSON_URL = `${OFFICIAL_FAULT_SOURCE.serviceUrl}/query?where=1%3D1&outFields=FID%2CName%2CSegment%2CMmax%2CRegion%2CType%2CSliprate_m%2CLength_km&returnGeometry=true&f=geojson`;
+/**
+ * Query ArcGIS dengan paginasi — maxRecordCount server (biasanya 1000)
+ * bisa memotong cakupan sesar diam-diam; `exceededTransferLimit` wajib
+ * diikuti sampai habis.
+ */
+export function buildFaultQueryUrl(offset = 0, recordCount = 2000) {
+  const where = encodeURIComponent('1=1');
+  const outFields = encodeURIComponent('FID,Name,Segment,Mmax,Region,Type,Sliprate_m,Length_km');
+  return (
+    `${OFFICIAL_FAULT_SOURCE.serviceUrl}/query?where=${where}&outFields=${outFields}` +
+    `&returnGeometry=true&f=geojson&resultRecordCount=${recordCount}&resultOffset=${offset}`
+  );
+}
+
+export const OFFICIAL_FAULT_GEOJSON_URL = buildFaultQueryUrl();
 
 export function getFaultTraceSegments() {
   return FAULT_TRACE_SEGMENTS;
