@@ -12,7 +12,10 @@
 import axios from 'axios';
 import { generateProceduralNarrative } from '../lib/proceduralNarrative';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Emergent mem-proxy /api/* ke backend pada origin yang sama. Di produksi
+// jangan default ke localhost — itu hanya untuk Vite dev.
+const BASE_URL = import.meta.env.VITE_API_URL
+  || (import.meta.env.PROD ? '' : 'http://localhost:8000');
 
 const client = axios.create({
   baseURL: BASE_URL,

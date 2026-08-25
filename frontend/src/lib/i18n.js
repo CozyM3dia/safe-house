@@ -301,6 +301,14 @@ const translations = {
   'report.createAudit': { id: 'Buat Audit', en: 'Create Audit' },
   'report.loading': { id: 'Memuat laporan…', en: 'Loading report…' },
   'report.notFound': { id: 'Laporan tidak ditemukan', en: 'Report not found' },
+  'report.storageDown': {
+    id: 'Penyimpanan laporan mati',
+    en: 'Report storage is down',
+  },
+  'report.storageDownDetail': {
+    id: 'Tautan /laporan membutuhkan DATABASE_URL (PostgreSQL/Supabase) di server Emergent. Audit di /app tetap dihitung, tetapi tidak tersimpan.',
+    en: 'Public /laporan links need DATABASE_URL (PostgreSQL/Supabase) on the Emergent server. Audits on /app still calculate; they are not stored.',
+  },
   'report.createOwn': { id: 'Buat audit sendiri', en: 'Create your own audit' },
   'report.locationAudit': { id: 'Audit Risiko Lokasi', en: 'Location Risk Audit' },
   'report.riskAnalysis': { id: 'Analisis Risiko', en: 'Risk Analysis' },
@@ -560,6 +568,10 @@ const translations = {
     en: 'Share link copied to clipboard',
   },
   'toast.shareFailed': { id: 'Gagal menyalin link', en: 'Failed to copy link' },
+  'toast.notPersisted': {
+    id: 'Audit siap di sesi ini. Tautan /laporan membutuhkan DATABASE_URL di server.',
+    en: 'Audit ready in this session. /laporan links need DATABASE_URL on the server.',
+  },
 
   // --- Halaman validasi historis (/validasi) ---
   'validasi.eyebrow': {
@@ -635,6 +647,18 @@ const translations = {
   'validasi.retry': { id: 'Muat Ulang', en: 'Retry' },
 
   // --- Checklist kelengkapan teknis PBG ---
+  'pbg.pageTitle': {
+    id: 'Checklist dokumen teknis PBG',
+    en: 'PBG technical document checklist',
+  },
+  'pbg.pageLead': {
+    id: 'Daftar ini menerjemahkan parameter SNI 1726:2019 menjadi dokumen yang lazim diminta saat pengajuan PBG. Butir wajib/disarankan untuk satu tapak muncul setelah audit — halaman ini hanya menjelaskan jenis dokumennya, bukan mengarang angka lokasi.',
+    en: 'This list turns SNI 1726:2019 parameters into documents typically requested for a PBG filing. Required vs recommended items for a specific site appear after an audit — this page explains the document types, it does not invent site numbers.',
+  },
+  'pbg.runAuditCta': {
+    id: 'Jalankan audit untuk checklist lokasi',
+    en: 'Run an audit for a site checklist',
+  },
   'pbg.title': { id: 'Keperluan Dokumen PBG', en: 'PBG Document Requirements' },
   'pbg.wajib': { id: 'WAJIB', en: 'REQUIRED' },
   'pbg.disarankan': { id: 'DISARANKAN', en: 'RECOMMENDED' },

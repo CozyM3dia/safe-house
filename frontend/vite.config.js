@@ -5,9 +5,23 @@ import { fileURLToPath } from 'node:url'
 
 const sourceDirectory = fileURLToPath(new URL('./src', import.meta.url))
 
+const PUBLIC_SITE_URL = (
+  process.env.VITE_PUBLIC_SITE_URL ||
+  'https://safehouse-pull.emergent.host'
+).replace(/\/+$/, '')
+
+function injectPublicSiteUrl() {
+  return {
+    name: 'inject-public-site-url',
+    transformIndexHtml(html) {
+      return html.replaceAll('__PUBLIC_SITE_URL__', PUBLIC_SITE_URL)
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), injectPublicSiteUrl()],
   resolve: {
     alias: {
       '@': path.resolve(sourceDirectory),

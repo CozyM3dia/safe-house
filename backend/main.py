@@ -60,9 +60,12 @@ app.add_middleware(
 
 @app.get("/api/health", response_model=HealthResult)
 async def health() -> HealthResult:
+    # Proses API bisa hidup tanpa DB (audit tetap dihitung). Jangan klaim
+    # "ok" kalau penyimpanan — syarat /laporan dan share — sedang mati.
+    connected = db.is_connected()
     return HealthResult(
-        status="ok",
-        database="connected" if db.is_connected() else "unavailable",
+        status="ok" if connected else "degraded",
+        database="connected" if connected else "unavailable",
     )
 
 

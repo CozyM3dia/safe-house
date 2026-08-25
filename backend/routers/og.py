@@ -12,13 +12,13 @@ hit crawler bukan sinyal minat. Query read-only, tanpa INSERT/UPDATE.
 import asyncio
 import html as _html
 import logging
-import os
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, Response
 
 import db
 from services.og_image import DEFAULT_TITLE, render_card
+from services.site_url import backend_public_origin, public_site_origin
 
 log = logging.getLogger(__name__)
 
@@ -94,19 +94,13 @@ def _base_api(request: Request) -> str:
     """Host yang melayani endpoint ini. Env menang (proxy kadang menulis ulang
     Host); tanpa env, host request dipakai — backend dan gambar selalu satu
     origin sehingga og:image selalu fetchable di host mana pun HTML disajikan."""
-    env = os.getenv("BACKEND_PUBLIC_URL", "").strip().rstrip("/")
-    if env:
-        return env
-    return str(request.base_url).rstrip("/")
+    return backend_public_origin(request)
 
 
 def _base_site(request: Request) -> str:
-    """Domain kanonik halaman share. PUBLIC_SITE_URL menang bila diset;
-    default = host request (mengikuti kenyataan host yang dibagikan)."""
-    env = os.getenv("PUBLIC_SITE_URL", "").strip().rstrip("/")
-    if env:
-        return env
-    return str(request.base_url).rstrip("/")
+    """Domain kanonik halaman share. PUBLIC_SITE_URL menang bila valid;
+    host mati (safehouse.web.id NXDOMAIN) diabaikan — lihat site_url."""
+    return public_site_origin(request)
 
 
 def _html_meta(*, judul: str, deskripsi: str, slug: str, base_api: str, base_site: str) -> str:
@@ -139,9 +133,50 @@ def _html_meta(*, judul: str, deskripsi: str, slug: str, base_api: str, base_sit
 </body></html>"""
 
 
+def _storage_down_html(*, slug: str, request: Request) -> str:
+    """HTML jujur saat DB mati — jangan menyamar sebagai laporan sukses."""
+    esc = _html.escape
+    slug_aman = esc(slug, quote=True)
+    base_site = _base_site(request)
+    url_halaman = f"{base_site}/laporan/{slug_aman}"
+    judul = "Laporan tidak tersedia — penyimpanan mati"
+    deskripsi = (
+        "S.A.F.E House tidak dapat memuat laporan publik karena database "
+        "tidak tersambung. Audit di /app tetap dihitung; tautan /laporan "
+        "membutuhkan DATABASE_URL (PostgreSQL/Supabase) di server."
+    )
+    return f"""<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8">
+<title>{esc(judul)}</title>
+<meta name="description" content="{esc(deskripsi)}">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="S.A.F.E House">
+<meta property="og:title" content="{esc(judul)}">
+<meta property="og:description" content="{esc(deskripsi)}">
+<meta property="og:url" content="{url_halaman}">
+<meta property="og:locale" content="id_ID">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{esc(judul)}">
+<meta name="twitter:description" content="{esc(deskripsi)}">
+</head><body>
+<h1>{esc(judul)}</h1>
+<p>{esc(deskripsi)}</p>
+<p>Halaman laporan: <a href="{url_halaman}">{url_halaman}</a></p>
+</body></html>"""
+
+
 @router.get("/laporan/{slug}", response_class=HTMLResponse)
 async def og_laporan(slug: str, request: Request):
     data = await _muat_audit(slug)
+    if data is None:
+        # DB mati / error: 503, bukan kartu generik 200 yang seolah laporan ada.
+        return HTMLResponse(
+            _storage_down_html(slug=slug, request=request),
+            status_code=503,
+            headers={"Cache-Control": "no-store"},
+        )
     if data is _MISSING:
         # Slug tak dikenal: 404 semantik, tapi crawler mayoritas tetap
         # membaca body — beri meta default tanpa angka palsu.
@@ -156,8 +191,6 @@ async def og_laporan(slug: str, request: Request):
             status_code=404,
             headers={"Cache-Control": "public, max-age=60"},
         )
-    # data None (DB mati/error) atau dict → 200. DB mati = kartu default
-    # generik, bukan angka palsu.
     judul = _judul(data)
     deskripsi = _deskripsi(data)
     return HTMLResponse(
@@ -216,3 +249,16 @@ async def og_default():
         media_type="image/png",
         headers={"Cache-Control": "public, max-age=86400"},
     )
+
+
+@router.get("/{slug}", response_class=HTMLResponse)
+async def og_slug_alias(slug: str, request: Request):
+    """Alias /api/og/{slug} → /api/og/laporan/{slug}.
+
+    Smoke test dan beberapa crawler mengetik /api/og/:slug; path kanonik
+    tetap /api/og/laporan/{slug}, /api/og/img/{slug}.png, /api/og/default.png.
+    Didaftarkan terakhir supaya tidak menelan /img dan /default.png.
+    """
+    if slug in {"laporan", "img", "default.png"}:
+        return HTMLResponse("Not Found", status_code=404)
+    return await og_laporan(slug, request)

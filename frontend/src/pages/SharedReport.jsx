@@ -5,6 +5,7 @@ import { ShieldCheck, ArrowRight, AlertTriangle } from 'lucide-react';
 import { getSharedReport } from '../services/api';
 import SniReport, { ReportSkeleton } from '../components/report/SniReport';
 import { useT } from '../hooks/useTranslation';
+import { getPublicSiteUrl, ogImageUrl } from '../lib/publicOrigin';
 
 /**
  * Halaman audit publik — /laporan/:slug.
@@ -38,11 +39,18 @@ export default function SharedReport() {
               ? `S.A.F.E Score ${data.safe_score} — ${alamat}`
               : `${t('report.locationAudit')} ${alamat} — S.A.F.E House`;
           document.title = judul;
+          const origin = getPublicSiteUrl();
+          const pageUrl = `${origin}/laporan/${slug}`;
           // Pre-viewer yang menjalankan JS (Discord kadang) membaca meta ini;
-          // crawler murni dilayani endpoint /og/laporan via rewrite Vercel.
+          // crawler murni harus memukul /api/og/laporan/{slug} (Emergent
+          // hanya mem-proxy /api/*; rewrite crawler Vercel tidak berlaku di sini).
           for (const [sel, content] of [
             ['meta[property="og:title"]', judul],
             ['meta[name="twitter:title"]', judul],
+            ['link[rel="canonical"]', pageUrl],
+            ['meta[property="og:url"]', pageUrl],
+            ['meta[property="og:image"]', ogImageUrl(slug)],
+            ['meta[name="twitter:image"]', ogImageUrl(slug)],
             [
               'meta[property="og:description"]',
               data.safe_score != null
@@ -51,7 +59,8 @@ export default function SharedReport() {
             ],
           ]) {
             if (!content) continue;
-            document.querySelector(sel)?.setAttribute('content', content);
+            const attr = sel.startsWith('link') ? 'href' : 'content';
+            document.querySelector(sel)?.setAttribute(attr, content);
           }
         }
         setState({ status: 'ready', data, error: null });
@@ -94,8 +103,16 @@ export default function SharedReport() {
         {state.status === 'error' && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <AlertTriangle className="mb-3 h-8 w-8 text-risk-moderate" />
-            <h1 className="mb-1 font-display text-lg font-semibold">{t('report.notFound')}</h1>
-            <p className="mb-6 max-w-sm text-sm text-text-muted">{state.error}</p>
+            <h1 className="mb-1 font-display text-lg font-semibold">
+              {/penyimpanan|DATABASE_URL|storage/i.test(state.error || '')
+                ? t('report.storageDown')
+                : t('report.notFound')}
+            </h1>
+            <p className="mb-6 max-w-sm text-sm text-text-muted">
+              {/penyimpanan|DATABASE_URL|storage/i.test(state.error || '')
+                ? t('report.storageDownDetail')
+                : state.error}
+            </p>
             <Link
               to="/app"
               className="btn-press inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-bg"

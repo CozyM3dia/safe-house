@@ -34,7 +34,13 @@ def _new_slug() -> str:
 async def create_share(req: ShareRequest) -> ShareResult:
     pool = db.get_pool()
     if pool is None:
-        raise HTTPException(status_code=503, detail="Penyimpanan tidak tersedia")
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Penyimpanan tidak tersedia. Tautan /laporan membutuhkan "
+                "DATABASE_URL (PostgreSQL/Supabase transaction pooler) di server."
+            ),
+        )
 
     try:
         audit_uid = uuid.UUID(req.audit_id)
@@ -71,7 +77,13 @@ async def create_share(req: ShareRequest) -> ShareResult:
 async def get_shared(slug: str) -> AuditResult:
     pool = db.get_pool()
     if pool is None:
-        raise HTTPException(status_code=503, detail="Penyimpanan tidak tersedia")
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Penyimpanan tidak tersedia. Tautan /laporan membutuhkan "
+                "DATABASE_URL (PostgreSQL/Supabase transaction pooler) di server."
+            ),
+        )
 
     share = await pool.fetchrow(
         "SELECT id, audit_id FROM shared_reports WHERE slug = $1", slug

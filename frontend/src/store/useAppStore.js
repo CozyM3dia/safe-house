@@ -361,6 +361,15 @@ export const useAppStore = create(
             });
           }
 
+          if (data.persisted === false) {
+            toast.warning(
+              lang === 'en'
+                ? 'Audit ready in this session. /laporan links need DATABASE_URL on the server.'
+                : 'Audit siap di sesi ini. Tautan /laporan membutuhkan DATABASE_URL di server.',
+              { duration: 5500 }
+            );
+          }
+
           // The score is already visible. Generate the explanatory layer in
           // the background so an AI outage can never invalidate the audit.
           if (!battleTarget) {

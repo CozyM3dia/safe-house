@@ -61,13 +61,15 @@ class OgLaporanRouteTests(unittest.IsolatedAsyncioTestCase):
         # Tidak ada angka skor palsu untuk slug yang tidak ada.
         self.assertNotIn("S.A.F.E Score", body)
 
-    async def test_pool_none_200_kartu_default(self):
+    async def test_pool_none_503_jujur_bukan_kartu_sukses(self):
         with patch("routers.og.db.get_pool", return_value=None):
             response = await self._get()
 
-        self.assertEqual(200, response.status_code)
-        self.assertIn("S.A.F.E House", response.text)
+        self.assertEqual(503, response.status_code)
+        self.assertIn("penyimpanan mati", response.text.lower())
+        self.assertIn("DATABASE_URL", response.text)
         self.assertNotIn("S.A.F.E Score", response.text)
+        self.assertIn("noindex", response.text)
 
     async def test_karakter_berbahaya_ter_escape(self):
         data = {
@@ -82,25 +84,53 @@ class OgLaporanRouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("<script>alert", response.text)
         self.assertIn("&lt;script&gt;", response.text)
 
-    async def test_db_error_diperlakukan_sebagai_default(self):
+    async def test_db_error_503_jujur(self):
         pool = MagicMock()
         pool.fetchrow = AsyncMock(side_effect=RuntimeError("koneksi putus"))
         with patch("routers.og.db.get_pool", return_value=pool):
             response = await self._get()
 
-        self.assertEqual(200, response.status_code)
-        self.assertIn("S.A.F.E House", response.text)
+        self.assertEqual(503, response.status_code)
+        self.assertIn("penyimpanan mati", response.text.lower())
+        self.assertNotIn("S.A.F.E Score", response.text)
 
     async def test_public_site_url_mengoverride_og_url(self):
         pool = _pool_dengan_audit()
         with patch("routers.og.db.get_pool", return_value=pool), patch.dict(
-            "os.environ", {"PUBLIC_SITE_URL": "https://safehouse.web.id/"}
+            "os.environ",
+            {"PUBLIC_SITE_URL": "https://safehouse-pull.emergent.host/"},
+            clear=False,
         ):
             response = await self._get()
 
-        self.assertIn('property="og:url" content="https://safehouse.web.id/laporan/', response.text)
+        self.assertIn(
+            'property="og:url" content="https://safehouse-pull.emergent.host/laporan/',
+            response.text,
+        )
         # og:image tetap mengikuti host backend (yang melayani gambar).
         self.assertIn(f"/api/og/img/{_SLUG}.png", response.text)
+
+    async def test_dead_web_id_tidak_dipakai_sebagai_og_url(self):
+        pool = _pool_dengan_audit()
+        with patch("routers.og.db.get_pool", return_value=pool), patch.dict(
+            "os.environ",
+            {"PUBLIC_SITE_URL": "https://safehouse.web.id/", "PUBLIC_SITE_ALLOW_UNRESOLVED": ""},
+            clear=False,
+        ):
+            response = await self._get()
+
+        self.assertNotIn("safehouse.web.id", response.text)
+        self.assertIn('property="og:url" content="http://testserver/laporan/', response.text)
+
+    async def test_alias_api_og_slug(self):
+        pool = _pool_dengan_audit()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            with patch("routers.og.db.get_pool", return_value=pool):
+                response = await client.get(f"/api/og/{_SLUG}")
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn("Gang Teratai", response.text)
 
 
 class OgImgRouteTests(unittest.IsolatedAsyncioTestCase):
