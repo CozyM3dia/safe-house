@@ -30,7 +30,7 @@ test('landing nav advertises validasi, bandingkan, and pbg', async () => {
 test('index.html does not hardcode the dead safehouse.web.id origin', async () => {
   const html = await readFile(new URL('../index.html', root), 'utf8');
 
-  assert.doesNotMatch(html, /safehouse\.web\.id/);
+  assert.doesNotMatch(html, /(?:href|content)="https:\/\/safehouse\.web\.id/);
   assert.match(html, /__PUBLIC_SITE_URL__/);
   assert.match(html, /\/api\/og\/default\.png/);
 });

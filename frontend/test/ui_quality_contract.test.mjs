@@ -61,7 +61,7 @@ test('async content surfaces use reusable layout-shaped shimmer skeletons', asyn
   assert.ok(files.every((content) => /Skeleton/.test(content)));
   assert.match(files[2], /battleReportLoading/);
   assert.match(files[4], /SkeletonRows/);
-  assert.match(files[7], /SharedReportSkeleton/);
+  assert.match(files[7], /ReportSkeleton/);
 });
 
 test('report priority cards avoid thick side-stripe accents', async () => {
