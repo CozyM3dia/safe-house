@@ -101,7 +101,7 @@ class ShareResult(BaseModel):
 
 
 class HealthResult(BaseModel):
-    status: Literal["ok"]
+    status: Literal["ok", "degraded"]
     database: Literal["connected", "unavailable"]
 
 

@@ -283,6 +283,8 @@ export default function LandingPage() {
               { label: 'About', target: 'about' },
               { label: 'Workflow', target: 'process' },
               { label: 'Validasi', to: '/validasi' },
+              { label: 'Bandingkan', to: '/bandingkan' },
+              { label: 'PBG', to: '/pbg' },
               { label: 'Disclaimer', target: 'disclaimer' },
               { label: 'FAQ', target: 'faq' },
             ].map((link) => (
@@ -353,14 +355,21 @@ export default function LandingPage() {
               {[
                 { label: 'About', target: 'about' },
                 { label: 'Workflow', target: 'process' },
+                { label: 'Validasi', to: '/validasi' },
+                { label: 'Bandingkan', to: '/bandingkan' },
+                { label: 'PBG', to: '/pbg' },
                 { label: 'Disclaimer', target: 'disclaimer' },
                 { label: 'FAQ', target: 'faq' },
               ].map((link) => (
                 <button
                   type="button"
-                  key={link.target}
+                  key={link.target || link.to}
                   onClick={() => {
                     setMobileMenuOpen(false);
+                    if (link.to) {
+                      navigate(link.to);
+                      return;
+                    }
                     document.getElementById(link.target)?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="flex min-h-[44px] items-center rounded-xl px-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary hover:bg-white/[0.05] hover:text-text-primary"

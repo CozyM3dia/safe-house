@@ -124,7 +124,7 @@ export default function HeroSection({ t }) {
               </div>
             <div className="flex w-auto max-w-full items-center justify-center gap-1.5 rounded border border-border bg-secondary/50 px-3 py-1 text-[9px] tracking-wide text-muted-foreground font-mono sm:w-72 sm:text-[10px]">
                 <span className="text-accent/60">✦</span>
-                <span className="opacity-60">safehouse.web.id/app</span>
+                <span className="opacity-60">safehouse-pull.emergent.host/app</span>
               </div>
               <div className="w-12" /> {/* spacer */}
             </div>

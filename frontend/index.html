@@ -23,16 +23,18 @@
       content="S.A.F.E House (Seismic Analysis for Foundation Evaluation) — Platform audit geospasial & geoteknik berbasis AI untuk parameter SNI 1726:2019, PGA desain, FS likuefaksi, dan bahaya banjir dari satu koordinat."
     />
     <meta name="keywords" content="kelas situs SNI 1726 2019, cara menghitung Vs30, PGA desain gempa Indonesia, penyelidikan tanah PBG, likuefaksi factor of safety, syarat PBG 2026, desk study geoteknik" />
-    <link rel="canonical" href="https://safehouse.web.id/" />
+    <link rel="canonical" href="__PUBLIC_SITE_URL__/" />
 
-    <!-- Open Graph -->
+    <!-- Open Graph — origin diisi saat build (VITE_PUBLIC_SITE_URL).
+         Default: host Emergent LIVE. Jangan hardcode safehouse.web.id (NXDOMAIN).
+         Per-laporan: crawler harus memukul /api/og/laporan/{slug}. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="S.A.F.E House" />
     <meta property="og:title" content="S.A.F.E House — AI Geotechnical & Disaster Risk Platform" />
     <meta property="og:description" content="Kelas situs SNI 1726:2019, PGA desain, FS likuefaksi, dan bahaya banjir dari satu koordinat. Untuk konsultan perizinan, developer, dan konsultan geoteknik." />
     <meta property="og:locale" content="id_ID" />
-    <meta property="og:url" content="https://safehouse.web.id/" />
-    <meta property="og:image" content="https://safehouse.web.id/og-default.png" />
+    <meta property="og:url" content="__PUBLIC_SITE_URL__/" />
+    <meta property="og:image" content="__PUBLIC_SITE_URL__/api/og/default.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="S.A.F.E House — parameter SNI 1726:2019 siap-PBG dari satu koordinat" />
@@ -41,7 +43,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="S.A.F.E House — Parameter Gempa & Tanah untuk PBG" />
     <meta name="twitter:description" content="Desk study geoteknik SNI 1726:2019 dari satu koordinat, dalam dua menit." />
-    <meta name="twitter:image" content="https://safehouse.web.id/og-default.png" />
+    <meta name="twitter:image" content="__PUBLIC_SITE_URL__/api/og/default.png" />
 
     <!-- Structured data: SoftwareApplication -->
     <script type="application/ld+json">

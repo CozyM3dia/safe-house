@@ -77,8 +77,8 @@ Frontend jalan di `http://localhost:5173`, backend di `http://localhost:8000`.
 
 ### Variabel lingkungan
 
-`backend/.env` — `GEMINI_API_KEY`, `GEMINI_MODEL`, `MONGO_URL`, `CORS_ORIGINS`
-`frontend/.env` — `VITE_API_URL`
+`backend/.env` — `DATABASE_URL` (PostgreSQL/Supabase, wajib untuk /laporan dan share), `GEMINI_API_KEY`, `GEMINI_MODEL`, `CORS_ORIGINS`, `PUBLIC_SITE_URL`, `BACKEND_PUBLIC_URL`
+`frontend/.env` — `VITE_API_URL` (kosongkan di Emergent), `VITE_PUBLIC_SITE_URL`
 
 Setiap orang memakai kunci masing-masing. **Jangan pernah commit file `.env`** — hanya `.env.example` yang masuk repo. Lihat [CONTRIBUTING.md](CONTRIBUTING.md).
 

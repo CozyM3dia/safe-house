@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Toaster } from 'sonner';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 
 import { MapArea } from './components/map/MapArea';
 import { TopBar } from './components/panels/TopBar';
@@ -22,6 +22,8 @@ import { isNarrowViewport } from './lib/responsive';
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const SharedReport = lazy(() => import('./pages/SharedReport'));
 const ValidationPage = lazy(() => import('./pages/ValidationPage'));
+const PbgGuidePage = lazy(() => import('./pages/PbgGuidePage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -216,7 +218,9 @@ function AppPreferences() {
     const scrollable =
       location.pathname === '/' ||
       location.pathname.startsWith('/laporan/') ||
-      location.pathname.startsWith('/validasi');
+      location.pathname.startsWith('/validasi') ||
+      location.pathname.startsWith('/pbg') ||
+      location.pathname === '/404';
     document.documentElement.classList.toggle('document-scroll', scrollable);
     document.documentElement.classList.toggle('app-scroll-lock', !scrollable);
     return () => {
@@ -237,6 +241,14 @@ function AppPage() {
   );
 }
 
+function BandingkanPage() {
+  const setMode = useAppStore((s) => s.setMode);
+  useEffect(() => {
+    setMode('battle');
+  }, [setMode]);
+  return <AppPage />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -251,6 +263,7 @@ export default function App() {
           }
         />
         <Route path="/app" element={<AppPage />} />
+        <Route path="/bandingkan" element={<BandingkanPage />} />
         <Route
           path="/laporan/:slug"
           element={
@@ -267,7 +280,30 @@ export default function App() {
             </Suspense>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/pbg"
+          element={
+            <Suspense fallback={<RouteSkeleton label="Memuat panduan PBG S.A.F.E House" />}>
+              <PbgGuidePage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/pbg-checklist"
+          element={
+            <Suspense fallback={<RouteSkeleton label="Memuat checklist PBG S.A.F.E House" />}>
+              <PbgGuidePage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <Suspense fallback={<RouteSkeleton label="Memuat S.A.F.E House" />}>
+              <NotFoundPage />
+            </Suspense>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
