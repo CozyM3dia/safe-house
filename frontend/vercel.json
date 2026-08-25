@@ -3,6 +3,17 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    {
+      "source": "/laporan/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(facebookexternalhit|Twitterbot|twitterbot|WhatsApp|whatsapp|TelegramBot|telegrambot|Discordbot|discordbot|LinkedInBot|linkedinbot|Slackbot|slackbot|iMessage)"
+        }
+      ],
+      "destination": "https://safehouse-pull.emergent.host/api/og/laporan/:slug"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
