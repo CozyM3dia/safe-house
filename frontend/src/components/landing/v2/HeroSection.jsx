@@ -1,12 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { useLpNavigate } from '../../../hooks/useLpNavigate';
-import { useLpParallax } from '../../../hooks/useLpMotion';
-import { BlurWords, MaskedWords } from './motion';
+import { ContainerScroll } from '../../ui/container-scroll-animation';
 import AppMockup from './AppMockup';
-
-const seq = (delay) => ({ style: { '--seq-delay': `${delay}ms` } });
 
 const PROOFS = [
   { key: 'heroProof1', delay: 0 },
@@ -16,168 +12,138 @@ const PROOFS = [
 
 export default function HeroSection({ t }) {
   const navigate = useLpNavigate();
-  const bgRef = useLpParallax(0.04);
-  const reduce = useReducedMotion();
-  const [on, setOn] = useState(false);
-
-  const tiltRef = useRef(null);
-  const rx = useMotionValue(0);
-  const ry = useMotionValue(0);
-  const srx = useSpring(rx, { stiffness: 120, damping: 18, mass: 0.4 });
-  const sry = useSpring(ry, { stiffness: 120, damping: 18, mass: 0.4 });
-  const tilt = useTransform(
-    [srx, sry],
-    ([x, y]) => `perspective(1400px) rotateX(${x}deg) rotateY(${y}deg)`
-  );
-
-  useEffect(() => {
-    const id = setTimeout(() => setOn(true), 30);
-    return () => clearTimeout(id);
-  }, []);
-
-  useEffect(() => {
-    const el = tiltRef.current;
-    if (!el || reduce) return undefined;
-    const touch = window.matchMedia && window.matchMedia('(hover: none)').matches;
-    if (touch) return undefined;
-    const MAX = 2.4;
-    const onMove = (e) => {
-      const r = el.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width - 0.5;
-      const py = (e.clientY - r.top) / r.height - 0.5;
-      ry.set(px * MAX * 2);
-      rx.set(-py * MAX * 2);
-    };
-    const onLeave = () => {
-      rx.set(0);
-      ry.set(0);
-    };
-    el.addEventListener('mousemove', onMove, { passive: true });
-    el.addEventListener('mouseleave', onLeave);
-    return () => {
-      el.removeEventListener('mousemove', onMove);
-      el.removeEventListener('mouseleave', onLeave);
-    };
-  }, [reduce, rx, ry]);
-
-  const cls = (name) => `lp-hero-seq ${name} ${on ? 'lp-seq-in' : ''}`;
   const goApp = () => navigate('/app');
   const goDemo = () => navigate('/app?lat=-5.42920&lon=105.26100');
 
-  return (
-    <section className="relative isolate overflow-hidden pt-[124px] pb-6 md:pt-[140px]" aria-labelledby="hero-title">
-      {/* ── Latar: Lanskap Hero Redesign dengan fade-in halus & mask gradient ── */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        <motion.div
-          initial={{ opacity: 0, scale: 1.04 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-0 h-full w-full"
-        >
-          <img
-            src="/landing/hero-redesign.jpg"
-            alt=""
-            className="h-full w-full object-cover object-top opacity-80"
-            style={{
-              maskImage:
-                'linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.9) 25%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 85%)',
-              WebkitMaskImage:
-                'linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.9) 25%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 85%)',
-            }}
-          />
-        </motion.div>
-        {/* Atmospheric ambient top shading for navbar and soft fade */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#12100d]/60 via-transparent to-[#12100d]" />
-        <div className="lp-aurora lp-aurora-a opacity-20" />
-        <div className="lp-grain absolute inset-0" />
-      </div>
+  const titleComponent = (
+    <div className="mx-auto mb-10 flex w-full max-w-4xl flex-col items-center px-4 text-center sm:mb-14">
+      {/* 1. H1: Tipografi Fraunces Serif besar & berwibawa sesuai Vercel */}
+      <motion.h1
+        id="hero-title"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        className="lp-serif max-w-[22ch] text-balance text-center text-[clamp(2.8rem,7.2vw,5.6rem)] leading-[1.03] tracking-[-0.025em] text-[color:var(--lp-mocha)] md:max-w-[26ch]"
+      >
+        <span>{t('heroTitlePrefix')}</span>{' '}
+        <em className="italic text-[color:var(--lp-chestnut)]">
+          {t('heroTitleItalic')}
+        </em>
+      </motion.h1>
 
-      <div className="lp-container flex flex-col items-center text-center">
-        {/* H1: Tipografi berwibawa, besar, elegan tanpa badge */}
-        <h1
-          id="hero-title"
-          className="lp-serif max-w-[22ch] text-balance text-[clamp(3.4rem,7.8vw,6.4rem)] leading-[1.02] tracking-[-0.025em] text-[color:var(--lp-mocha)] md:max-w-[26ch]"
+      {/* 2. Subheadline */}
+      <motion.p
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.85, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+        className="mt-6 max-w-[56ch] text-center text-xs leading-relaxed text-[color:var(--lp-umber)]/85 text-balance font-body sm:text-base md:text-[1.06rem]"
+      >
+        {t('heroSub')}
+      </motion.p>
+
+      {/* 3. CTA Buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.85, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto"
+      >
+        <button
+          type="button"
+          onClick={goApp}
+          className="lp-btn lp-btn--copper btn-shine min-h-[46px] w-full sm:w-auto transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+        >
+          <span>{t('heroCTA')}</span>
+          <ArrowRight size={16} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={goDemo}
+          className="lp-btn lp-btn--ghost min-h-[46px] w-full sm:w-auto flex items-center justify-center gap-2"
+        >
+          <MapPin size={16} aria-hidden="true" />
+          <span>{t('heroDemoCta')}</span>
+        </button>
+      </motion.div>
+
+      {/* 4. Proof chips */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.85, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="mt-7 flex flex-wrap items-center justify-center gap-2.5"
+      >
+        {PROOFS.map(({ key }) => (
+          <span
+            key={key}
+            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--lp-line)] bg-[color:var(--lp-paper)] px-3.5 py-1.5 text-[11px] font-medium text-[color:var(--lp-chestnut)]"
+          >
+            {t(key)}
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+
+  return (
+    <section className="relative w-full overflow-hidden pt-16 sm:pt-20 select-none isolate" aria-labelledby="hero-title">
+      {/* ── 1. Opaque Backdrop Layer (Warna Cokelat Hangat / Rich Mocha-Brown) ── */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 bg-[#201812]"
+        style={{
+          maskImage: 'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)',
+        }}
+        aria-hidden="true"
+      >
+        {/* Video Animasi Latar dengan Tint Cokelat Hangat & Sepia */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover opacity-35"
           style={{
-            backgroundImage:
-              'linear-gradient(to bottom, var(--lp-mocha) 55%, color-mix(in srgb, var(--lp-mocha) 55%, transparent))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            filter: 'sepia(45%) saturate(135%) brightness(78%) contrast(115%)',
           }}
         >
-          <span style={{ WebkitTextFillColor: 'initial' }}>
-            <MaskedWords text={t('heroTitlePrefix')} delay={0.16} />
-          </span>{' '}
-          <em style={{ WebkitTextFillColor: 'initial' }}>
-            <MaskedWords text={t('heroTitleItalic')} delay={0.44} />
-          </em>
-        </h1>
-
-        {/* Sub */}
-        <p className={`lp-sub ${cls('lp-sub')} mt-6 max-w-[56ch] text-[1rem] leading-relaxed text-[color:var(--lp-umber)]/85 md:text-[1.06rem]`}>
-          <BlurWords text={t('heroSub')} delay={0.72} stagger={0.035} />
-        </p>
-
-        {/* CTA */}
-        <div {...seq(400)} className={`lp-ctas ${cls('lp-ctas')} mt-8 flex flex-col items-center gap-3 sm:flex-row`}>
-          <button
-            type="button"
-            onClick={goApp}
-            className="lp-btn lp-btn--copper btn-shine w-full sm:w-auto transition-transform hover:scale-[1.01] active:scale-[0.99]"
-          >
-            {t('heroCTA')}
-            <ArrowRight size={16} aria-hidden="true" />
-          </button>
-          <button type="button" onClick={goDemo} className="lp-btn lp-btn--ghost w-full sm:w-auto">
-            <MapPin size={16} aria-hidden="true" />
-            {t('heroDemoCta')}
-          </button>
-        </div>
-
-        {/* Proof chips */}
-        <div {...seq(520)} className={`mt-6 flex flex-wrap items-center justify-center gap-2.5 ${cls('lp-proof')}`}>
-          {PROOFS.map(({ key, delay }) => (
-            <motion.span
-              key={key}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.85 + delay / 1000 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--lp-line)] bg-[color:var(--lp-paper)] px-3.5 py-1.5 text-[11px] font-medium text-[color:var(--lp-chestnut)]"
-            >
-              {t(key)}
-            </motion.span>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Product shot: glow ala template + mockup interaktif ───────────── */}
-      <div {...seq(600)} className={`lp-hero-window ${cls('lp-hero-window')} relative mx-auto mt-16 w-full max-w-5xl px-4 md:mt-20`}>
-        {/* Glow besar di belakang shot (CSS, bernapas pelan) */}
-        <div className="pointer-events-none absolute left-1/2 top-[-24%] z-0 w-[92%] -translate-x-1/2" aria-hidden="true">
-          <motion.div
-            className="mx-auto h-[340px] w-full rounded-[50%]"
-            style={{
-              background:
-                'radial-gradient(ellipse at center, rgba(212,149,106,0.30) 0%, rgba(212,149,106,0.10) 38%, transparent 68%)',
-              filter: 'blur(38px)',
-            }}
-            animate={reduce ? undefined : { scale: [1, 1.08, 1], opacity: [0.75, 1, 0.75] }}
-            transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+          <source
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260319_015952_e1deeb12-8fb7-4071-a42a-60779fc64ab6.mp4"
+            type="video/mp4"
           />
-        </div>
+        </video>
 
-        <motion.div ref={tiltRef} style={{ transform: tilt }} className="relative z-10 will-change-transform">
-          <AppMockup t={t} />
-        </motion.div>
+        {/* Lapisan Warm Copper-Brown Ambient Wash */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 90% 70% at 50% 28%, rgba(212, 149, 106, 0.18) 0%, rgba(100, 68, 44, 0.32) 48%, rgba(32, 24, 18, 0.82) 85%)',
+          }}
+        />
 
-        <figcaption className="lp-mono relative z-10 mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-[9px] text-[color:var(--lp-taupe)]">
-          <span>{t('heroCaptionRoute')}</span>
-          <span aria-hidden="true">·</span>
-          <span>{t('heroCaptionData')}</span>
-        </figcaption>
+        {/* Grid Texture Warm Copper */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(212, 149, 106, 0.035) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(212, 149, 106, 0.035) 40px)',
+          }}
+        />
       </div>
 
-      <div className="pointer-events-none relative mt-4 h-24 bg-[linear-gradient(180deg,transparent,var(--lp-canvas))]" aria-hidden="true" />
+      {/* ── 2. Parallax 3D Scroll Container dengan Card Demo Interaktif ── */}
+      <div className="relative z-10 w-full h-full pb-16 sm:pb-24">
+        <ContainerScroll titleComponent={titleComponent}>
+          <AppMockup t={t} />
+        </ContainerScroll>
+      </div>
     </section>
   );
 }
+
+
+
+
+
+

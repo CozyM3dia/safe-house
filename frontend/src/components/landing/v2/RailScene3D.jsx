@@ -202,6 +202,7 @@ const M = {
   },
 
   draw(e, t) {
+    if (!e || !e.scene || !e.ctx || !e.canvas) return;
     e.update?.(t);
     this.renderer.render(e.scene, this.camera);
     const c = e.ctx;
