@@ -93,3 +93,4 @@ frontend/bisect-dist/
 .hermes/
 frontend/dev/
 .vercel
+.worktrees/

@@ -275,26 +275,6 @@ export default function MissionSection({ t }) {
             </motion.div>
           </motion.div>
         </div>
-
-        {/* Pull-quote — folio penutup */}
-        <blockquote
-          className={`relative mt-16 pl-10 md:mt-20 md:pl-14 ${inView ? 'lp-in' : 'lp-reveal'}`}
-          style={{ '--lp-delay': '420ms' }}
-        >
-          <span
-            className="lp-serif pointer-events-none absolute -top-3 left-0 select-none text-[3.4rem] leading-none text-[color:var(--lp-taupe)] md:-top-5 md:text-[4.2rem]"
-            aria-hidden="true"
-          >
-            &ldquo;
-          </span>
-          <p className="lp-serif max-w-[40rem] text-[clamp(1.35rem,2.6vw,1.85rem)] italic leading-[1.45] text-[color:var(--lp-chestnut)]">
-            {t('missionQuote')}
-          </p>
-          <cite className="lp-mono mt-4 flex items-center gap-3 text-[10px] not-italic text-[color:var(--lp-taupe)]">
-            <span className="inline-block h-px w-8 bg-[color:var(--lp-taupe)]" aria-hidden="true" />
-            {t('missionQuoteSource')}
-          </cite>
-        </blockquote>
       </div>
     </section>
   );
