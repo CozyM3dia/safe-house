@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useLpNavigate } from '../../../hooks/useLpNavigate';
 import { ContainerScroll } from '../../ui/container-scroll-animation';
 import AppMockup from './AppMockup';
@@ -13,7 +13,6 @@ const PROOFS = [
 export default function HeroSection({ t }) {
   const navigate = useLpNavigate();
   const goApp = () => navigate('/app');
-  const goDemo = () => navigate('/app?lat=-5.42920&lon=105.26100');
 
   const titleComponent = (
     <div className="mx-auto mb-10 flex w-full max-w-4xl flex-col items-center px-4 text-center sm:mb-14">
@@ -46,24 +45,35 @@ export default function HeroSection({ t }) {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.85, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto"
+        className="mt-8 flex items-center justify-center w-full"
       >
-        <button
-          type="button"
-          onClick={goApp}
-          className="lp-btn lp-btn--copper btn-shine min-h-[46px] w-full sm:w-auto transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
-        >
-          <span>{t('heroCTA')}</span>
-          <ArrowRight size={16} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={goDemo}
-          className="lp-btn lp-btn--ghost min-h-[46px] w-full sm:w-auto flex items-center justify-center gap-2"
-        >
-          <MapPin size={16} aria-hidden="true" />
-          <span>{t('heroDemoCta')}</span>
-        </button>
+        <div className="group relative inline-flex items-center justify-center">
+          {/* Ambient Warm Glow Aura */}
+          <div
+            className="pointer-events-none absolute -inset-1.5 rounded-full bg-gradient-to-r from-[#f0b68c]/35 via-[#d4956a]/55 to-[#b87442]/35 blur-xl opacity-60 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100 group-hover:blur-2xl"
+            aria-hidden="true"
+          />
+
+          <button
+            type="button"
+            onClick={goApp}
+            className="relative flex items-center justify-center gap-3 rounded-full bg-[linear-gradient(180deg,#f6c19a_0%,#d4956a_52%,#b87342_100%)] px-7 py-3.5 sm:px-8 sm:py-4 text-[15px] sm:text-[16px] font-bold tracking-tight text-[#1c130b] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_12px_28px_-6px_rgba(212,149,106,0.5),0_4px_12px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_18px_36px_-6px_rgba(212,149,106,0.65),0_6px_16px_rgba(0,0,0,0.4)] hover:brightness-[1.03] active:translate-y-0 active:scale-[0.98] overflow-hidden cursor-pointer"
+          >
+            {/* Shimmer sweep effect */}
+            <span
+              className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full"
+              aria-hidden="true"
+            />
+
+            <span className="relative z-10">{t('heroCTA')}</span>
+            <span
+              className="relative z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#1c130b]/12 transition-all duration-300 group-hover:bg-[#1c130b]/20 group-hover:translate-x-0.5"
+              aria-hidden="true"
+            >
+              <ArrowRight size={14} strokeWidth={2.5} className="text-[#1c130b]" />
+            </span>
+          </button>
+        </div>
       </motion.div>
 
       {/* 4. Proof chips */}
