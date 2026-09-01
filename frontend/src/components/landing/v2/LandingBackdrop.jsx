@@ -3,8 +3,7 @@ import { prefersLiteMedia } from '../../../lib/responsive';
 
 /**
  * LandingBackdrop — latar penuh halaman: medan kontur topografi yang
- * merayap sangat pelan (shader WebGL, tanpa dependency — three.js tetap
- * eksklusif untuk RailScene3D).
+ * merayap sangat pelan (shader WebGL murni, tanpa dependency three.js).
  *
  * Desain:
  * - fbm + domain warp dua lapis → garis kontur organik ala peta sediment,

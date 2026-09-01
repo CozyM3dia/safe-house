@@ -435,223 +435,774 @@ html[data-theme='light'] .lp .lp-backdrop-fallback {
   border-radius: inherit;
 }
 
-/* â”€â”€ Rail (embla) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.lp .lp-rail-viewport {
-  overflow: hidden;
-  /* Edge fade kiri-kanan halus */
-  mask-image: linear-gradient(to right, transparent, #000 3.5%, #000 96.5%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 3.5%, #000 96.5%, transparent);
+/* ── Lembar kerja lima bahaya (.lp-ws) ─────────────────────────────────────── */
+/* Lembar kerja lima bahaya: indeks (tablist) di kiri + satu lembar untuk
+   lapisan aktif di kanan. Tanpa carousel, tanpa 3D; SVG + CSS saja. */
+.lp .lp-ws {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1.75rem;
+  align-items: start;
 }
 
-.lp .lp-rail-container {
+.lp .lp-ws-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.35rem;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+  white-space: nowrap;
+}
+
+.lp .lp-ws-meta-sep {
+  width: 1.5rem;
+  height: 1px;
+  background: var(--lp-line);
+}
+
+/* Hue semantik per lapisan (satu keluarga dengan chip bahaya di Bento) */
+.lp .lp-ws [data-hue='seismic'],
+.lp .lp-ws[data-hue='seismic']      { --hue: #d4956a; } /* copper: gempa */
+.lp .lp-ws [data-hue='flood'],
+.lp .lp-ws[data-hue='flood']        { --hue: #7a9cbe; } /* biru: banjir */
+.lp .lp-ws [data-hue='liquefaction'],
+.lp .lp-ws[data-hue='liquefaction'] { --hue: #9db48a; } /* sage: likuefaksi */
+.lp .lp-ws [data-hue='volcanic'],
+.lp .lp-ws[data-hue='volcanic']     { --hue: #e0a35c; } /* amber: vulkanik */
+.lp .lp-ws [data-hue='terrain'],
+.lp .lp-ws[data-hue='terrain']      { --hue: #b98a6e; } /* tanah: terrain */
+
+/* Indeks: lima baris ledger, keluaran terbaca tanpa klik */
+.lp .lp-ws-side {
   display: flex;
-  gap: 1rem;
-  touch-action: pan-y;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: sticky;
+  top: 5.5rem;
 }
 
-.lp .lp-rail-slide {
-  flex: 0 0 auto;
+.lp .lp-ws-index {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--lp-line);
+}
+
+.lp .lp-ws-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 1rem 0.9rem 1rem 1.1rem;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--lp-line);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-ws-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  bottom: 0.85rem;
+  width: 2px;
+  background: var(--hue);
+  opacity: 0;
+  transform: scaleY(0.3);
+  transition: opacity var(--lp-d-state) var(--lp-ease), transform var(--lp-d-reveal) var(--lp-ease);
+}
+
+.lp .lp-ws-row:hover {
+  background: var(--lp-well);
+}
+
+.lp .lp-ws-row[aria-selected='true'] {
+  background: color-mix(in srgb, var(--hue) 7%, var(--lp-well));
+}
+
+.lp .lp-ws-row[aria-selected='true']::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.lp .lp-ws-row-num {
+  font-size: 11px;
+  color: var(--lp-taupe);
+  transition: color var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-ws-row[aria-selected='true'] .lp-ws-row-num {
+  color: color-mix(in srgb, var(--hue) 75%, var(--lp-mocha));
+}
+
+.lp .lp-ws-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
   min-width: 0;
 }
 
-/* â”€â”€ Rail card: personalitas per lapisan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Tiap kartu punya hue semantik sendiri (satu keluarga dengan chip bahaya
-   di BentoSection) yang mewarnai nomor, vignette instrumen, dan readout.
-   Aksen tetap copper; hue di sini adalah identitas bahaya, bukan aksen baru. */
-.lp .lp-rail-card {
-  border-radius: 16px;
+.lp .lp-ws-row-title {
+  font-size: 1.2rem;
+  line-height: 1.1;
+  color: var(--lp-umber);
+  transition: color var(--lp-d-state) var(--lp-ease);
 }
 
-.lp .lp-rail-card[data-hue='seismic']      { --hue: #d4956a; } /* copper â€” gempa  */
-.lp .lp-rail-card[data-hue='flood']        { --hue: #7a9cbe; } /* biru â€” banjir   */
-.lp .lp-rail-card[data-hue='liquefaction'] { --hue: #9db48a; } /* sage â€” likuefaksi */
-.lp .lp-rail-card[data-hue='volcanic']     { --hue: #e0a35c; } /* amber â€” vulkanik */
-.lp .lp-rail-card[data-hue='terrain']      { --hue: #b98a6e; } /* tanah â€” terrain */
-
-.lp .lp-rail-num {
-  color: color-mix(in srgb, var(--hue) 72%, var(--lp-mocha));
-  font-variant-numeric: tabular-nums;
+.lp .lp-ws-row[aria-selected='true'] .lp-ws-row-title {
+  color: var(--lp-mocha);
 }
 
-/* Vignette instrumen SVG */
-.lp .lp-rail-vign {
-  position: relative;
+.lp .lp-ws-row-tag {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+  white-space: nowrap;
   overflow: hidden;
-  border-radius: 10px;
-  border: 1px solid var(--lp-line-soft);
-  background:
-    radial-gradient(120% 140% at 50% 120%, color-mix(in srgb, var(--hue) 9%, transparent), transparent 62%),
-    var(--lp-well);
-  padding: 0.5rem 0.6rem;
+  text-overflow: ellipsis;
 }
 
-.lp .lp-rail-vign svg {
-  display: block;
-  width: 100%;
-  height: 84px;
+.lp .lp-ws-row-read {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
 }
 
-/* Lapisan scene 3D di atas vignette SVG (SVG = fallback + latar) */
-.lp .lp-rail-scene {
+.lp .lp-ws-row-readlabel {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+}
+
+.lp .lp-ws-row-readval {
+  font-size: 12.5px;
+  color: var(--lp-clay);
+  transition: color var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-ws-row[aria-selected='true'] .lp-ws-row-readval {
+  color: color-mix(in srgb, var(--hue) 60%, var(--lp-mocha));
+}
+
+/* Garis waktu auto-advance: hanya muncul saat berganti otomatis */
+.lp .lp-ws-row-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--hue);
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: lp-ws-progress var(--ws-dur, 7s) linear forwards;
+}
+
+@keyframes lp-ws-progress {
+  to { transform: scaleX(1); }
+}
+
+.lp .lp-ws-foot {
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--lp-taupe);
+  max-width: 44ch;
+}
+
+/* Lembar: kertas dengan garis bantu + register mark */
+.lp .lp-ws-sheet {
+  position: relative;
+  background: var(--lp-paper);
+  border: 1px solid var(--lp-line);
+  border-radius: 16px;
+  box-shadow: var(--lp-shadow-card);
+  overflow: hidden;
+}
+
+.lp .lp-ws-sheet::before {
+  content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 31px,
+    var(--lp-line-soft) 31px 32px
+  );
+  opacity: 0.55;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent);
 }
 
-.lp .lp-rail-vign {
-  /* ruang tetap 84px + padding walau scene 3D absolut */
-  min-height: 96px;
-}
-
-/* Badge DEMO: menandai vignette sebagai simulasi, bukan screenshot */
-.lp .lp-rail-demo-badge {
+.lp .lp-ws-mark {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  width: 11px;
+  height: 11px;
   z-index: 2;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid var(--lp-line);
-  background: color-mix(in srgb, var(--lp-canvas) 78%, transparent);
-  font-size: 8.5px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--lp-taupe), var(--lp-taupe)) center / 1px 100% no-repeat,
+    linear-gradient(var(--lp-taupe), var(--lp-taupe)) center / 100% 1px no-repeat;
+  opacity: 0.55;
+}
+
+.lp .lp-ws-mark[data-pos='tl'] { top: 10px; left: 10px; }
+.lp .lp-ws-mark[data-pos='tr'] { top: 10px; right: 10px; }
+.lp .lp-ws-mark[data-pos='bl'] { bottom: 10px; left: 10px; }
+.lp .lp-ws-mark[data-pos='br'] { bottom: 10px; right: 10px; }
+
+.lp .lp-ws-sheet-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.6rem;
+  border-bottom: 1px solid var(--lp-line);
+  background: color-mix(in srgb, var(--lp-canvas) 55%, transparent);
+}
+
+.lp .lp-ws-sheet-id,
+.lp .lp-ws-scenario {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--lp-clay);
-  pointer-events: none;
+  white-space: nowrap;
 }
 
-/* Narasi demo 3 langkah: sumber â†’ proses â†’ hasil */
-.lp .lp-rail-demo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.3rem;
-  list-style: none;
-  padding: 0;
-  margin-top: 1.1rem;
-  margin-bottom: 0;
+.lp .lp-ws-scenario {
+  color: var(--lp-taupe);
 }
 
-.lp .lp-rail-demo-step {
+.lp .lp-ws-dim {
+  color: var(--lp-taupe);
+}
+
+.lp .lp-ws-sheet-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--hue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hue) 22%, transparent);
+  transition: background var(--lp-d-state) var(--lp-ease), box-shadow var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-ws-nav {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.22rem 0.55rem;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -6px 0;
   border-radius: 999px;
-  border: 1px solid var(--lp-line-soft);
+  border: 1px solid var(--lp-line);
+  background: var(--lp-paper);
+  color: var(--lp-umber);
+  transition: border-color var(--lp-d-micro) var(--lp-ease), background var(--lp-d-micro) var(--lp-ease);
+}
+
+.lp .lp-ws-nav:hover {
+  border-color: var(--lp-taupe);
   background: var(--lp-well);
+}
+
+/* Panel: masuk lembut setiap ganti lapisan */
+.lp .lp-ws-panel {
+  position: relative;
+  z-index: 1;
+  padding: 1.35rem 1.6rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: lp-ws-in 0.5s var(--lp-ease) both;
+}
+
+@keyframes lp-ws-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.lp .lp-ws-label {
+  margin: 0 0 0.35rem;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+}
+
+.lp .lp-ws-lede {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.lp .lp-ws-q {
+  margin: 0;
+  max-width: 26ch;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--lp-mocha);
+  text-wrap: balance;
+}
+
+.lp .lp-ws-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.lp .lp-ws-hero-val {
+  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+  line-height: 1;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--hue) 62%, var(--lp-mocha));
+  white-space: nowrap;
+}
+
+/* Diagram teknis */
+.lp .lp-ws-fig {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--lp-line-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    radial-gradient(90% 120% at 50% 110%, color-mix(in srgb, var(--hue) 10%, transparent), transparent 64%),
+    var(--lp-well);
+}
+
+.lp .lp-ws-fig svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lp .lp-ws-fig-cap {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.75rem;
   font-family: 'Azeret Mono', ui-monospace, monospace;
   font-size: 8.5px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--lp-taupe);
-  opacity: 0.55;
-  transition: opacity 0.5s var(--lp-ease), color 0.5s var(--lp-ease),
-    border-color 0.5s var(--lp-ease), background 0.5s var(--lp-ease);
 }
 
-.lp .lp-rail-demo-step--on {
-  opacity: 1;
-  color: var(--lp-umber);
-  border-color: color-mix(in srgb, var(--hue) 45%, transparent);
-  background: color-mix(in srgb, var(--hue) 10%, var(--lp-well));
+.lp .lp-ws-t {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  fill: var(--lp-clay);
 }
 
-.lp .lp-rail-demo-dot {
-  width: 4px;
-  height: 4px;
+.lp .lp-ws-t--hue {
+  fill: color-mix(in srgb, var(--hue) 70%, var(--lp-mocha));
+}
+
+.lp .lp-ws-t--big {
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+/* Alur: sumber → metode → keluaran */
+.lp .lp-ws-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr) minmax(0, 3fr);
+  margin: 0;
+  border: 1px solid var(--lp-line-soft);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.lp .lp-ws-flow-cell {
+  position: relative;
+  padding: 0.7rem 0.95rem 0.75rem;
+  border-left: 1px solid var(--lp-line-soft);
+  min-width: 0;
+}
+
+.lp .lp-ws-flow-cell:first-child {
+  border-left: 0;
+}
+
+.lp .lp-ws-flow-cell + .lp-ws-flow-cell::before {
+  /* panah kecil di sambungan sel */
+  content: '→';
+  position: absolute;
+  left: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  display: grid;
+  place-items: center;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--hue) 70%, transparent);
+  background: var(--lp-paper);
+  border: 1px solid var(--lp-line-soft);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--lp-taupe);
 }
 
-/* Readout mono ala kertas kerja */
-.lp .lp-rail-readout {
+.lp .lp-ws-flow-cell dt {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+  margin-bottom: 0.3rem;
+}
+
+.lp .lp-ws-flow-cell dd {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--lp-umber);
+}
+
+.lp .lp-ws-flow-cell--out {
+  background: color-mix(in srgb, var(--hue) 9%, transparent);
+}
+
+.lp .lp-ws-flow-cell--out dd {
+  font-size: 0.95rem;
+  color: color-mix(in srgb, var(--hue) 60%, var(--lp-mocha));
+}
+
+/* Tubuh lembar: deskripsi + batasan | tabel parameter */
+.lp .lp-ws-body {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.lp .lp-ws-h {
+  margin: 0 0 0.45rem;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: var(--lp-mocha);
+}
+
+.lp .lp-ws-desc {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--lp-clay);
+}
+
+.lp .lp-ws-note {
   display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 1rem 0 0;
+  padding: 0.65rem 0 0.1rem 0.85rem;
+  border-left: 2px solid color-mix(in srgb, var(--hue) 55%, transparent);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--lp-clay);
+}
+
+.lp .lp-ws-note-label {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+}
+
+.lp .lp-ws-params {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--lp-line);
+}
+
+.lp .lp-ws-params li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  justify-content: space-between;
   gap: 1rem;
-  margin-top: auto;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--lp-line-soft);
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--lp-line-soft);
 }
 
-/* Jarak minimal deskripsi ke readout saat kartu dipaksa sama tinggi */
-.lp .lp-rail-card > p {
-  margin-bottom: 1.1rem;
+.lp .lp-ws-params-key {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--lp-umber);
 }
 
-.lp .lp-rail-readval {
-  color: color-mix(in srgb, var(--hue) 55%, var(--lp-mocha));
-  font-variant-numeric: tabular-nums;
+.lp .lp-ws-params-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  text-align: right;
 }
 
-/* Animasi vignette: trace seismogram, muka air naik-turun, marker bor turun,
-   gelombang KRB memancar, kontur bergeser pelan. */
-.lp .lp-anim-trace {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  animation: lp-trace 3.4s var(--lp-ease) infinite;
+.lp .lp-ws-params-val {
+  font-size: 0.84rem;
+  white-space: nowrap;
+  color: var(--lp-mocha);
 }
 
-@keyframes lp-trace {
-  0% { stroke-dashoffset: 100; }
-  55% { stroke-dashoffset: 0; }
-  82% { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -100; }
+.lp .lp-ws-params-note {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+  white-space: nowrap;
 }
 
-.lp .lp-anim-water {
-  animation: lp-water 4.6s ease-in-out infinite;
+/* Animasi diagram: gambar sekali saat masuk, loop halus sesudahnya */
+.lp .lp-ws-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: lp-ws-draw 1.4s var(--lp-ease) 0.15s forwards;
 }
 
-@keyframes lp-water {
+@keyframes lp-ws-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.lp .lp-ws-ring {
+  animation: lp-ws-ring 3.6s ease-in-out infinite;
+}
+
+@keyframes lp-ws-ring {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.lp .lp-ws-water {
+  animation: lp-ws-water 4.4s ease-in-out infinite;
+}
+
+@keyframes lp-ws-water {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  50% { transform: translateY(-3px); }
 }
 
-.lp .lp-anim-marker {
-  animation: lp-marker 5s var(--lp-ease-soft) infinite;
+.lp .lp-ws-rain {
+  animation: lp-ws-rain 1.6s linear infinite;
 }
 
-@keyframes lp-marker {
-  0%, 12% { transform: translateY(-14px); }
-  48%, 78% { transform: translateY(0); }
-  100% { transform: translateY(-14px); }
+@keyframes lp-ws-rain {
+  0% { transform: translateY(-6px); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(10px); opacity: 0; }
 }
 
-.lp .lp-anim-ring {
-  opacity: 0;
-  animation: lp-ring 3.15s linear infinite;
+.lp .lp-ws-marker {
+  animation: lp-ws-marker 5s var(--lp-ease-soft) infinite;
 }
 
-@keyframes lp-ring {
-  0% { opacity: 0; }
-  12% { opacity: 0.85; }
-  55% { opacity: 0.25; }
-  100% { opacity: 0; }
+@keyframes lp-ws-marker {
+  0%, 10% { transform: translateY(0); }
+  55%, 80% { transform: translateY(168px); }
+  100% { transform: translateY(0); }
 }
 
-.lp .lp-anim-contour {
-  animation: lp-contour 12s linear infinite;
+.lp .lp-ws-pulse {
+  animation: lp-ws-pulse 2.8s ease-in-out infinite;
 }
 
-@keyframes lp-contour {
-  from { transform: translateX(-14px); }
-  to { transform: translateX(14px); }
+@keyframes lp-ws-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.lp .lp-ws-contour {
+  animation: lp-ws-contour 14s linear infinite alternate;
+}
+
+@keyframes lp-ws-contour {
+  from { transform: translateX(-12px); }
+  to { transform: translateX(12px); }
+}
+
+/* Layar sempit: indeks jadi strip pil horizontal di atas lembar */
+@media (max-width: 1023px) {
+  .lp .lp-ws {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .lp .lp-ws-side {
+    position: static;
+    display: contents;
+  }
+
+  .lp .lp-ws-index {
+    flex-direction: row;
+    gap: 0.5rem;
+    border-top: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0.15rem 0 0.35rem;
+    margin-inline: -1.25rem;
+    padding-inline: 1.25rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .lp .lp-ws-index::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lp .lp-ws-row {
+    grid-template-columns: auto auto;
+    gap: 0.55rem;
+    width: auto;
+    flex: 0 0 auto;
+    padding: 0.55rem 0.9rem 0.55rem 0.8rem;
+    border: 1px solid var(--lp-line);
+    border-radius: 999px;
+    scroll-snap-align: start;
+  }
+
+  .lp .lp-ws-row::before,
+  .lp .lp-ws-row-tag,
+  .lp .lp-ws-row-read,
+  .lp .lp-ws-row-progress {
+    display: none;
+  }
+
+  .lp .lp-ws-row[aria-selected='true'] {
+    border-color: color-mix(in srgb, var(--hue) 55%, var(--lp-line));
+  }
+
+  .lp .lp-ws-row-title {
+    font-size: 1rem;
+  }
+
+  .lp .lp-ws-foot {
+    order: 3;
+    padding-left: 0;
+    max-width: none;
+  }
+
+  .lp .lp-ws-sheet {
+    order: 2;
+  }
+
+  .lp .lp-ws-sheet-head {
+    padding: 0.7rem 1rem;
+  }
+
+  .lp .lp-ws-scenario {
+    display: none;
+  }
+
+  .lp .lp-ws-panel {
+    padding: 1.1rem 1rem 1.25rem;
+    gap: 1rem;
+  }
+
+  .lp .lp-ws-lede {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+  }
+
+  .lp .lp-ws-hero {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .lp .lp-ws-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .lp .lp-ws-flow-cell {
+    border-left: 0;
+    border-top: 1px solid var(--lp-line-soft);
+  }
+
+  .lp .lp-ws-flow-cell:first-child {
+    border-top: 0;
+  }
+
+  .lp .lp-ws-flow-cell + .lp-ws-flow-cell::before {
+    content: '↓';
+    left: auto;
+    right: 0.9rem;
+    top: -0.5rem;
+    transform: none;
+  }
+
+  .lp .lp-ws-body {
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+  }
+}
+
+/* Diagram di layar sempit: SVG mengecil, anotasi dibesarkan agar tetap terbaca */
+@media (max-width: 639px) {
+  .lp .lp-ws-t {
+    font-size: 12px;
+  }
+
+  .lp .lp-ws-t--big {
+    font-size: 15px;
+  }
+
+  .lp .lp-ws-fig-cap {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lp .lp-anim-trace,
-  .lp .lp-anim-water,
-  .lp .lp-anim-marker,
-  .lp .lp-anim-ring,
-  .lp .lp-anim-contour {
+  .lp .lp-ws-row-progress,
+  .lp .lp-ws-panel,
+  .lp .lp-ws-ring,
+  .lp .lp-ws-water,
+  .lp .lp-ws-rain,
+  .lp .lp-ws-marker,
+  .lp .lp-ws-pulse,
+  .lp .lp-ws-contour {
     animation: none;
   }
-  .lp .lp-anim-trace {
+
+  .lp .lp-ws-draw {
+    animation: none;
     stroke-dasharray: none;
     stroke-dashoffset: 0;
   }
-  .lp .lp-anim-ring {
-    opacity: 0.5;
+
+  .lp .lp-ws-marker {
+    transform: translateY(84px);
   }
 }
 
@@ -713,10 +1264,6 @@ html[data-theme='light'] .lp .lp-backdrop-fallback {
 
   .lp .lp-flow-line[data-anim='pulse'] {
     animation: none;
-  }
-
-  .lp .lp-rail-container {
-    transition: none !important;
   }
 
   .lp .lp-ucase-sonar {
