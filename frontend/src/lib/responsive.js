@@ -4,7 +4,7 @@ export function isNarrowViewport() {
 
 /**
  * Perangkat / jaringan yang tidak boleh menjalankan media mahal:
- * video hero, WebGL backdrop, Three.js rail, tile Leaflet di mockup.
+ * video hero, WebGL backdrop, tile Leaflet di mockup.
  * Ponsel selalu lite. Desktop hanya lite saat Save-Data, 2G, atau
  * prefers-reduced-motion.
  */

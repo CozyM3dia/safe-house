@@ -1,108 +1,77 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import useEmblaCarousel from 'embla-carousel-react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
 import { useLpInView } from '../../../hooks/useLpMotion';
-import { prefersLiteMedia } from '../../../lib/responsive';
 import { SectionHeader } from './atoms';
-import { useSpotlight } from './motion';
-
-/* Aset 3D dimuat lazy: chunk three.js hanya diunduh saat section masuk viewport */
-const RailScene3D = lazy(() => import('./RailScene3D'));
+import HazardFigure from './HazardFigures';
 
 /**
- * Rail lapisan analisis, adaptasi carousel channel Fernand.
- * - embla: drag sentuh + tombol prev/next (keyboard accessible, >=44px).
- * - Auto-advance pelan yang berhenti saat hover/fokus/interaksi pengguna
- *   dan mati total pada prefers-reduced-motion (gerak terus-menerus yang
- *   tak bisa dijeda itu tidak bisa diakses).
- * - Konten kartu: terminologi persis dari produk (COPY dict).
+ * "Lima bahaya, satu kertas kerja": section-nya adalah kertas kerja itu.
  *
- * Personalitas per kartu: tiap lapisan punya hue semantik sendiri
- * (satu keluarga dengan chip bahaya di BentoSection) + vignette
- * instrumen SVG yang hidup + readout mono ala kertas kerja.
- * Angka pada readout memakai sampel kanonik Bandar Lampung
- * (PGA 0,42 g · elevasi 91 mdpl · FS 2,00) dari COPY dict.
+ * Kiri: indeks lima lapisan (tablist vertikal) yang sekaligus memuat
+ *   keluaran tiap lapisan, jadi lima angka terbaca sekilas tanpa klik.
+ * Kanan: satu lembar kerja untuk lapisan aktif — pertanyaan yang dijawab,
+ *   diagram teknis SVG ringan, alur sumber → metode → keluaran, tabel
+ *   parameter yang dikutip di laporan, dan batasan metodenya.
+ *
+ * Tanpa three.js, tanpa carousel: seluruh visual = SVG + CSS.
+ * Berganti otomatis pelan saat terlihat; berhenti begitu pengguna
+ * hover/fokus/memilih, dan mati total pada prefers-reduced-motion.
+ * Angka memakai skenario kanonik Bandar Lampung dari COPY dict.
  */
+
+const LAYERS = [
+  { key: 'Seismic', hue: 'seismic' },
+  { key: 'Flood', hue: 'flood' },
+  { key: 'Liquefaction', hue: 'liquefaction' },
+  { key: 'Volcanic', hue: 'volcanic' },
+  { key: 'Terrain', hue: 'terrain' },
+];
+const AUTO_MS = 7000;
+const pad2 = (n) => String(n).padStart(2, '0');
+
 export default function AnalysisRailSection({ t }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: true,
-    align: 'start',
-    dragFree: true,
-  });
-  const { rootRef, inView } = useLpInView({ threshold: 0.25 });
-  const [selected, setSelected] = useState(0);
-  const [snapCount, setSnapCount] = useState(0);
-  const [allow3d] = useState(() => !prefersLiteMedia());
-  const pausedRef = useRef(false);
-  const reducedRef = useRef(false);
-  const spotA = useSpotlight();
-  const spotB = useSpotlight();
-  const spotC = useSpotlight();
-  const spotD = useSpotlight();
-  const spotE = useSpotlight();
-  const spots = [spotA, spotB, spotC, spotD, spotE];
+  const { rootRef, inView } = useLpInView({ threshold: 0.2 });
+  const reduce = useReducedMotion();
+  const [active, setActive] = useState(0);
+  const [hover, setHover] = useState(false);
+  const [focus, setFocus] = useState(false);
+  const [manual, setManual] = useState(false); // pengguna sudah memilih sendiri
+  const tabRefs = useRef([]);
 
-  const layers = [
-    { key: 'Seismic', hue: 'seismic', tag: 'PuSGeN · USGS' },
-    { key: 'Flood', hue: 'flood', tag: 'InaRISK BNPB · Open-Meteo' },
-    { key: 'Liquefaction', hue: 'liquefaction', tag: 'Seed & Idriss · Vs30' },
-    { key: 'Volcanic', hue: 'volcanic', tag: 'PVMBG KRB' },
-    { key: 'Terrain', hue: 'terrain', tag: 'OpenStreetMap · SRTM' },
-  ];
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setSelected(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
+  const autoplay = inView && !hover && !focus && !manual && !reduce;
 
   useEffect(() => {
-    if (!emblaApi) return undefined;
-    // Defer setState ke microtask: embla baru selesai inisialisasi di sini,
-    // dan react-hooks melarang setState sinkron di badan effect.
-    let alive = true;
-    const id = setTimeout(() => {
-      if (!alive) return;
-      setSnapCount(emblaApi.scrollSnapList().length);
-      onSelect();
-    }, 0);
-    emblaApi.on('select', onSelect);
-    return () => {
-      alive = false;
-      clearTimeout(id);
-      emblaApi.off('select', onSelect);
-    };
-  }, [emblaApi, onSelect]);
+    if (!autoplay) return undefined;
+    const id = setTimeout(() => setActive((a) => (a + 1) % LAYERS.length), AUTO_MS);
+    return () => clearTimeout(id);
+  }, [autoplay, active]);
 
-  useEffect(() => {
-    reducedRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }, []);
-
-  // Auto-advance pelan: 4.2s, hanya saat rail terlihat & tidak dijeda.
-  useEffect(() => {
-    if (!emblaApi || !inView) return undefined;
-    const id = setInterval(() => {
-      if (reducedRef.current || pausedRef.current) return;
-      emblaApi.scrollNext();
-    }, 4200);
-    return () => clearInterval(id);
-  }, [emblaApi, inView]);
-
-  const pause = () => {
-    pausedRef.current = true;
-  };
-  const resume = () => {
-    pausedRef.current = false;
+  const pick = (i, focus = false) => {
+    const next = (i + LAYERS.length) % LAYERS.length;
+    setActive(next);
+    setManual(true);
+    if (focus) tabRefs.current[next]?.focus();
   };
 
-  const onKeyDown = (e) => {
-    if (e.key === 'ArrowLeft') {
+  const onTabKeyDown = (e) => {
+    const delta = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (delta) {
       e.preventDefault();
-      emblaApi?.scrollPrev();
-    } else if (e.key === 'ArrowRight') {
+      pick(active + delta, true);
+    } else if (e.key === 'Home') {
       e.preventDefault();
-      emblaApi?.scrollNext();
+      pick(0, true);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      pick(LAYERS.length - 1, true);
     }
   };
+
+  const cur = LAYERS[active];
+  const K = cur.key;
+  const params = t(`rail${K}Params`);
+  const paramRows = Array.isArray(params) ? params : [];
 
   return (
     <section id="lapisan" ref={rootRef} className="lp-section" aria-labelledby="lapisan-title">
@@ -110,237 +79,183 @@ export default function AnalysisRailSection({ t }) {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <SectionHeader
             eyebrow={t('railEyebrow')}
-            title={t('railTitle')} titleId="lapisan-title"
+            title={t('railTitle')}
+            titleId="lapisan-title"
             lead={t('railLead')}
           />
-          {/* Kontrol eksplisit */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => emblaApi?.scrollPrev()}
-              aria-label={t('railPrev')}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--lp-line)] bg-[color:var(--lp-paper)] text-[color:var(--lp-umber)] transition-all hover:border-[color:var(--lp-taupe)] hover:bg-[color:var(--lp-well)]"
+          <p className="lp-ws-meta">
+            <span>{t('wsSheet')} 01–05</span>
+            <span className="lp-ws-meta-sep" aria-hidden="true" />
+            <span>{t('wsStandard')}</span>
+          </p>
+        </div>
+
+        <div
+          className={`lp-ws mt-10 ${inView ? 'lp-in' : 'lp-reveal'}`}
+          data-hue={cur.hue}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+          onFocusCapture={() => setFocus(true)}
+          onBlurCapture={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget)) setFocus(false);
+          }}
+        >
+          {/* ── Indeks lapisan ─────────────────────────────────────────── */}
+          <div className="lp-ws-side">
+            <div
+              role="tablist"
+              aria-label={t('wsIndexLabel')}
+              aria-orientation="vertical"
+              className="lp-ws-index"
+              onKeyDown={onTabKeyDown}
             >
-              <ArrowLeft size={16} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => emblaApi?.scrollNext()}
-              aria-label={t('railNext')}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--lp-line)] bg-[color:var(--lp-paper)] text-[color:var(--lp-umber)] transition-all hover:border-[color:var(--lp-taupe)] hover:bg-[color:var(--lp-well)]"
-            >
-              <ArrowRight size={16} aria-hidden="true" />
-            </button>
+              {LAYERS.map((layer, i) => {
+                const on = i === active;
+                return (
+                  <button
+                    key={layer.key}
+                    ref={(el) => {
+                      tabRefs.current[i] = el;
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`lapisan-tab-${layer.hue}`}
+                    aria-selected={on}
+                    aria-controls="lapisan-panel"
+                    tabIndex={on ? 0 : -1}
+                    data-hue={layer.hue}
+                    className="lp-ws-row"
+                    onClick={() => pick(i)}
+                  >
+                    <span className="lp-ws-row-num lp-num">{pad2(i + 1)}</span>
+                    <span className="lp-ws-row-main">
+                      <span className="lp-ws-row-title lp-serif">{t(`rail${layer.key}Title`)}</span>
+                      <span className="lp-ws-row-tag">{t(`rail${layer.key}Source`)}</span>
+                    </span>
+                    <span className="lp-ws-row-read">
+                      <span className="lp-ws-row-readlabel">{t(`rail${layer.key}ReadLabel`)}</span>
+                      <span className="lp-ws-row-readval lp-num">{t(`rail${layer.key}ReadValue`)}</span>
+                    </span>
+                    {on && autoplay ? (
+                      <span
+                        key={`p-${active}`}
+                        className="lp-ws-row-progress"
+                        style={{ '--ws-dur': `${AUTO_MS}ms` }}
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="lp-ws-foot">{t('wsFootnote')}</p>
           </div>
-        </div>
-      </div>
 
-      <div
-        ref={emblaRef}
-        className="lp-rail-viewport mt-10 cursor-grab active:cursor-grabbing"
-        onMouseEnter={pause}
-        onMouseLeave={resume}
-        onFocusCapture={pause}
-        onBlurCapture={resume}
-        onKeyDown={onKeyDown}
-        tabIndex={-1}
-      >
-        <div className="lp-rail-container px-[max(1.25rem,calc((100vw-1200px)/2+1.25rem))]">
-          {layers.map((layer, i) => (
-            <article
-              key={layer.key}
-              ref={spots[i].ref}
-              onMouseMove={spots[i].onMouseMove}
-              data-hue={layer.hue}
-              className={`lp-rail-slide lp-rail-card lp-card lp-card-spot flex w-[min(84vw,320px)] flex-col p-6 transition-all duration-500 md:w-[320px] ${
-                inView ? 'lp-in' : 'lp-reveal'
-              }`}
-              style={{ '--lp-delay': `${i * 80}ms` }}
-            >
-              <div className="flex items-center justify-between">
-                <span className="lp-rail-num lp-num text-[11px]">
-                  {String(i + 1).padStart(2, '0')}
+          {/* ── Lembar kerja lapisan aktif ─────────────────────────────── */}
+          <article
+            id="lapisan-panel"
+            role="tabpanel"
+            aria-labelledby={`lapisan-tab-${cur.hue}`}
+            className="lp-ws-sheet"
+          >
+            <span className="lp-ws-mark" data-pos="tl" aria-hidden="true" />
+            <span className="lp-ws-mark" data-pos="tr" aria-hidden="true" />
+            <span className="lp-ws-mark" data-pos="bl" aria-hidden="true" />
+            <span className="lp-ws-mark" data-pos="br" aria-hidden="true" />
+
+            <header className="lp-ws-sheet-head">
+              <p className="lp-ws-sheet-id">
+                <span className="lp-ws-sheet-dot" aria-hidden="true" />
+                <span>
+                  {t('wsSheet')} {pad2(active + 1)}
+                  <span className="lp-ws-dim">/{pad2(LAYERS.length)}</span>
                 </span>
-                <span className="rounded-full bg-[color:var(--lp-well)] px-2.5 py-1 font-[Azeret_Mono,ui-monospace,monospace] text-[9px] uppercase tracking-[0.14em] text-[color:var(--lp-clay)]">
-                  {layer.tag}
-                </span>
-              </div>
-
-              <div className="lp-rail-vign mt-4" aria-hidden="true">
-                <LayerVignette hue={layer.hue} />
-                {inView && allow3d && (
-                  <div className="lp-rail-scene">
-                    <Suspense fallback={null}>
-                      <RailScene3D variant={layer.hue} />
-                    </Suspense>
-                  </div>
-                )}
-                <span className="lp-rail-demo-badge lp-mono">
-                  {t('railDemoBadge')}
-                </span>
-              </div>
-
-              <DemoSteps
-                steps={t(`rail${layer.key}Steps`)}
-                hue={layer.hue}
-                active={inView}
-              />
-
-              <h3 className="lp-serif mt-5 text-[1.45rem] leading-tight text-[color:var(--lp-mocha)]">
-                {t(`rail${layer.key}Title`)}
-              </h3>
-              <p className="mt-2.5 text-[0.9rem] leading-relaxed text-[color:var(--lp-clay)]">
-                {t(`rail${layer.key}Desc`)}
               </p>
-
-              <div className="lp-rail-readout">
-                <span className="lp-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--lp-taupe)]">
-                  {t(`rail${layer.key}ReadLabel`)}
-                </span>
-                <span className="lp-rail-readval lp-num text-[12px]">
-                  {t(`rail${layer.key}ReadValue`)}
-                </span>
+              <div className="flex items-center gap-3">
+                <span className="lp-ws-scenario">{t('wsScenario')}</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => pick(active - 1)}
+                    aria-label={t('railPrev')}
+                    className="lp-ws-nav"
+                  >
+                    <ArrowLeft size={14} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => pick(active + 1)}
+                    aria-label={t('railNext')}
+                    className="lp-ws-nav"
+                  >
+                    <ArrowRight size={14} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
-            </article>
-          ))}
-        </div>
-      </div>
+            </header>
 
-      {/* Dots, indikator posisi, klik untuk lompat */}
-      <div className="mt-6 flex items-center justify-center gap-2">
-        {Array.from({ length: snapCount }).map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => emblaApi?.scrollTo(i)}
-            aria-label={`${t('railGoTo')} ${i + 1}`}
-            aria-current={selected === i}
-            className={`h-2.5 rounded-full transition-all duration-300 ${
-              selected === i
-                ? 'w-6 bg-[color:var(--lp-chestnut)]'
-                : 'w-2.5 bg-[color:var(--lp-sand)] hover:bg-[color:var(--lp-taupe)]'
-            }`}
-          />
-        ))}
+            <div key={cur.key} className="lp-ws-panel">
+              <div className="lp-ws-lede">
+                <div className="min-w-0">
+                  <p className="lp-ws-label">{t('wsQuestion')}</p>
+                  <h3 className="lp-ws-q lp-serif">{t(`rail${K}Question`)}</h3>
+                </div>
+                <div className="lp-ws-hero">
+                  <span className="lp-ws-label">{t(`rail${K}ReadLabel`)}</span>
+                  <span className="lp-ws-hero-val lp-num">{t(`rail${K}ReadValue`)}</span>
+                </div>
+              </div>
+
+              <figure className="lp-ws-fig" aria-hidden="true">
+                <HazardFigure variant={cur.hue} labels={t(`rail${K}Fig`)} />
+                <figcaption className="lp-ws-fig-cap">
+                  {pad2(active + 1)} · {t(`rail${K}Title`)}
+                </figcaption>
+              </figure>
+
+              <dl className="lp-ws-flow">
+                <div className="lp-ws-flow-cell">
+                  <dt>{t('wsColSource')}</dt>
+                  <dd>{t(`rail${K}Source`)}</dd>
+                </div>
+                <div className="lp-ws-flow-cell">
+                  <dt>{t('wsColMethod')}</dt>
+                  <dd>{t(`rail${K}Method`)}</dd>
+                </div>
+                <div className="lp-ws-flow-cell lp-ws-flow-cell--out">
+                  <dt>{t('wsColOutput')}</dt>
+                  <dd className="lp-num">{t(`rail${K}ReadValue`)}</dd>
+                </div>
+              </dl>
+
+              <div className="lp-ws-body">
+                <div>
+                  <h4 className="lp-ws-h lp-serif">{t(`rail${K}Title`)}</h4>
+                  <p className="lp-ws-desc">{t(`rail${K}Desc`)}</p>
+                  <p className="lp-ws-note">
+                    <span className="lp-ws-note-label">{t('wsNoteLabel')}</span>
+                    <span>{t(`rail${K}Note`)}</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="lp-ws-label">{t('wsParamsTitle')}</p>
+                  <ul className="lp-ws-params">
+                    {paramRows.map(([label, value, note]) => (
+                      <li key={label}>
+                        <span className="lp-ws-params-key">{label}</span>
+                        <span className="lp-ws-params-cell">
+                          <span className="lp-ws-params-val lp-num">{value}</span>
+                          <span className="lp-ws-params-note">{note}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
-  );
-}
-
-/* ── Narasi demo 3 langkah: chip menyala berurutan, loop pelan ─────────────
-   Ini yang membuat orang paham: sumber → proses → hasil, satu baris. */
-function DemoSteps({ steps, hue, active }) {
-  const reduceRef = useRef(false);
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    reduceRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }, []);
-
-  useEffect(() => {
-    if (!active) return undefined;
-    const reduce = reduceRef.current;
-    const id = setInterval(() => {
-      setStep((s) => (s + 1) % (steps.length + 1)); // +1 = jeda sejenak di akhir
-    }, reduce ? 0 : 1700);
-    if (reduce) setStep(steps.length - 1); // statis: semua langkah menyala
-    return () => clearInterval(id);
-  }, [active, steps.length]);
-
-  return (
-    <ol className="lp-rail-demo mt-4" data-hue={hue}>
-      {steps.map((s, i) => (
-        <li
-          key={s}
-          className={`lp-rail-demo-step ${i <= step ? 'lp-rail-demo-step--on' : ''}`}
-        >
-          <span className="lp-rail-demo-dot" aria-hidden="true" />
-          {s}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/* ── Vignette instrumen per lapisan (dekoratif, aria-hidden di induk) ────── */
-function LayerVignette({ hue }) {
-  if (hue === 'seismic') {
-    return (
-      <svg viewBox="0 0 280 92" preserveAspectRatio="xMidYMid meet">
-        {[40, 80, 120, 160, 200, 240].map((x) => (
-          <line key={x} x1={x} y1="14" x2={x} y2="78" stroke="var(--hue)" strokeOpacity="0.1" strokeWidth="1" />
-        ))}
-        <line x1="0" y1="46" x2="280" y2="46" stroke="var(--hue)" strokeOpacity="0.25" strokeWidth="1" strokeDasharray="2 4" />
-        <path
-          className="lp-anim-trace"
-          pathLength="100"
-          d="M0 46 H36 L44 34 L52 58 L60 22 L68 66 L76 38 L84 54 L92 46 H120 L126 40 L132 52 L138 46 H280"
-          fill="none"
-          stroke="var(--hue)"
-          strokeWidth="1.6"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-  if (hue === 'flood') {
-    return (
-      <svg viewBox="0 0 280 92" preserveAspectRatio="xMidYMid meet">
-        <path d="M0 30 Q70 22 140 30 T280 30" fill="none" stroke="var(--hue)" strokeOpacity="0.18" strokeWidth="1" />
-        <path d="M0 46 Q70 38 140 46 T280 46" fill="none" stroke="var(--hue)" strokeOpacity="0.28" strokeWidth="1" />
-        <g className="lp-anim-water">
-          <path d="M0 66 Q70 58 140 66 T280 66 V92 H0 Z" fill="var(--hue)" fillOpacity="0.16" />
-          <path d="M0 66 Q70 58 140 66 T280 66" fill="none" stroke="var(--hue)" strokeWidth="1.5" />
-        </g>
-        <line x1="196" y1="42" x2="196" y2="64" stroke="var(--hue)" strokeOpacity="0.5" strokeWidth="1" strokeDasharray="2 3" />
-        <circle cx="196" cy="38" r="3.2" fill="none" stroke="var(--hue)" strokeWidth="1.5" />
-        <circle cx="196" cy="38" r="1.4" fill="var(--hue)" />
-      </svg>
-    );
-  }
-  if (hue === 'liquefaction') {
-    return (
-      <svg viewBox="0 0 280 92" preserveAspectRatio="xMidYMid meet">
-        <rect x="0" y="8" width="280" height="20" fill="var(--hue)" fillOpacity="0.1" />
-        <rect x="0" y="28" width="280" height="18" fill="var(--hue)" fillOpacity="0.2" />
-        <rect x="0" y="46" width="280" height="16" fill="var(--hue)" fillOpacity="0.1" />
-        <rect x="0" y="62" width="280" height="22" fill="var(--hue)" fillOpacity="0.24" />
-        {[28, 46, 62].map((y) => (
-          <line key={y} x1="0" y1={y} x2="280" y2={y} stroke="var(--hue)" strokeOpacity="0.3" strokeWidth="1" />
-        ))}
-        <g className="lp-anim-marker">
-          <line x1="176" y1="8" x2="176" y2="84" stroke="var(--hue)" strokeWidth="1.5" strokeDasharray="3 3" />
-          <circle cx="176" cy="46" r="3.2" fill="var(--hue)" />
-        </g>
-      </svg>
-    );
-  }
-  if (hue === 'volcanic') {
-    return (
-      <svg viewBox="0 0 280 92" preserveAspectRatio="xMidYMid meet">
-        <g fill="none" stroke="var(--hue)">
-          <circle className="lp-anim-ring" cx="84" cy="46" r="16" strokeWidth="1.4" />
-          <circle className="lp-anim-ring" cx="84" cy="46" r="30" strokeWidth="1.2" style={{ animationDelay: '1.05s' }} />
-          <circle className="lp-anim-ring" cx="84" cy="46" r="44" strokeWidth="1" style={{ animationDelay: '2.1s' }} />
-        </g>
-        <path d="M72 54 L84 34 L96 54 Z" fill="var(--hue)" fillOpacity="0.85" />
-        <line x1="92" y1="42" x2="194" y2="30" stroke="var(--hue)" strokeOpacity="0.5" strokeWidth="1" strokeDasharray="2 4" />
-        <circle cx="200" cy="29" r="4" fill="none" stroke="var(--hue)" strokeWidth="1.5" />
-        <circle cx="200" cy="29" r="1.6" fill="var(--hue)" />
-      </svg>
-    );
-  }
-  /* terrain */
-  return (
-    <svg viewBox="0 0 280 92" preserveAspectRatio="xMidYMid meet">
-      <g fill="none" stroke="var(--hue)" strokeLinecap="round">
-        <path className="lp-anim-contour" d="M-10 70 C40 40 90 78 140 58 S240 30 290 52" strokeWidth="1.2" strokeOpacity="0.22" />
-        <path className="lp-anim-contour" d="M-10 54 C40 26 90 62 140 44 S240 18 290 38" strokeWidth="1.2" strokeOpacity="0.4" style={{ animationDelay: '-4s' }} />
-        <path className="lp-anim-contour" d="M-10 38 C40 14 90 46 140 30 S240 8 290 24" strokeWidth="1.2" strokeOpacity="0.55" style={{ animationDelay: '-8s' }} />
-      </g>
-      <circle cx="150" cy="36" r="3" fill="var(--hue)" />
-      <circle cx="150" cy="36" r="6.5" fill="none" stroke="var(--hue)" strokeOpacity="0.4" strokeWidth="1" />
-    </svg>
   );
 }
