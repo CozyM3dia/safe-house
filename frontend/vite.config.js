@@ -21,6 +21,6 @@ export default defineConfig({
     // dan atribut body[data-chat-dock] dari ChatbotFab â€” sehingga mekanisme
     // itu menghapus gaya yang justru dipakai halaman. Matikan analisisnya.
     cssTreeshake: false,
-    cssMinify: false,
+    cssMinify: true,
   },
 })

@@ -1009,6 +1009,24 @@ html[data-theme='light'] .lp .lp-card-spot::before {
   }
 }
 
+/* Poster peta di ponsel: grid kontur + pin, tanpa tile Leaflet */
+.lp-mock-map-poster {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 48%, rgba(212, 149, 106, 0.16), transparent 62%),
+    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(212, 149, 106, 0.07) 28px),
+    repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(212, 149, 106, 0.07) 28px),
+    #161311;
+}
+
+.lp-mock-map-poster .lp-mock-pin {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 26px;
+  height: 26px;
+  transform: translate(-50%, -50%);
+}
+
 .lp .lp-mock-map .leaflet-tile {
   opacity: 0;
   transition: opacity 0.9s ease;
@@ -1261,7 +1279,11 @@ html[data-theme='light'] .lp .lp-card-spot::before {
 
 
 
-/* ── Misi: register arsip + lembar laporan ber-cap ───────────────────────── */
+/* ── Misi: manifold — lima sumber → satu mesin → satu berkas ─────────────────
+   Diagram teknik ala gambar kerja: port sumber di kiri, segel mesin hitung
+   deterministik di tengah, berkas gelap ber-cap di kanan. Kabel SVG diukur
+   dari DOM (hanya ≥1024px); di bawahnya alur jadi vertikal. Denyut data
+   (SMIL animateMotion) baru terlihat saat `is-live`; reduced-motion: statis. */
 .lp .lp-msn-folio {
   font-family: 'Azeret Mono', ui-monospace, monospace;
   font-size: 11px;
@@ -1270,16 +1292,51 @@ html[data-theme='light'] .lp .lp-card-spot::before {
   color: var(--lp-taupe);
 }
 
-.lp .lp-msn-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2.5rem;
-  align-items: start;
+/* Bidang gambar kerja: register mark '+' di sudut, batas atas-bawah tipis */
+.lp .lp-mfd {
+  position: relative;
+  border-block: 1px solid var(--lp-line-soft);
+  padding: 2.5rem 0 2.75rem;
 }
 
-.lp .lp-msn-col-label {
+.lp .lp-mfd::before,
+.lp .lp-mfd::after {
+  content: '+';
+  position: absolute;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--lp-taupe);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.lp .lp-mfd::before {
+  top: 0.65rem;
+  left: 0.15rem;
+}
+
+.lp .lp-mfd::after {
+  bottom: 0.65rem;
+  right: 0.15rem;
+}
+
+.lp .lp-mfd-grid {
+  position: relative;
+  display: grid;
+  gap: 1.4rem;
+  justify-items: center;
+}
+
+.lp .lp-mfd-col {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.lp .lp-mfd-col-label {
   display: block;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.75rem;
   font-family: 'Azeret Mono', ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.18em;
@@ -1287,182 +1344,387 @@ html[data-theme='light'] .lp .lp-card-spot::before {
   color: var(--lp-taupe);
 }
 
-/* Register: baris arsip dengan garis pemimpin, tanpa kartu */
-.lp .lp-msn-rows {
+@media (max-width: 1023px) {
+  .lp .lp-mfd-col-label {
+    text-align: center;
+  }
+}
+
+/* Kabel: pathLength=1 → dashoffset 1→0 menggambar diri saat masuk viewport */
+.lp .lp-mfd-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.lp .lp-mfd-wire {
+  fill: none;
+  stroke: var(--lp-taupe);
+  stroke-opacity: 0.38;
+  stroke-width: 1;
+  stroke-dasharray: 1;
+  transition:
+    stroke-dashoffset 1.1s var(--lp-ease-soft),
+    stroke-opacity var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-mfd-svg g.is-on .lp-mfd-wire {
+  stroke-opacity: 0.14;
+}
+
+.lp .lp-mfd-wire-out {
+  stroke-width: 1.6;
+  stroke-opacity: 0.45;
+}
+
+/* Aliran aktif: dash pendek (satuan pathLength) mengalir menuju mesin */
+.lp .lp-mfd-flow {
+  fill: none;
+  stroke: var(--lp-copper);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.035 0.055;
+  opacity: 0;
+  transition: opacity 0.45s var(--lp-ease);
+}
+
+@keyframes lp-mfd-dash {
+  to {
+    stroke-dashoffset: -0.09;
+  }
+}
+
+.lp .lp-mfd-svg g.is-on .lp-mfd-flow {
+  opacity: 0.95;
+  animation: lp-mfd-dash 1.3s linear infinite;
+}
+
+.lp .lp-mfd.is-live .lp-mfd-flow-out {
+  opacity: 0.85;
+  stroke-width: 1.9;
+  animation: lp-mfd-dash 1.05s linear infinite;
+}
+
+/* Denyut data: netral redup, terang penuh di jalur aktif & keluaran */
+.lp .lp-mfd-pulse {
+  fill: var(--lp-copper);
+  opacity: 0;
+  transition: opacity 0.45s var(--lp-ease);
+}
+
+.lp .lp-mfd.is-live .lp-mfd-pulse {
+  opacity: 0.4;
+}
+
+.lp .lp-mfd.is-live g.is-on .lp-mfd-pulse {
+  opacity: 1;
+}
+
+.lp .lp-mfd.is-live .lp-mfd-pulse-out {
+  opacity: 0.95;
+}
+
+/* Port sumber: pelat terminal dengan pin sambungan di tepi kanan */
+.lp .lp-mfd-ports {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
-.lp .lp-msn-rowli {
-  border-bottom: 1px solid var(--lp-line-soft);
-}
-
-.lp .lp-msn-rowli:first-child {
-  border-top: 1px solid var(--lp-line-soft);
-}
-
-.lp .lp-msn-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.9rem;
+.lp .lp-mfd-port {
+  position: relative;
+  display: block;
   width: 100%;
-  padding: 1rem 0.25rem;
+  padding: 0.7rem 1rem 0.7rem 0.85rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lp-paper) 74%, transparent);
   text-align: left;
   cursor: pointer;
+  transition:
+    border-color var(--lp-d-state) var(--lp-ease),
+    background var(--lp-d-state) var(--lp-ease),
+    transform var(--lp-d-state) var(--lp-ease),
+    box-shadow var(--lp-d-state) var(--lp-ease);
 }
 
-.lp .lp-msn-row:focus-visible {
+.lp .lp-mfd-port:hover {
+  border-color: color-mix(in srgb, var(--lp-copper) 40%, var(--lp-line));
+}
+
+.lp .lp-mfd-port:focus-visible {
   outline: 2px solid var(--lp-copper);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
-.lp .lp-msn-idx {
-  font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: var(--lp-taupe);
-  transition: color var(--lp-d-state) var(--lp-ease);
+.lp .lp-mfd-port.is-active {
+  border-color: color-mix(in srgb, var(--lp-copper) 55%, var(--lp-line));
+  background: var(--lp-paper);
+  transform: translateX(4px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
 }
 
-.lp .lp-msn-rowmain {
+.lp .lp-mfd-port-in {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  align-items: center;
+  gap: 0.85rem;
   min-width: 0;
 }
 
-.lp .lp-msn-name {
-  position: relative;
-  max-width: 100%;
+.lp .lp-mfd-port-idx {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 6px;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--lp-taupe);
+  transition:
+    color var(--lp-d-state) var(--lp-ease),
+    border-color var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-mfd-port.is-active .lp-mfd-port-idx {
+  color: var(--lp-copper);
+  border-color: color-mix(in srgb, var(--lp-copper) 50%, var(--lp-line));
+}
+
+.lp .lp-mfd-port-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.lp .lp-mfd-port-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1.125rem;
+  font-size: 1.02rem;
   line-height: 1.15;
   color: var(--lp-mocha);
   transition: color var(--lp-d-state) var(--lp-ease);
 }
 
-.lp .lp-msn-name::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.06em;
-  height: 1.5px;
-  background: var(--lp-copper);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.45s var(--lp-ease);
-}
-
-.lp .lp-msn-row.is-active .lp-msn-name::after {
-  transform: scaleX(1);
-}
-
-.lp .lp-msn-row.is-active .lp-msn-name {
+.lp .lp-mfd-port.is-active .lp-mfd-port-name {
   color: var(--lp-chestnut);
 }
 
-.lp .lp-msn-tag {
+.lp .lp-mfd-port-tag {
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--lp-taupe);
-}
-
-/* Garis pemimpin titik-titik ala daftar isi; sorotan menggambar
-   garis solid di atasnya (::after) alih-alih membalik gaya border */
-.lp .lp-msn-leader {
-  position: relative;
-  flex: 1;
-  min-width: 1.5rem;
-  align-self: center;
-  height: 1px;
-  background-image: repeating-linear-gradient(90deg, var(--lp-taupe) 0 1px, transparent 1px 4px);
-  opacity: 0.4;
-  transition: opacity var(--lp-d-state) var(--lp-ease);
-}
-
-.lp .lp-msn-leader::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--lp-copper);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.4s var(--lp-ease);
-}
-
-.lp .lp-msn-row:hover .lp-msn-leader {
-  opacity: 0.7;
-}
-
-.lp .lp-msn-row.is-active .lp-msn-leader {
-  opacity: 0.85;
-}
-
-.lp .lp-msn-row.is-active .lp-msn-leader::after {
-  transform: scaleX(1);
-}
-
-.lp .lp-msn-mx {
-  flex-shrink: 0;
-  font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: var(--lp-clay);
   white-space: nowrap;
-  /* Nilai mono jangan pernah menabrak judul: di layar sempit boleh
-     menyusut lalu tersembunyi — judul selalu menang (audit 25 Aug). */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Nilai mono tidak boleh menabrak nama: boleh menyusut lalu terpotong */
+.lp .lp-mfd-port-mx {
+  margin-left: auto;
+  flex-shrink: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: clip;
-  max-width: 44vw;
+  white-space: nowrap;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--lp-clay);
 }
 
 @media (max-width: 639px) {
-  .lp .lp-msn-mx {
+  .lp .lp-mfd-port-mx {
     display: none;
   }
 }
 
-/* Seleksi teks menyatu dengan palet (bukan biru default browser) */
-.lp ::selection {
-  background: color-mix(in srgb, var(--lp-copper) 32%, transparent);
+.lp .lp-mfd-port-pin {
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  border: 1.5px solid var(--lp-taupe);
+  background: var(--lp-canvas);
+  display: none;
+  transition:
+    border-color var(--lp-d-state) var(--lp-ease),
+    box-shadow var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-mfd-port.is-active .lp-mfd-port-pin {
+  border-color: var(--lp-copper);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-copper) 22%, transparent);
+}
+
+/* Segel mesin: orbit dash berputar + denyut cincin + muka segel */
+.lp .lp-mfd-hubcol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: auto;
+}
+
+.lp .lp-mfd-hub {
+  position: relative;
+  width: clamp(9.5rem, 13vw, 11rem);
+  aspect-ratio: 1;
+}
+
+.lp .lp-mfd-hub-orbit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--lp-copper) 50%, var(--lp-taupe));
+  opacity: 0.55;
+  animation: lp-mfd-orbit 44s linear infinite;
+}
+
+@keyframes lp-mfd-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lp .lp-mfd-hub-ping {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1px solid var(--lp-copper);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes lp-mfd-ping {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.16);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.16);
+    opacity: 0;
+  }
+}
+
+.lp .lp-mfd.is-live .lp-mfd-hub-ping {
+  animation: lp-mfd-ping 3.2s var(--lp-ease) infinite;
+}
+
+.lp .lp-mfd-hub-face {
+  position: absolute;
+  inset: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18rem;
+  border-radius: 50%;
+  border: 1px solid var(--lp-line);
+  background: var(--lp-paper);
+  box-shadow: var(--lp-shadow-card);
+}
+
+.lp .lp-mfd-hub-fx {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--lp-taupe);
+}
+
+.lp .lp-mfd-hub-sni {
+  font-size: 1.9rem;
+  line-height: 1;
   color: var(--lp-mocha);
 }
 
-.lp .lp-msn-arrow {
+.lp .lp-mfd-hub-code {
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--lp-chestnut);
+}
+
+.lp .lp-mfd-hub-label {
+  margin-top: 0.9rem;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-clay);
+  text-align: center;
+}
+
+.lp .lp-mfd-hub-sub {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
   color: var(--lp-taupe);
-  transition:
-    color var(--lp-d-state) var(--lp-ease),
-    transform var(--lp-d-state) var(--lp-ease);
+  text-align: center;
 }
 
-.lp .lp-msn-row:hover .lp-msn-arrow,
-.lp .lp-msn-row.is-active .lp-msn-arrow {
-  color: var(--lp-copper);
-  transform: translateX(2px);
+/* Sambungan vertikal (alur mobile): dash mengalir ke bawah saat live */
+.lp .lp-mfd-vline {
+  width: 1px;
+  height: 3rem;
+  justify-self: center;
+  background-image: repeating-linear-gradient(180deg, var(--lp-taupe) 0 4px, transparent 4px 9px);
+  opacity: 0.5;
 }
 
-.lp .lp-msn-row.is-active .lp-msn-idx {
-  color: var(--lp-copper);
+@keyframes lp-mfd-vflow {
+  to {
+    background-position: 0 9px;
+  }
 }
 
-/* Lembar laporan: kertas arsip bertumpuk dengan tab */
-.lp .lp-msn-docwrap {
+.lp .lp-mfd.is-live .lp-mfd-vline {
+  animation: lp-mfd-vflow 1.4s linear infinite;
+}
+
+/* Berkas keluar: kertas arsip gelap di kedua tema (token di-pin) */
+.lp .lp-mfd-doccol {
+  display: flex;
+  flex-direction: column;
+}
+
+.lp .lp-mfd-doc {
   position: relative;
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
 }
 
-.lp .lp-msn-doc {
+.lp .lp-mfd-doc::before {
+  content: '';
+  position: absolute;
+  inset: 0.5rem -0.5rem -0.5rem 0.5rem;
+  background: var(--lp-paper);
+  border: 1px solid var(--lp-line-soft);
+  border-radius: 6px;
+  transform: rotate(0.8deg);
+}
+
+.lp .lp-mfd-doc-card {
   position: relative;
-  /* Artefak selalu gelap di kedua tema (pola lp-window): token di-pin */
   --lp-mocha: #f0e4cc;
   --lp-chestnut: #e2b58c;
   --lp-clay: #c9ab88;
@@ -1472,68 +1734,54 @@ html[data-theme='light'] .lp .lp-card-spot::before {
   --lp-line-soft: rgba(240, 228, 204, 0.07);
   background: linear-gradient(180deg, #282017, #221b15);
   border: 1px solid rgba(240, 228, 204, 0.13);
-  border-radius: 4px;
-  padding: 2rem 1.9rem 1.5rem;
+  border-radius: 6px;
+  padding: 1.7rem 1.45rem 1.05rem;
   box-shadow:
     0 22px 54px rgba(0, 0, 0, 0.5),
     0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* Lembar kedua di belakang, sedikit rotasi — kertas bertumpuk.
-   Di docwrap (bukan doc): transform jolt pada doc menciptakan stacking
-   context yang membuat pseudo z-index:-1 malah tampil di atas kertas. */
-.lp .lp-msn-docwrap::before {
-  content: '';
+.lp .lp-mfd-tab {
   position: absolute;
-  inset: 0.55rem -0.55rem -0.55rem 0.55rem;
-  background: var(--lp-paper);
-  border: 1px solid var(--lp-line-soft);
-  border-radius: 4px;
-  transform: rotate(0.8deg);
-  z-index: -1;
-}
-
-.lp .lp-msn-tab {
-  position: absolute;
-  top: -0.85rem;
-  left: 1.4rem;
+  top: -0.8rem;
+  left: 1.2rem;
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 9.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--lp-chestnut);
   background: var(--lp-sand);
   border: 1px solid var(--lp-line);
-  padding: 0.3rem 0.7rem;
+  padding: 0.28rem 0.65rem;
   border-radius: 3px;
 }
 
-.lp .lp-msn-doc-head {
-  padding-bottom: 1rem;
+.lp .lp-mfd-doc-head {
+  padding-bottom: 0.8rem;
   border-bottom: 1px solid var(--lp-line);
-}
-
-.lp .lp-msn-doc-title {
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--lp-mocha);
 }
 
-/* Isian dokumen: label kolom tetap, nilai serif dominan, sub di bawah nilai */
-.lp .lp-msn-field {
+.lp .lp-mfd-field {
   position: relative;
-  padding: 1.05rem 0 1rem 0.9rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.78rem 0 0.72rem 0.8rem;
   border-bottom: 1px solid var(--lp-line-soft);
 }
 
-.lp .lp-msn-field::before {
+.lp .lp-mfd-field::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 1.15rem;
-  bottom: 1rem;
+  top: 0.85rem;
+  bottom: 0.75rem;
   width: 2px;
   background: var(--lp-copper);
   transform: scaleY(0);
@@ -1541,174 +1789,276 @@ html[data-theme='light'] .lp .lp-card-spot::before {
   transition: transform 0.4s var(--lp-ease);
 }
 
-.lp .lp-msn-field.is-hot::before {
+.lp .lp-mfd-field.is-hot::before {
   transform: scaleY(1);
 }
 
-.lp .lp-msn-field-label {
-  display: block;
+.lp .lp-mfd-field-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.lp .lp-mfd-field-label {
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--lp-taupe);
 }
 
-.lp .lp-msn-field-body {
-  margin-top: 0.35rem;
-}
-
-.lp .lp-msn-field-value {
-  display: inline-block;
-  font-size: clamp(1.7rem, 2.4vw, 2.05rem);
-  line-height: 1.15;
-  color: var(--lp-mocha);
-  font-variant-numeric: tabular-nums;
-  transition: color var(--lp-d-state) var(--lp-ease);
-}
-
-.lp .lp-msn-field.is-hot .lp-msn-field-value {
-  color: var(--lp-chestnut);
+.lp .lp-mfd-field-sub {
+  font-size: 0.66rem;
+  color: color-mix(in srgb, var(--lp-taupe) 82%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Mask reveal: nilai naik dari balik garis dasarnya */
-.lp .lp-msn-field-mask {
+.lp .lp-mfd-field-mask {
   display: inline-block;
+  flex-shrink: 0;
   overflow: hidden;
   padding-bottom: 0.08em;
   margin-bottom: -0.08em;
 }
 
-/* Rujukan silang: nomor sumber superscript — pemetaan terbaca tanpa animasi */
-.lp .lp-msn-field-refs {
-  margin-left: 0.45em;
+.lp .lp-mfd-field-value {
+  display: inline-block;
+  font-size: clamp(1.05rem, 1.55vw, 1.28rem);
+  line-height: 1.15;
+  color: var(--lp-mocha);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: color var(--lp-d-state) var(--lp-ease);
 }
 
-.lp .lp-msn-field-refs sup {
+.lp .lp-mfd-field.is-hot .lp-mfd-field-value {
+  color: var(--lp-chestnut);
+}
+
+/* Rujukan silang: nomor sumber superscript — pemetaan terbaca tanpa animasi */
+.lp .lp-mfd-field-refs {
+  margin-left: 0.4em;
+}
+
+.lp .lp-mfd-field-refs sup {
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  line-height: 1.4;
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
   color: var(--lp-taupe);
   opacity: 0.7;
   border: 1px solid currentColor;
   border-radius: 2px;
-  padding: 0 0.2em;
-  margin-left: 0.3em;
+  padding: 0 0.18em;
+  margin-left: 0.28em;
   transition:
     color var(--lp-d-state) var(--lp-ease),
     opacity var(--lp-d-state) var(--lp-ease);
 }
 
-.lp .lp-msn-field-refs sup.is-on {
+.lp .lp-mfd-field-refs sup.is-on {
   color: var(--lp-copper);
   opacity: 1;
 }
 
-.lp .lp-msn-field-sub {
-  display: block;
-  margin-top: 0.2rem;
-  font-size: 0.7rem;
-  color: var(--lp-taupe);
-}
-
-.lp .lp-msn-doc-foot {
+.lp .lp-mfd-doc-foot {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding-top: 1rem;
-  font-size: 0.78rem;
+  gap: 0.45rem;
+  padding-top: 0.85rem;
+  font-size: 0.72rem;
   color: var(--lp-clay);
 }
 
-.lp .lp-msn-doc-foot svg {
+.lp .lp-mfd-doc-foot svg {
   color: var(--lp-clay);
   flex-shrink: 0;
 }
 
-.lp .lp-msn-doc-manual {
+.lp .lp-mfd-doc-manual {
   margin-left: auto;
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--lp-taupe);
 }
 
-/* Cap: bentuk cap karet — radius tak beraturan, mask tinta tak rata,
-   keluar dari tepi kertas; anchor ke foot divider ala berkas tercap */
-.lp .lp-msn-stamp {
+/* Cap karet menimpa sudut atas berkas — keluar dari tepi kertas */
+.lp .lp-mfd-stamp {
   position: absolute;
-  bottom: calc(1rem + 2.75rem);
-  right: -0.9rem;
+  top: -1.1rem;
+  right: -0.85rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  padding: 0.5rem 0.9rem;
+  gap: 0.08rem;
+  padding: 0.42rem 0.75rem;
   border: 2px solid var(--lp-copper);
   border-radius: 8px 12px 9px 14px / 12px 8px 13px 9px;
   box-shadow: inset 0 0 0 1.5px #221b15, inset 0 0 0 2.5px var(--lp-copper);
   color: var(--lp-copper);
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  opacity: 0.92;
   -webkit-mask-image: radial-gradient(120% 120% at 30% 40%, #000 60%, rgba(0, 0, 0, 0.72) 100%);
   mask-image: radial-gradient(120% 120% at 30% 40%, #000 60%, rgba(0, 0, 0, 0.72) 100%);
   pointer-events: none;
 }
 
-.lp .lp-msn-stamp small {
-  font-size: 10px;
+.lp .lp-mfd-stamp small {
+  font-size: 8.5px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   opacity: 0.8;
 }
 
-@media (max-width: 1023px) {
-  /* Payoff dulu, bukti belakangan; semua isian menyala (siklis tak terlihat) */
-  .lp .lp-msn-docwrap {
-    order: -1;
+/* Buku besar penutup: cara lama (dicoret) vs dengan S.A.F.E House */
+.lp .lp-mfd-ledger {
+  display: grid;
+  gap: 2rem;
+  margin-top: 2.75rem;
+}
+
+.lp .lp-mfd-ledger-label {
+  display: block;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+}
+
+.lp .lp-mfd-ledger-col.is-new .lp-mfd-ledger-label {
+  color: var(--lp-copper-deep);
+}
+
+.lp .lp-mfd-ledger-stat {
+  margin-top: 0.55rem;
+  font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+  line-height: 1.15;
+  color: var(--lp-mocha);
+}
+
+.lp .lp-mfd-ledger-col.is-old .lp-mfd-ledger-stat {
+  color: var(--lp-clay);
+}
+
+.lp .lp-mfd-strike {
+  position: relative;
+  display: inline-block;
+}
+
+.lp .lp-mfd-strike::after {
+  content: '';
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: 55%;
+  height: 2px;
+  background: color-mix(in srgb, var(--lp-clay) 85%, transparent);
+  transform: scaleX(0) rotate(-1.2deg);
+  transform-origin: left center;
+  transition: transform 0.7s var(--lp-ease) 1.7s;
+}
+
+.lp .lp-mfd-strike.is-on::after {
+  transform: scaleX(1) rotate(-1.2deg);
+}
+
+.lp .lp-mfd-ledger-desc {
+  margin-top: 0.6rem;
+  max-width: 34rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--lp-clay);
+}
+
+.lp .lp-mfd-ledger-note {
+  margin-top: 0.55rem;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-taupe);
+}
+
+.lp .lp-mfd-ledger-note.is-proof {
+  color: var(--lp-copper-deep);
+}
+
+@media (min-width: 768px) {
+  .lp .lp-mfd-ledger {
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
   }
 
-  .lp .lp-msn-field::before {
-    transform: scaleY(1);
+  .lp .lp-mfd-ledger-col.is-old {
+    padding-right: clamp(1.75rem, 4vw, 3.5rem);
   }
 
-  .lp .lp-msn-doc {
-    padding: 1.5rem 1.25rem 1.2rem;
-  }
-
-  .lp .lp-msn-stamp {
-    top: auto;
-    bottom: 1rem;
-    right: 1rem;
-    font-size: 11px;
-    padding: 0.4rem 0.7rem;
-  }
-
-  .lp .lp-msn-doc-foot {
-    padding-right: 7.5rem;
-  }
-
-  .lp .lp-msn-doc-manual {
-    display: none;
+  .lp .lp-mfd-ledger-col.is-new {
+    border-left: 1px solid var(--lp-line-soft);
+    padding-left: clamp(1.75rem, 4vw, 3.5rem);
   }
 }
 
+/* Layout lebar: tiga kolom diagram + garis kolom kalkir samar */
 @media (min-width: 1024px) {
-  .lp .lp-msn-grid {
-    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1fr);
-    gap: 5rem;
+  .lp .lp-mfd {
+    background-image: repeating-linear-gradient(90deg, var(--lp-line-soft) 0 1px, transparent 1px 120px);
   }
 
-  /* Dokumen duduk lebih tinggi dari baris pertama register — ketegangan asimetris */
-  .lp .lp-msn-docwrap {
-    margin-top: -2.5rem;
+  .lp .lp-mfd-grid {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.02fr);
+    align-items: center;
+    gap: clamp(2.5rem, 5vw, 4.5rem);
+    justify-items: stretch;
   }
+
+  .lp .lp-mfd-vline {
+    display: none;
+  }
+
+  .lp .lp-mfd-port-pin {
+    display: block;
+  }
+
+  .lp .lp-mfd-doc {
+    margin-inline: 0;
+  }
+}
+
+/* Reduced motion: diagram statis penuh, kabel langsung tergambar */
+@media (prefers-reduced-motion: reduce) {
+  .lp .lp-mfd-wire {
+    stroke-dashoffset: 0 !important;
+    transition: none;
+  }
+
+  .lp .lp-mfd-flow,
+  .lp .lp-mfd-flow-out,
+  .lp .lp-mfd-hub-orbit,
+  .lp .lp-mfd-hub-ping,
+  .lp .lp-mfd-vline {
+    animation: none !important;
+  }
+
+  .lp .lp-mfd-strike::after {
+    transition: none;
+  }
+}
+
+/* Seleksi teks menyatu dengan palet (bukan biru default browser) */
+.lp ::selection {
+  background: color-mix(in srgb, var(--lp-copper) 32%, transparent);
+  color: var(--lp-mocha);
 }
 
 /* ── Use cases: slip arsip tanah (dossier slip) ──────────────────────────
@@ -1849,4 +2199,18 @@ html.landing-scroll::-webkit-scrollbar-thumb {
 html.landing-scroll::-webkit-scrollbar-thumb:hover {
   background: #5d4c3a;
   background-clip: padding-box;
+}
+
+/* Section di bawah fold: skip layout/paint sampai dekat viewport */
+.lp .lp-defer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
+}
+
+/* Blur nav lebih murah di sentuh; backdrop-filter mahal di GPU ponsel */
+@media (max-width: 767px) {
+  .lp header {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
 }

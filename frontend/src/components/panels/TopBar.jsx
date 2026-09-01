@@ -42,9 +42,9 @@ export function TopBar() {
 
   return (
     <motion.div
-      initial={{ y: -40, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       data-testid="topbar"
       className="safe-inset-x fixed top-2 z-10 flex h-14 min-w-0 items-center justify-between gap-1 rounded-2xl border border-white/10 bg-bg/90 px-1.5 shadow-[0_12px_36px_rgba(15,11,8,0.22)] backdrop-blur-xl sm:inset-x-4 sm:top-3 sm:gap-4 sm:px-4"
     >

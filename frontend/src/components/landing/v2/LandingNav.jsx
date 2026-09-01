@@ -31,8 +31,13 @@ export default function LandingNav({ t }) {
     const onKey = (e) => {
       if (e.key === 'Escape') setOpen(false);
     };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
   }, [open]);
 
   const handleClick = (item) => {
@@ -59,9 +64,9 @@ export default function LandingNav({ t }) {
 
   return (
     <motion.header
-      initial={{ y: -48, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
           ? 'border-b border-white/10 bg-[#12100d]/95 shadow-[0_12px_36px_rgba(0,0,0,0.5)] backdrop-blur-xl'
@@ -139,7 +144,7 @@ export default function LandingNav({ t }) {
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Close navigation' : 'Open navigation'}
             aria-expanded={open}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-[#f0e4cc] md:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-[#f0e4cc] md:hidden"
           >
             {open ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
           </button>
@@ -166,7 +171,7 @@ export default function LandingNav({ t }) {
                 {l.label}
               </button>
             ))}
-            <div className="mt-2 flex items-center justify-between gap-2 border-t border-[color:var(--lp-line-soft)] px-2 pt-3">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-[color:var(--lp-line-soft)] px-2 pt-3">
               <div className="flex items-center gap-2">
                 <ThemeToggle t={t} />
               </div>
