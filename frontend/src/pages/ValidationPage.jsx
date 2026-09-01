@@ -44,6 +44,29 @@ export default function ValidationPage() {
   const [state, setState] = useState({ status: 'loading', data: null, error: null });
   const [activeFilter, setActiveFilter] = useState('all');
 
+  // Judul, deskripsi, dan canonical khusus /validasi. Tanpa ini halaman
+  // mewarisi meta landing dari index.html dan tampil duplikat di hasil pencarian.
+  useEffect(() => {
+    const prevTitle = document.title;
+    const desc = document.querySelector('meta[name="description"]');
+    const canon = document.querySelector('link[rel="canonical"]');
+    const prevDesc = desc?.getAttribute('content');
+    const prevCanon = canon?.getAttribute('href');
+
+    document.title = 'Validasi Historis Engine Geoteknik | S.A.F.E House';
+    desc?.setAttribute(
+      'content',
+      'Pembandingan terbuka perhitungan S.A.F.E House (kelas situs, PGA desain, likuefaksi) terhadap katalog gempa dan sumber publik resmi. Metode deterministik SNI 1726:2019, hasil bisa direproduksi.'
+    );
+    canon?.setAttribute('href', 'https://safehouse.web.id/validasi');
+
+    return () => {
+      document.title = prevTitle;
+      if (prevDesc != null) desc?.setAttribute('content', prevDesc);
+      if (prevCanon != null) canon?.setAttribute('href', prevCanon);
+    };
+  }, []);
+
   useEffect(() => {
     let alive = true;
     getValidation()
@@ -81,7 +104,7 @@ export default function ValidationPage() {
 
       {/* ── STICKY GLASS HEADER ── */}
       <header
-        className="safe-top sticky top-0 z-30 border-b backdrop-blur-xl transition-all duration-300"
+        className="safe-top sticky top-0 z-30 border-b backdrop-blur-md md:backdrop-blur-xl transition-all duration-300"
         style={{
           borderColor: 'var(--rpt-line)',
           background:
@@ -95,14 +118,15 @@ export default function ValidationPage() {
           <div className="flex items-center gap-3">
             <Link
               to="/"
+              aria-label="S.A.F.E House, beranda"
               className="group flex min-h-[44px] items-center gap-2.5 transition-transform active:scale-95"
             >
               <BrandLogo
-                variant="mark"
-                alt="S.A.F.E House"
-                className="h-7 w-auto transition-transform group-hover:scale-105"
+                variant="icon"
+                alt=""
+                className="h-7 w-7 shrink-0 transition-transform group-hover:scale-105"
               />
-              <div className="flex flex-col">
+              <div className="hidden min-[380px]:flex flex-col">
                 <span className="font-display text-sm font-bold tracking-tight text-text-primary">
                   S.A.F.E House
                 </span>
@@ -123,23 +147,24 @@ export default function ValidationPage() {
           </div>
 
           {/* Actions: Lang, Theme, CTA */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-3">
             <LanguageSelector />
 
             <button
               type="button"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-text-secondary transition-colors hover:border-accent/40 hover:text-text-primary"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-text-secondary transition-colors hover:border-accent/40 hover:text-text-primary"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
             <Link
               to="/app"
-              className="btn-press inline-flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-bg shadow-sm transition-all hover:brightness-110 active:scale-95"
+              className="btn-press inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-bg shadow-sm transition-all hover:brightness-110 active:scale-95"
             >
-              <span>{t('report.startAudit')}</span>
+              <span className="sm:hidden">Audit</span>
+              <span className="hidden sm:inline">{t('report.startAudit')}</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -375,10 +400,10 @@ function RekapPanel({ data, onSelectSpecimen }) {
                     }}
                   />
                 </div>
-                <span className="mt-1 truncate font-display text-xs font-semibold text-text-primary group-hover:text-accent">
+                <span className="mt-1 line-clamp-1 font-display text-xs font-semibold text-text-primary group-hover:text-accent">
                   {event.site.name.split(',')[0]}
                 </span>
-                <span className="truncate font-mono text-[9px] text-text-muted">
+                <span className="line-clamp-2 font-mono text-[9px] leading-snug text-text-muted">
                   {event.expect.label}
                 </span>
               </button>

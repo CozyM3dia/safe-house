@@ -1,32 +1,43 @@
-import { useCallback, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 
 import '../styles/landing-v2.css';
 import LandingNav from '../components/landing/v2/LandingNav';
 import LandingBackdrop from '../components/landing/v2/LandingBackdrop';
 import HeroSection from '../components/landing/v2/HeroSection';
-import BentoSection from '../components/landing/v2/BentoSection';
-import AnalysisRailSection from '../components/landing/v2/AnalysisRailSection';
-import MissionSection from '../components/landing/v2/MissionSection';
-import UseCasesSection from '../components/landing/v2/UseCasesSection';
-import ShowcaseSection from '../components/landing/v2/ShowcaseSection';
-import DeepDiveSection from '../components/landing/v2/DeepDiveSection';
-import PipelineSection from '../components/landing/v2/PipelineSection';
-import SampleReportSection from '../components/landing/v2/SampleReportSection';
-import TestimonialSection from '../components/landing/v2/TestimonialSection';
-import FaqSection from '../components/landing/v2/FaqSection';
-import FinalCtaSection from '../components/landing/v2/FinalCtaSection';
-import LandingFooter from '../components/landing/v2/LandingFooter';
-import LandingCursor from '../components/landing/LandingCursor';
 
 import { COPY } from './copy/landingCopy';
+
+const BentoSection = lazy(() => import('../components/landing/v2/BentoSection'));
+const AnalysisRailSection = lazy(() => import('../components/landing/v2/AnalysisRailSection'));
+const MissionSection = lazy(() => import('../components/landing/v2/MissionSection'));
+const UseCasesSection = lazy(() => import('../components/landing/v2/UseCasesSection'));
+const ShowcaseSection = lazy(() => import('../components/landing/v2/ShowcaseSection'));
+const DeepDiveSection = lazy(() => import('../components/landing/v2/DeepDiveSection'));
+const PipelineSection = lazy(() => import('../components/landing/v2/PipelineSection'));
+const SampleReportSection = lazy(() => import('../components/landing/v2/SampleReportSection'));
+const TestimonialSection = lazy(() => import('../components/landing/v2/TestimonialSection'));
+const FaqSection = lazy(() => import('../components/landing/v2/FaqSection'));
+const FinalCtaSection = lazy(() => import('../components/landing/v2/FinalCtaSection'));
+const LandingFooter = lazy(() => import('../components/landing/v2/LandingFooter'));
+const LandingCursor = lazy(() => import('../components/landing/LandingCursor'));
+
+function Deferred({ minHeight, children }) {
+  return (
+    <div className="lp-defer" style={{ minHeight }}>
+      <Suspense fallback={<div style={{ minHeight }} aria-hidden="true" />}>
+        {children}
+      </Suspense>
+    </div>
+  );
+}
 
 /**
  * LandingPage v2, "Arsip Tanah" (Earthen Dossier).
  *
- * Rombak total halaman publik: ritme editorial terang (kertas hangat)
- * dengan bukti produk ASLI dalam jendela gelap berbingkai ganda.
- * /app, engine, API, dan rute lain tidak disentuh.
+ * Nav + hero dimuat segera. Section di bawah fold dipecah jadi chunk
+ * terpisah supaya ponsel tidak mengunduh Three.js, carousel, dan
+ * salinan Leaflet sebelum pengguna menggulir.
  *
  * Kontrak yang dipertahankan:
  * - COPY dict bilingual (id/en) + t(), semua string baru ada di kedua bahasa.
@@ -52,7 +63,6 @@ export default function LandingPage() {
     metaDesc.content =
       'Ketik alamat properti, langsung dapat parameter SNI 1726:2019: kelas situs, PGA desain, risiko likuefaksi, dan banjir — dari data resmi BNPB & PuSGeN. Gratis, tanpa akun.';
 
-    // Landing memakai scroll dokumen (dikelola AppPreferences via document-scroll).
     document.documentElement.classList.add('landing-scroll');
     return () => {
       document.documentElement.classList.remove('landing-scroll');
@@ -61,51 +71,52 @@ export default function LandingPage() {
 
   return (
     <div className="lp relative isolate flex min-h-[100dvh] w-full max-w-full flex-col overflow-x-hidden">
-      {/* Latar penuh halaman: kontur topografi WebGL (fixed, z -10) */}
       <LandingBackdrop />
       <LandingNav t={t} />
 
       <main>
-        {/* 1-2. Hero + jendela produk */}
         <HeroSection t={t} />
-
-        {/* 2b. Bento: di dalam app */}
-        <BentoSection t={t} />
-
-        {/* 3. Rail lapisan analisis */}
-        <AnalysisRailSection t={t} />
-
-        {/* 4. Misi editorial */}
-        <MissionSection t={t} />
-
-        {/* 5. Tiga kartu use-case */}
-        <UseCasesSection t={t} />
-
-        {/* 6. Showcase utama */}
-        <ShowcaseSection t={t} />
-
-        {/* 8. Deep-dive selang-seling */}
-        <DeepDiveSection t={t} />
-
-        {/* 10. Pipeline audit */}
-        <PipelineSection t={t} />
-
-        {/* 11. Sample report */}
-        <SampleReportSection t={t} />
-
-        {/* 11b. Testimoni pelaku industri */}
-        <TestimonialSection t={t} />
-
-        {/* 12. FAQ */}
-        <FaqSection t={t} />
-
-        {/* 13. CTA koordinat final */}
-        <FinalCtaSection t={t} />
+        <Deferred minHeight={640}>
+          <BentoSection t={t} />
+        </Deferred>
+        <Deferred minHeight={560}>
+          <AnalysisRailSection t={t} />
+        </Deferred>
+        <Deferred minHeight={480}>
+          <MissionSection t={t} />
+        </Deferred>
+        <Deferred minHeight={420}>
+          <UseCasesSection t={t} />
+        </Deferred>
+        <Deferred minHeight={520}>
+          <ShowcaseSection t={t} />
+        </Deferred>
+        <Deferred minHeight={640}>
+          <DeepDiveSection t={t} />
+        </Deferred>
+        <Deferred minHeight={480}>
+          <PipelineSection t={t} />
+        </Deferred>
+        <Deferred minHeight={560}>
+          <SampleReportSection t={t} />
+        </Deferred>
+        <Deferred minHeight={360}>
+          <TestimonialSection t={t} />
+        </Deferred>
+        <Deferred minHeight={480}>
+          <FaqSection t={t} />
+        </Deferred>
+        <Deferred minHeight={420}>
+          <FinalCtaSection t={t} />
+        </Deferred>
       </main>
 
-      {/* 14. Footer */}
-      <LandingFooter t={t} />
-      <LandingCursor />
+      <Deferred minHeight={220}>
+        <LandingFooter t={t} />
+      </Deferred>
+      <Suspense fallback={null}>
+        <LandingCursor />
+      </Suspense>
     </div>
   );
 }

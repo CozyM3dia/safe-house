@@ -16,7 +16,7 @@ export function BrandSplash({ label = 'Memuat S.A.F.E House' }) {
 
   return (
     <div
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bg"
+      className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-bg"
       role="status"
       aria-live="polite"
     >

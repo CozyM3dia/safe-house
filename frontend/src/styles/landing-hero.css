@@ -1,0 +1,262 @@
+/* Hero landing v2, foreground "Meja Ukur".
+   Latar hero selalu gelap (video + wash mocha) di kedua tema, jadi warna
+   foreground di sini sengaja tetap: krem brand, tembaga, taupe. */
+
+.lp .lp-hero-h1 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  font-optical-sizing: none;
+  font-variation-settings: 'opsz' 144;
+  letter-spacing: -0.034em;
+  line-height: 0.97;
+  color: #f0e4cc;
+  text-wrap: balance;
+}
+
+.lp .lp-hero-h1 em {
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: #e2b58c;
+}
+
+.lp .lp-hero-meta {
+  font-family: 'Azeret Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: #c9ab88;
+}
+
+@media (max-width: 400px) {
+  .lp .lp-hero-meta {
+    font-size: 0.6rem;
+    letter-spacing: 0.11em;
+  }
+}
+
+.lp .lp-hero-rule {
+  height: 1px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    rgba(240, 228, 204, 0.32),
+    rgba(240, 228, 204, 0.1) 55%,
+    rgba(240, 228, 204, 0.32)
+  );
+}
+
+.lp .lp-hero-sub {
+  font-family: 'Red Hat Display', ui-sans-serif, system-ui, sans-serif;
+  color: rgba(220, 201, 176, 0.86);
+  text-wrap: pretty;
+}
+
+/* Kolom alamat: pelat instrumen di atas video, blur berfungsi untuk
+   keterbacaan, bukan hiasan. */
+.lp .lp-hero-field {
+  position: relative;
+  background: rgba(20, 14, 9, 0.66);
+  border: 1px solid rgba(240, 228, 204, 0.14);
+  border-radius: 16px;
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow:
+    0 1px 0 rgba(240, 228, 204, 0.06) inset,
+    0 28px 64px -32px rgba(0, 0, 0, 0.75);
+  transition:
+    border-color var(--lp-d-state) var(--lp-ease),
+    box-shadow var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-hero-field:focus-within {
+  border-color: rgba(212, 149, 106, 0.62);
+  box-shadow:
+    0 1px 0 rgba(240, 228, 204, 0.08) inset,
+    0 0 0 4px rgba(212, 149, 106, 0.13),
+    0 28px 64px -32px rgba(0, 0, 0, 0.75);
+}
+
+.lp .lp-hero-glyph {
+  flex-shrink: 0;
+  color: #c9ab88;
+  transition:
+    transform 600ms var(--lp-ease),
+    color var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-hero-field:focus-within .lp-hero-glyph {
+  color: #d4956a;
+  transform: rotate(90deg);
+}
+
+.lp .lp-hero-input {
+  font-family: 'Red Hat Display', ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1rem, 0.94rem + 0.3vw, 1.125rem);
+  font-weight: 500;
+  color: #f0e4cc;
+  background: transparent;
+  outline: none;
+  caret-color: #d4956a;
+}
+
+.lp .lp-hero-input::placeholder {
+  color: rgba(201, 171, 136, 0.58);
+  font-weight: 400;
+}
+
+/* Penggaris tick di tepi bawah kolom: skala mayor 40px, minor 8px. */
+.lp .lp-hero-ticks {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 0;
+  height: 7px;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(212, 149, 106, 0.6) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(90deg, rgba(212, 149, 106, 0.3) 0 1px, transparent 1px 8px);
+  background-size:
+    40px 7px,
+    8px 3px;
+  background-position:
+    0 0,
+    0 4px;
+  background-repeat: repeat-x;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+
+.lp .lp-hero-key {
+  font-family: 'Red Hat Display', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: #1c130b;
+  background: #d4956a;
+  border-radius: 10px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.34) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.16) inset,
+    0 10px 22px -12px rgba(212, 149, 106, 0.8);
+  transition:
+    background-color var(--lp-d-micro) var(--lp-ease),
+    transform var(--lp-d-micro) var(--lp-ease);
+}
+
+.lp .lp-hero-key:hover {
+  background: #e2a878;
+}
+
+.lp .lp-hero-key:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.lp .lp-hero-key:focus-visible {
+  outline: 2px solid #f0e4cc;
+  outline-offset: 3px;
+}
+
+.lp .lp-hero-kbd {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(28, 19, 11, 0.78);
+  background: rgba(28, 19, 11, 0.14);
+  border-radius: 5px;
+  padding: 3px 6px;
+}
+
+/* Readout: status mono seperti layar instrumen. */
+.lp .lp-hero-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c9ab88;
+}
+
+.lp .lp-hero-readout i {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8d7a64;
+  transition: background-color var(--lp-d-state) var(--lp-ease);
+}
+
+.lp .lp-hero-readout[data-kind='idle'] i {
+  animation: lp-hero-blink 1.8s ease-in-out infinite;
+}
+
+.lp .lp-hero-readout[data-kind='coord'] i,
+.lp .lp-hero-readout[data-kind='preset'] i {
+  background: #9db48a;
+  box-shadow: 0 0 0 3px rgba(157, 180, 138, 0.18);
+}
+
+.lp .lp-hero-readout[data-kind='address'] i {
+  background: #d4956a;
+}
+
+.lp .lp-hero-readout[data-kind='invalid'] i {
+  background: #ff8a7a;
+}
+
+.lp .lp-hero-readout b {
+  font-weight: 500;
+  color: #f0e4cc;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes lp-hero-blink {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.lp .lp-hero-ex {
+  font-family: 'Red Hat Display', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #dcc9b0;
+  text-decoration: underline;
+  text-decoration-color: rgba(220, 201, 176, 0.28);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition:
+    color var(--lp-d-micro) var(--lp-ease),
+    text-decoration-color var(--lp-d-micro) var(--lp-ease);
+}
+
+.lp .lp-hero-ex:hover {
+  color: #f0e4cc;
+  text-decoration-color: #d4956a;
+}
+
+.lp .lp-hero-ex:focus-visible {
+  outline: 2px solid #d4956a;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .lp-hero-readout i {
+    animation: none;
+  }
+  .lp .lp-hero-glyph,
+  .lp .lp-hero-field,
+  .lp .lp-hero-key {
+    transition: none;
+  }
+}

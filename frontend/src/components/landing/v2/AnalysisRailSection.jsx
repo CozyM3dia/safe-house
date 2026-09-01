@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useLpInView } from '../../../hooks/useLpMotion';
+import { prefersLiteMedia } from '../../../lib/responsive';
 import { SectionHeader } from './atoms';
 import { useSpotlight } from './motion';
 
@@ -31,6 +32,7 @@ export default function AnalysisRailSection({ t }) {
   const { rootRef, inView } = useLpInView({ threshold: 0.25 });
   const [selected, setSelected] = useState(0);
   const [snapCount, setSnapCount] = useState(0);
+  const [allow3d] = useState(() => !prefersLiteMedia());
   const pausedRef = useRef(false);
   const reducedRef = useRef(false);
   const spotA = useSpotlight();
@@ -166,7 +168,7 @@ export default function AnalysisRailSection({ t }) {
 
               <div className="lp-rail-vign mt-4" aria-hidden="true">
                 <LayerVignette hue={layer.hue} />
-                {inView && (
+                {inView && allow3d && (
                   <div className="lp-rail-scene">
                     <Suspense fallback={null}>
                       <RailScene3D variant={layer.hue} />

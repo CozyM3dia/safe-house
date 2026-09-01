@@ -15,8 +15,21 @@ export default function FaqSection({ t }) {
 
   const items = [1, 2, 3, 4, 5, 6];
 
+  // FAQPage JSON-LD dari copy yang sama dengan yang tampil, agar tidak
+  // pernah berbeda dari isi halaman (syarat rich result Google).
+  const faqJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((n) => ({
+      '@type': 'Question',
+      name: t(`faqQ${n}`),
+      acceptedAnswer: { '@type': 'Answer', text: t(`faqA${n}`) },
+    })),
+  });
+
   return (
     <section id="faq" ref={rootRef} className="lp-section relative pb-16 md:pb-24" aria-labelledby="faq-title">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLd }} />
       <div className="lp-container grid gap-10 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] md:gap-16">
         <div className="md:sticky md:top-28 md:self-start">
           <SectionHeader

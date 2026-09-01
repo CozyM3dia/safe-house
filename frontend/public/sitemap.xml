@@ -2,13 +2,21 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://safehouse.web.id/</loc>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://safehouse.web.id/validasi</loc>
+    <lastmod>2026-09-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
 <!--
-  Sitemap awal berisi halaman depan.
+  /app sengaja tidak masuk (Disallow di robots.txt, tidak punya nilai pencarian).
+  /laporan/:slug bersifat dinamis per audit; kartu share-nya dilayani backend.
   Setelah halaman /panduan/* dan /wilayah/[kota] dibuat, sitemap ini akan
   di-generate otomatis dari daftar kota di backend/data/constants.py
-  (REGIONAL_PGA) — satu URL per kota. Lihat docs/positioning-b2b-seo.md.
+  (REGIONAL_PGA), satu URL per kota. Lihat docs/positioning-b2b-seo.md.
 -->

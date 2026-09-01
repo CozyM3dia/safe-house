@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { prefersLiteMedia } from '../../../lib/responsive';
 
 /**
  * LandingBackdrop — latar penuh halaman: medan kontur topografi yang
@@ -191,6 +192,8 @@ export default function LandingBackdrop() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
+    // Ponsel / Save-Data: jangan buka context WebGL. Fallback SVG sudah ada.
+    if (prefersLiteMedia()) return undefined;
 
     const reduceMotion =
       typeof window.matchMedia === 'function' &&
@@ -203,7 +206,6 @@ export default function LandingBackdrop() {
     let themeObs = null;
     let onResize = null;
     let onScroll = null;
-    let onVisibility = null;
     let onContextLost = null;
     let onContextRestored = null;
 
