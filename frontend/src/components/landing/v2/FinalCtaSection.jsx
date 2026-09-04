@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLpNavigate } from '../../../hooks/useLpNavigate';
-import { motion, useReducedMotion } from 'framer-motion';
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
 import {
   ArrowRight,
   CheckCircle2,
@@ -8,15 +16,25 @@ import {
   FileCheck2,
   MapPin,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react';
 import { useLpInView } from '../../../hooks/useLpMotion';
+import { EASE } from './motion';
 
 /**
- * FinalCtaSection: Full Remake — Simpel, Elegan, Anti AI-Slop.
- * Mempertahankan lanskap gambar kaki web dengan integrasi gradasi ultra-halus,
- * dipadukan dengan search console kaca kristal, preset alamat siap klik,
- * dan tipografi editorial berwibawa.
+ * FinalCtaSection — world-class animated finale.
+ * "Cukup satu alamat properti, parameter SNI siap lampir."
+ *
+ * Lapisan gerak (semua transform/opacity, GPU-friendly):
+ * 1. Latar: parallax scroll (Ken Burns halus) + aurora copper drift +
+ *    kontur topografi berdenyut + debu melayang + vignette sinematik.
+ * 2. Masuk: koreografi stagger — badge → headline masked per-kata →
+ *    sub blur → console spring → chips pop → trust fade.
+ * 3. Interaksi: console 3D-tilt + spotlight kursor + border-beam saat
+ *    fokus, tombol magnetik + shine sweep, placeholder mengetik bergilir,
+ *    chip melayang saat hover.
+ *
+ * Kontrak: copy, preset, parse koordinat, navigasi, id/aria tidak berubah.
+ * Reduced-motion & ponsel: semua gerak jadi statis yang tetap cantik.
  */
 
 const PRESETS = [
@@ -26,12 +44,142 @@ const PRESETS = [
   { name: 'Malioboro, Jogja', lat: -7.79259, lon: 110.36584 },
 ];
 
+const DUST = [
+  { left: '8%', top: '30%', size: 3, delay: '0s', dur: '9s' },
+  { left: '16%', top: '64%', size: 2, delay: '1.4s', dur: '11s' },
+  { left: '27%', top: '22%', size: 2, delay: '0.7s', dur: '10s' },
+  { left: '72%', top: '26%', size: 3, delay: '2s', dur: '12s' },
+  { left: '84%', top: '58%', size: 2, delay: '0.4s', dur: '9.5s' },
+  { left: '91%', top: '34%', size: 3, delay: '1.1s', dur: '10.5s' },
+  { left: '62%', top: '72%', size: 2, delay: '2.4s', dur: '11.5s' },
+  { left: '40%', top: '78%', size: 2, delay: '1.8s', dur: '10s' },
+];
+
+/* Kata naik dari balik masker — hanya jalan saat section masuk viewport. */
+function MaskedLine({ text, base = 0, step = 0.055, active, className = '' }) {
+  const reduce = useReducedMotion();
+  const words = String(text).split(' ');
+  if (reduce || !active) {
+    return <span className={className}>{text}</span>;
+  }
+  return (
+    <span className={className} aria-label={text} role="text">
+      {words.map((w, i) => (
+        <span
+          key={`${w}-${i}`}
+          aria-hidden="true"
+          className="lp-cta-mask"
+        >
+          <motion.span
+            className="lp-cta-mask-in"
+            initial={{ y: '115%', rotate: 4 }}
+            animate={{ y: '0%', rotate: 0 }}
+            transition={{ duration: 1, ease: EASE, delay: base + i * step }}
+          >
+            {w}
+            {i < words.length - 1 ? '\u00A0' : ''}
+          </motion.span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function Corner({ pos, active, delay }) {
+  return (
+    <motion.span
+      className="lp-cta-corner"
+      data-pos={pos}
+      aria-hidden="true"
+      initial={{ opacity: 0, scale: 0.6 }}
+      animate={active ? { opacity: 1, scale: 1 } : undefined}
+      transition={{ duration: 0.9, delay, ease: EASE }}
+    >
+      <i />
+    </motion.span>
+  );
+}
+
 export default function FinalCtaSection({ t }) {
   const { rootRef, inView } = useLpInView({ threshold: 0.2 });
   const reduce = useReducedMotion();
   const navigate = useLpNavigate();
+  const sectionRef = useRef(null);
+  const formRef = useRef(null);
+  const btnRef = useRef(null);
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
+  const [focused, setFocused] = useState(false);
+  const [phIndex, setPhIndex] = useState(0);
+
+  const placeholders = useMemo(
+    () => [
+      t('ctaPlaceholderShort'),
+      '-5,4292 · 105,2610',
+      'Tempel tautan Google Maps…',
+    ],
+    [t],
+  );
+
+  /* Rotasi placeholder mengetik — berhenti saat fokus/mengetik/reduced. */
+  useEffect(() => {
+    if (reduce || focused || value) return undefined;
+    const id = setInterval(() => setPhIndex((i) => (i + 1) % placeholders.length), 3200);
+    return () => clearInterval(id);
+  }, [reduce, focused, value, placeholders.length]);
+
+  /* Parallax latar mengikuti scroll section. */
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const bgY = useTransform(scrollYProgress, [0, 1], ['-9%', '9%']);
+  const bgScaleT = useTransform(scrollYProgress, [0, 1], [1.1, 1.18]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [34, -34]);
+  const glowOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.4, 1, 0.4]);
+
+  /* Tilt 3D console (desktop + no-reduced saja). */
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const srx = useSpring(rx, { stiffness: 160, damping: 18, mass: 0.4 });
+  const sry = useSpring(ry, { stiffness: 160, damping: 18, mass: 0.4 });
+
+  /* Magnet tombol submit. */
+  const bx = useMotionValue(0);
+  const by = useMotionValue(0);
+  const sbx = useSpring(bx, { stiffness: 220, damping: 14, mass: 0.25 });
+  const sby = useSpring(by, { stiffness: 220, damping: 14, mass: 0.25 });
+
+  const finePointer =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  const interactive = !reduce && finePointer;
+
+  const onTilt = (e) => {
+    if (!interactive || !formRef.current) return;
+    const r = formRef.current.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    rx.set(-py * 5);
+    ry.set(px * 7);
+    formRef.current.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    formRef.current.style.setProperty('--my', `${e.clientY - r.top}px`);
+  };
+  const resetTilt = () => {
+    rx.set(0);
+    ry.set(0);
+    bx.set(0);
+    by.set(0);
+  };
+
+  const onBtnMove = (e) => {
+    if (!interactive || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    bx.set((e.clientX - (r.left + r.width / 2)) * 0.18);
+    by.set((e.clientY - (r.top + r.height / 2)) * 0.28);
+  };
 
   const parseCoord = (raw) => {
     const text = raw.trim();
@@ -57,20 +205,14 @@ export default function FinalCtaSection({ t }) {
       navigate(`/app?lat=${coord.lat.toFixed(5)}&lon=${coord.lon.toFixed(5)}`);
       return;
     }
-
-    // Cek apakah cocok dengan preset
-    const foundPreset = PRESETS.find(
-      (p) => p.name.toLowerCase().includes(text.toLowerCase())
-    );
+    const foundPreset = PRESETS.find((p) => p.name.toLowerCase().includes(text.toLowerCase()));
     if (foundPreset) {
       setError('');
       navigate(`/app?lat=${foundPreset.lat.toFixed(5)}&lon=${foundPreset.lon.toFixed(5)}`);
       return;
     }
-
-    // Default ke /app
     setError('');
-    navigate(`/app?lat=-5.42920&lon=105.26100`);
+    navigate('/app?lat=-5.42920&lon=105.26100');
   };
 
   const onSubmit = (e) => {
@@ -83,20 +225,55 @@ export default function FinalCtaSection({ t }) {
     navigate(`/app?lat=${preset.lat.toFixed(5)}&lon=${preset.lon.toFixed(5)}`);
   };
 
+  const container = reduce
+    ? {}
+    : {
+        initial: 'hidden',
+        animate: inView ? 'show' : 'hidden',
+        variants: { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } } },
+      };
+
+  const item = reduce
+    ? {}
+    : {
+        variants: {
+          hidden: { opacity: 0, y: 28, filter: 'blur(10px)' },
+          show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.95, ease: EASE } },
+        },
+      };
+
+  const pop = reduce
+    ? {}
+    : {
+        variants: {
+          hidden: { opacity: 0, y: 16, scale: 0.92 },
+          show: (i = 0) => ({
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            transition: { duration: 0.7, ease: EASE, delay: 0.55 + i * 0.08 },
+          }),
+        },
+      };
+
   return (
     <section
       id="mulai"
-      ref={rootRef}
-      className="relative isolate overflow-hidden pt-20 pb-28 md:pt-28 md:pb-36"
+      ref={(el) => {
+        rootRef.current = el;
+        sectionRef.current = el;
+      }}
+      className="lp-cta relative isolate overflow-hidden pt-20 pb-28 md:pt-28 md:pb-36"
       aria-labelledby="cta-title"
     >
-      {/* ── Latar Gambar Lanskap dengan Masking Atmosferik Halus ── */}
+      {/* ── 1. Latar sinematik ── */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <motion.div
-          initial={{ opacity: 0, scale: 1.03 }}
+          className="lp-cta-bg"
+          style={reduce ? undefined : { y: bgY, scale: bgScaleT }}
+          initial={reduce ? false : { opacity: 0, scale: 1.06 }}
           animate={inView ? { opacity: 1, scale: 1 } : undefined}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full w-full"
+          transition={{ duration: 1.6, ease: EASE }}
         >
           <img
             src="/landing/footer-redesign.jpg"
@@ -105,73 +282,160 @@ export default function FinalCtaSection({ t }) {
             alt=""
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover object-center brightness-90 opacity-75"
-            style={{
-              maskImage:
-                'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 15%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0.9) 70%, rgba(0,0,0,0.4) 90%, transparent 100%)',
-              WebkitMaskImage:
-                'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 15%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0.9) 70%, rgba(0,0,0,0.4) 90%, transparent 100%)',
-            }}
+            className="lp-cta-img"
           />
         </motion.div>
 
-        {/* Gradien pelindung atas & bawah */}
+        {/* Kontur topografi berdenyut */}
+        <svg className="lp-cta-contour" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+          <g fill="none" strokeWidth="1">
+            <path d="M-40 120C140 70 260 170 430 140S720 60 900 100 1120 150 1260 110" className="lp-cta-line l1" />
+            <path d="M-40 210C150 165 280 250 450 220S740 150 920 190 1120 235 1260 200" className="lp-cta-line l2" />
+            <path d="M-40 300C160 260 300 340 470 310S760 245 940 285 1130 325 1260 295" className="lp-cta-line l3" />
+            <path d="M-40 395C170 355 320 430 490 400S780 340 960 380 1140 420 1260 390" className="lp-cta-line l2" />
+            <path d="M-40 490C180 450 330 520 500 495S790 435 970 475 1150 515 1260 485" className="lp-cta-line l1" />
+          </g>
+        </svg>
+
+        {/* Aurora copper */}
+        <div className="lp-cta-aurora a" />
+        <div className="lp-cta-aurora b" />
+        <motion.div className="lp-cta-glow" style={reduce ? undefined : { opacity: glowOpacity }} />
+
+        {/* Debu melayang */}
+        {!reduce &&
+          DUST.map((d, i) => (
+            <span
+              key={i}
+              className="lp-cta-dust"
+              style={{
+                left: d.left,
+                top: d.top,
+                width: d.size,
+                height: d.size,
+                animationDelay: d.delay,
+                animationDuration: d.dur,
+              }}
+            />
+          ))}
+
+        {/* Gradien pelindung */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#12100d] via-[#12100d]/50 to-[#12100d]" />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#12100d] to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#12100d] to-transparent" />
       </div>
 
-      <div className="lp-container relative z-10 flex flex-col items-center text-center">
-        {/* 2-Part Contrast Headline */}
+      {/* ── 2. Konten terkoreografi ── */}
+      <motion.div
+        className="lp-container relative z-10 flex flex-col items-center text-center"
+        style={reduce ? undefined : { y: contentY }}
+        {...container}
+      >
+        {/* Headline 2-baris */}
         <h2
           id="cta-title"
-          className="max-w-[22ch] text-balance font-sans text-[clamp(2.3rem,5.2vw,4rem)] font-bold leading-[1.06] tracking-[-0.025em] text-[#faf7f1]"
+          className="lp-cta-title mt-6 max-w-[22ch] text-balance font-sans text-[clamp(2.3rem,5.2vw,4rem)] font-bold leading-[1.06] tracking-[-0.025em] text-[#faf7f1]"
         >
           <span className="block drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
-            Cukup satu alamat properti,
+            <MaskedLine text="Cukup satu alamat properti," base={0.25} active={inView} />
           </span>
-          <span className="lp-serif block font-normal italic text-[#f3d3a8] drop-shadow-[0_4px_24px_rgba(212,149,106,0.35)]">
-            parameter SNI siap lampir.
+          <span className="lp-serif lp-cta-italic block font-normal italic drop-shadow-[0_4px_24px_rgba(212,149,106,0.35)]">
+            <MaskedLine text="parameter SNI siap lampir." base={0.55} active={inView} />
           </span>
         </h2>
 
         {/* Subtitle */}
-        <p className="mt-5 max-w-[56ch] text-[1.05rem] leading-relaxed text-[#dcd1c0]/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+        <motion.p
+          className="lp-cta-sub mt-5 max-w-[56ch] text-[1.05rem] leading-relaxed text-[#dcd1c0]/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+          {...item}
+        >
           {t('ctaSub')}
-        </p>
+        </motion.p>
 
-        {/* ── Console Pencarian Kaca Elegan ── */}
-        <div className="mt-9 w-full max-w-2xl px-2">
-          <form
-            onSubmit={onSubmit}
-            className="group relative flex flex-col items-center gap-2 rounded-2xl border border-white/[0.14] bg-[#18130f]/90 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_1px_0_rgba(255,255,255,0.1)_inset] backdrop-blur-2xl transition-all duration-300 focus-within:border-amber-500/50 focus-within:shadow-[0_20px_50px_rgba(212,149,106,0.25)] sm:flex-row"
-            noValidate
+        {/* ── Console pencarian ── */}
+        <motion.div className="lp-cta-console mt-9 w-full max-w-2xl px-2" {...item}>
+          <motion.div
+            ref={formRef}
+            onMouseMove={onTilt}
+            onMouseLeave={resetTilt}
+            style={interactive ? { rotateX: srx, rotateY: sry, transformPerspective: 900 } : undefined}
+            className="lp-cta-tilt"
+            initial={reduce ? false : { opacity: 0, y: 34, scale: 0.97 }}
+            animate={inView ? { opacity: 1, y: 0, scale: 1 } : undefined}
+            transition={{ duration: 1.1, delay: 0.5, ease: EASE }}
           >
-            <label htmlFor="cta-address-input" className="sr-only">
-              {t('ctaInputLabel')}
-            </label>
-            <div className="flex w-full flex-1 items-center gap-3 px-3 py-1.5">
-              <MapPin size={18} className="shrink-0 text-[#d4956a]" aria-hidden="true" />
-              <input
-                id="cta-address-input"
-                type="text"
-                value={value}
-                onChange={(e) => {
-                  setValue(e.target.value);
-                  setError('');
-                }}
-                placeholder="Ketik alamat properti, nama jalan, atau koordinat..."
-                className="w-full bg-transparent text-[0.95rem] text-[#f5ebd9] placeholder-[#9a8573] focus:outline-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#d4956a] to-[#c27f52] px-6 text-[0.92rem] font-bold text-[#14100c] shadow-[0_4px_20px_rgba(212,149,106,0.4)] transition-all duration-200 hover:brightness-110 active:scale-[0.98] sm:w-auto"
+            <Corner pos="tl" active={inView} delay={0.9} />
+            <Corner pos="tr" active={inView} delay={0.95} />
+            <Corner pos="bl" active={inView} delay={1} />
+            <Corner pos="br" active={inView} delay={1.05} />
+
+            <form
+              onSubmit={onSubmit}
+              className={`lp-cta-form group relative flex flex-col items-center gap-2 rounded-2xl border p-2 backdrop-blur-2xl transition-all duration-300 sm:flex-row${
+                focused ? ' is-focus' : ''
+              }`}
+              noValidate
             >
-              <span>{t('ctaSubmit')}</span>
-              <ArrowRight size={16} aria-hidden="true" />
-            </button>
-          </form>
+              <span className="lp-cta-beam" aria-hidden="true" />
+              <span className="lp-cta-scan" aria-hidden="true" />
+              <label htmlFor="cta-address-input" className="sr-only">
+                {t('ctaInputLabel')}
+              </label>
+              <div className="flex w-full flex-1 items-center gap-3 px-3 py-1.5">
+                <span className="lp-cta-pin" aria-hidden="true">
+                  <MapPin size={18} />
+                  <span className="lp-cta-pin-ring" />
+                </span>
+                <input
+                  id="cta-address-input"
+                  type="text"
+                  value={value}
+                  onChange={(e) => {
+                    setValue(e.target.value);
+                    setError('');
+                  }}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder={placeholders[phIndex]}
+                  autoComplete="off"
+                  spellCheck={false}
+                  enterKeyHint="go"
+                  className="lp-cta-input w-full bg-transparent text-[0.95rem] focus:outline-none"
+                />
+                {/* Placeholder mengetik bergilir */}
+                <AnimatePresence mode="wait">
+                  {!reduce && !value && !focused && (
+                    <motion.span
+                      key={phIndex}
+                      className="lp-cta-typing"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.45, ease: EASE }}
+                    >
+                      {placeholders[phIndex]}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+              <motion.button
+                ref={btnRef}
+                type="submit"
+                onMouseMove={onBtnMove}
+                onMouseLeave={resetTilt}
+                style={interactive ? { x: sbx, y: sby } : undefined}
+                whileHover={reduce ? undefined : { scale: 1.03 }}
+                whileTap={reduce ? undefined : { scale: 0.96 }}
+                className="lp-cta-submit btn-shine flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl px-6 text-[0.92rem] font-bold sm:w-auto"
+              >
+                <span>{t('ctaSubmit')}</span>
+                <ArrowRight size={16} aria-hidden="true" className="lp-cta-arrow" />
+                <kbd className="lp-cta-kbd hidden xl:inline" aria-hidden="true">
+                  Enter &#x21B5;
+                </kbd>
+              </motion.button>
+            </form>
+          </motion.div>
 
           {error ? (
             <p role="alert" className="mt-2 text-center text-[0.82rem] font-medium text-rose-400">
@@ -179,39 +443,61 @@ export default function FinalCtaSection({ t }) {
             </p>
           ) : null}
 
-          {/* Quick Preset Location Chips */}
+          {/* Chips preset */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[11.5px] font-medium text-[#a89582] mr-1">Coba cepat:</span>
-            {PRESETS.map((p) => (
-              <button
+            <motion.span className="mr-1 text-[11.5px] font-medium text-[#a89582]" custom={0} {...pop}>
+              Coba cepat:
+            </motion.span>
+            {PRESETS.map((p, i) => (
+              <motion.button
                 key={p.name}
                 type="button"
+                custom={i + 1}
+                {...pop}
+                whileHover={reduce ? undefined : { y: -3, scale: 1.04 }}
+                whileTap={reduce ? undefined : { scale: 0.93 }}
                 onClick={() => handlePresetClick(p)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-[#1e1814]/75 px-3 py-1 text-[11px] font-medium text-[#e8d9c0] transition-all duration-200 hover:border-amber-500/30 hover:bg-[#28201a] hover:text-white active:scale-95"
+                className="lp-cta-chip inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium transition-colors duration-200 active:scale-95"
               >
-                <Compass size={11} className="text-[#d4956a]" />
+                <Compass size={11} aria-hidden="true" className="lp-cta-chip-icon" />
                 <span>{p.name}</span>
-              </button>
+              </motion.button>
             ))}
           </div>
 
-          {/* Trust Value Badges Line */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11.5px] font-medium text-[#c4b5a2]">
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-[#d4956a]" />
-              5 Sumber Data Resmi Pemerintah
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <CheckCircle2 size={14} className="text-[#d4956a]" />
-              Gratis · Tanpa Perlu Akun
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <FileCheck2 size={14} className="text-[#d4956a]" />
-              Format Siap Lampiran PBG
-            </span>
-          </div>
-        </div>
-      </div>
+          {/* Trust badges */}
+          <motion.div
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11.5px] font-medium"
+            initial={reduce ? false : { opacity: 0, y: 14 }}
+            animate={inView ? { opacity: 1, y: 0 } : undefined}
+            transition={{ duration: 0.9, delay: 1.05, ease: EASE }}
+          >
+            {[
+              { icon: ShieldCheck, label: '5 Sumber Data Resmi Pemerintah' },
+              { icon: CheckCircle2, label: 'Gratis · Tanpa Perlu Akun' },
+              { icon: FileCheck2, label: 'Format Siap Lampiran PBG' },
+            ].map(({ icon: Icon, label }, i) => (
+              <motion.span
+                key={label}
+                className="lp-cta-trust inline-flex items-center gap-1.5"
+                initial={reduce ? false : { opacity: 0, y: 10 }}
+                animate={inView ? { opacity: 1, y: 0 } : undefined}
+                transition={{ duration: 0.7, delay: 1.1 + i * 0.12, ease: EASE }}
+              >
+                <motion.span
+                  initial={reduce ? false : { scale: 0 }}
+                  animate={inView ? { scale: 1 } : undefined}
+                  transition={{ type: 'spring', stiffness: 320, damping: 16, delay: 1.15 + i * 0.12 }}
+                  className="lp-cta-trust-icon"
+                >
+                  <Icon size={14} aria-hidden="true" />
+                </motion.span>
+                {label}
+              </motion.span>
+            ))}
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 import db
 from models import HealthResult
@@ -48,6 +49,12 @@ _origins = [
     ).split(",")
     if origin.strip()
 ]
+
+# GZip dulu (paling dalam) agar CORS tetap paling luar: preflight
+# short-circuit sebelum kompresi. minimum_size=1000 menjaga respons kecil
+# (mis. /api/health) tetap tanpa overhead kompresi, sementara payload
+# audit/naratif JSON yang besar dikompresi untuk klien yang mendukungnya.
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
