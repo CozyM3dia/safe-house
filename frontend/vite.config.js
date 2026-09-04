@@ -22,5 +22,26 @@ export default defineConfig({
     // itu menghapus gaya yang justru dipakai halaman. Matikan analisisnya.
     cssTreeshake: false,
     cssMinify: true,
+    rollupOptions: {
+      output: {
+        // Vendor stabil dipisah dari kode aplikasi: react & framer-motion
+        // dipakai semua route, jadi chunk-nya di-cache browser antar halaman
+        // dan antar deploy (nama file ber-hash, isi jarang berubah).
+        // Kode aplikasi sendiri tetap terbelah per route via React.lazy.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'vendor-react';
+          }
+          if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) {
+            return 'vendor-motion';
+          }
+          if (/[\\/]node_modules[\\/](zustand|@tanstack[\\/]react-query)[\\/]/.test(id)) {
+            return 'vendor-state';
+          }
+          return undefined;
+        },
+      },
+    },
   },
 })

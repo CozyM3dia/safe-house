@@ -152,10 +152,29 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Font dimuat non-blocking: preload + media swap agar CSS font tidak
+         menahan first paint. Noscript menjaga fallback tanpa JS. -->
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,14..72,600;1,14..72,400&family=Instrument+Serif:ital@0;1&family=Red+Hat+Display:wght@400;600;700&display=swap"
+    />
     <link
       href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,14..72,600;1,14..72,400&family=Instrument+Serif:ital@0;1&family=Red+Hat+Display:wght@400;600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,14..72,600;1,14..72,400&family=Instrument+Serif:ital@0;1&family=Red+Hat+Display:wght@400;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+    <!-- Video hero desktop: sambungan dibuka lebih awal, unduhan tetap
+         lazy via preload="metadata" di elemen <video>. -->
+    <link rel="preconnect" href="https://d8j0ntlcm91z4.cloudfront.net" crossorigin />
+    <link rel="dns-prefetch" href="https://d8j0ntlcm91z4.cloudfront.net" />
   </head>
   <body>
     <div id="root"></div>

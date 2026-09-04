@@ -2761,3 +2761,488 @@ html.landing-scroll::-webkit-scrollbar-thumb:hover {
     backdrop-filter: blur(8px);
   }
 }
+
+/* ═══ Final CTA — koreografi sinematik world-class ═════════════════════════
+   Section #mulai ("Cukup satu alamat properti…"). Semua gerak di bawah
+   transform/opacity/filter agar tetap 60fps; ponsel & reduced-motion
+   mendapat versi statis yang tetap cantik. */
+.lp .lp-cta-bg {
+  height: 100%;
+  width: 100%;
+  will-change: transform, opacity;
+}
+
+.lp .lp-cta-img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: brightness(0.9) saturate(1.05);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 15%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0.9) 70%, rgba(0,0,0,0.4) 90%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 15%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0.9) 70%, rgba(0,0,0,0.4) 90%, transparent 100%);
+  animation: lp-cta-kenburns 26s ease-in-out infinite alternate;
+}
+
+@keyframes lp-cta-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.07); }
+}
+
+/* Kontur topografi: garis tipis berdenyut pelan */
+.lp .lp-cta-contour {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 0.5;
+}
+
+.lp .lp-cta-line {
+  stroke: rgba(212, 149, 106, 0.28);
+  stroke-dasharray: 5 9;
+  animation: lp-cta-dash 26s linear infinite;
+}
+
+.lp .lp-cta-line.l2 { stroke: rgba(240, 228, 204, 0.16); animation-duration: 34s; }
+.lp .lp-cta-line.l3 { stroke: rgba(212, 149, 106, 0.4); animation-duration: 20s; }
+
+@keyframes lp-cta-dash {
+  to { stroke-dashoffset: -280; }
+}
+
+/* Aurora copper melayang */
+.lp .lp-cta-aurora {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(90px);
+  will-change: transform;
+}
+
+.lp .lp-cta-aurora.a {
+  width: 520px;
+  height: 520px;
+  left: 50%;
+  top: 8%;
+  margin-left: -260px;
+  background: radial-gradient(circle, rgba(212, 149, 106, 0.22), transparent 65%);
+  animation: lp-cta-drift-a 18s ease-in-out infinite alternate;
+}
+
+.lp .lp-cta-aurora.b {
+  width: 420px;
+  height: 420px;
+  left: 8%;
+  bottom: -140px;
+  background: radial-gradient(circle, rgba(226, 181, 140, 0.13), transparent 65%);
+  animation: lp-cta-drift-b 22s ease-in-out infinite alternate;
+}
+
+@keyframes lp-cta-drift-a {
+  from { transform: translate3d(-40px, 0, 0) scale(1); }
+  to { transform: translate3d(40px, 26px, 0) scale(1.12); }
+}
+
+@keyframes lp-cta-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.06); }
+  to { transform: translate3d(50px, -30px, 0) scale(1); }
+}
+
+.lp .lp-cta-glow {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(720px, 90vw);
+  height: 220px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(212, 149, 106, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+/* Debu cahaya melayang */
+.lp .lp-cta-dust {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(240, 228, 204, 0.7);
+  box-shadow: 0 0 8px rgba(212, 149, 106, 0.8);
+  opacity: 0;
+  animation: lp-cta-float 10s ease-in-out infinite;
+}
+
+@keyframes lp-cta-float {
+  0%, 100% { opacity: 0; transform: translate3d(0, 0, 0); }
+  20% { opacity: 0.9; }
+  50% { transform: translate3d(10px, -46px, 0); opacity: 0.5; }
+  80% { opacity: 0.8; }
+}
+
+/* Badge */
+.lp .lp-cta-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(212, 149, 106, 0.35);
+  border-radius: 999px;
+  background: rgba(24, 19, 15, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0.45rem 1rem;
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e2b58c;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.lp .lp-cta-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #9db48a;
+  box-shadow: 0 0 0 3px rgba(157, 180, 138, 0.2), 0 0 12px rgba(157, 180, 138, 0.9);
+  animation: lp-cta-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes lp-cta-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.72); opacity: 0.65; }
+}
+
+.lp .lp-cta-badge-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.22) 50%, transparent 60%);
+  background-size: 250% 100%;
+  animation: lp-shine-sweep 4.5s linear infinite;
+  pointer-events: none;
+}
+
+/* Masked headline */
+.lp .lp-cta-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.lp .lp-cta-mask-in {
+  display: inline-block;
+  will-change: transform;
+}
+
+.lp .lp-cta-italic {
+  color: #f3d3a8;
+  background: linear-gradient(100deg, #f3d3a8 30%, #fff3df 50%, #f3d3a8 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: lp-cta-sheen 7s ease-in-out 1.6s infinite;
+}
+
+@keyframes lp-cta-sheen {
+  0%, 55% { background-position: 120% 0; }
+  85%, 100% { background-position: -120% 0; }
+}
+
+.lp .lp-cta-sub {
+  text-wrap: pretty;
+}
+
+/* Console tilt + form */
+.lp .lp-cta-tilt {
+  position: relative;
+  will-change: transform;
+}
+
+.lp .lp-cta-form {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(24, 19, 15, 0.9);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.lp .lp-cta-form.is-focus {
+  border-color: rgba(212, 149, 106, 0.55);
+  box-shadow: 0 20px 50px rgba(212, 149, 106, 0.22), 0 0 0 4px rgba(212, 149, 106, 0.12), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+
+/* Border beam berputar — hanya menyala saat fokus/hover */
+@property --cta-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.lp .lp-cta-beam {
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  padding: 1.5px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  background: conic-gradient(from var(--cta-angle), transparent 0deg 250deg, rgba(212, 149, 106, 0.95), rgba(255, 243, 223, 0.55));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: lp-cta-spin 5s linear infinite;
+}
+
+.lp .lp-cta-form.is-focus .lp-cta-beam,
+.lp .lp-cta-form:hover .lp-cta-beam {
+  opacity: 1;
+}
+
+@keyframes lp-cta-spin {
+  to { --cta-angle: 360deg; }
+}
+
+/* Garis scan menyapu saat fokus */
+.lp .lp-cta-scan {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 8px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(212, 149, 106, 0.9), transparent);
+}
+
+.lp .lp-cta-form.is-focus .lp-cta-scan {
+  opacity: 1;
+  animation: lp-cta-scan 2.6s ease-in-out infinite;
+}
+
+@keyframes lp-cta-scan {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(52px); opacity: 0; }
+}
+
+.lp .lp-cta-pin {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  color: #d4956a;
+}
+
+.lp .lp-cta-form.is-focus .lp-cta-pin {
+  animation: lp-cta-pin 0.7s var(--lp-ease);
+}
+
+@keyframes lp-cta-pin {
+  0% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-4px) rotate(-10deg); }
+  70% { transform: translateY(0) rotate(6deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+.lp .lp-cta-pin-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 149, 106, 0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lp .lp-cta-form.is-focus .lp-cta-pin-ring {
+  animation: lp-cta-ring 1.8s ease-out infinite;
+}
+
+@keyframes lp-cta-ring {
+  0% { transform: scale(0.5); opacity: 0.9; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.lp .lp-cta-input {
+  color: #f5ebd9;
+  caret-color: #d4956a;
+}
+
+.lp .lp-cta-input::placeholder {
+  color: transparent;
+}
+
+.lp .lp-cta-form.is-focus .lp-cta-input::placeholder {
+  color: #9a8573;
+}
+
+.lp .lp-cta-typing {
+  position: absolute;
+  left: 44px;
+  right: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #9a8573;
+  pointer-events: none;
+}
+
+.lp .lp-cta-typing::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: #d4956a;
+  animation: lp-cta-blink 1s steps(2) infinite;
+}
+
+@keyframes lp-cta-blink {
+  50% { opacity: 0; }
+}
+
+/* Tombol submit */
+.lp .lp-cta-submit {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #e2a878, #c27f52);
+  color: #14100c;
+  box-shadow: 0 4px 20px rgba(212, 149, 106, 0.4), 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+  transition: box-shadow 0.3s ease, filter 0.3s ease;
+  will-change: transform;
+}
+
+.lp .lp-cta-submit:hover {
+  filter: brightness(1.07);
+  box-shadow: 0 8px 32px rgba(212, 149, 106, 0.55), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+}
+
+.lp .lp-cta-submit .lp-cta-arrow {
+  transition: transform 0.3s var(--lp-ease);
+}
+
+.lp .lp-cta-submit:hover .lp-cta-arrow {
+  transform: translateX(4px);
+}
+
+.lp .lp-cta-kbd {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(20, 16, 12, 0.75);
+  background: rgba(20, 16, 12, 0.14);
+  border-radius: 5px;
+  padding: 3px 6px;
+}
+
+/* Corner reticle */
+.lp .lp-cta-corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  z-index: 2;
+  pointer-events: none;
+  color: rgba(212, 149, 106, 0.75);
+}
+
+.lp .lp-cta-corner i {
+  position: absolute;
+  inset: 0;
+  border: 0 solid currentColor;
+}
+
+.lp .lp-cta-corner[data-pos='tl'] { top: -9px; left: -9px; }
+.lp .lp-cta-corner[data-pos='tl'] i { border-top-width: 1.5px; border-left-width: 1.5px; border-top-left-radius: 6px; }
+.lp .lp-cta-corner[data-pos='tr'] { top: -9px; right: -9px; }
+.lp .lp-cta-corner[data-pos='tr'] i { border-top-width: 1.5px; border-right-width: 1.5px; border-top-right-radius: 6px; }
+.lp .lp-cta-corner[data-pos='bl'] { bottom: -9px; left: -9px; }
+.lp .lp-cta-corner[data-pos='bl'] i { border-bottom-width: 1.5px; border-left-width: 1.5px; border-bottom-left-radius: 6px; }
+.lp .lp-cta-corner[data-pos='br'] { bottom: -9px; right: -9px; }
+.lp .lp-cta-corner[data-pos='br'] i { border-bottom-width: 1.5px; border-right-width: 1.5px; border-bottom-right-radius: 6px; }
+
+/* Chips preset */
+.lp .lp-cta-chip {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(30, 24, 20, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #e8d9c0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  will-change: transform;
+}
+
+.lp .lp-cta-chip:hover {
+  border-color: rgba(212, 149, 106, 0.45);
+  background: #28201a;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(212, 149, 106, 0.25);
+}
+
+.lp .lp-cta-chip-icon {
+  color: #d4956a;
+  transition: transform 0.4s var(--lp-ease);
+}
+
+.lp .lp-cta-chip:hover .lp-cta-chip-icon {
+  transform: rotate(45deg) scale(1.15);
+}
+
+/* Trust badges */
+.lp .lp-cta-trust {
+  color: #c4b5a2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.lp .lp-cta-trust-icon {
+  display: inline-flex;
+  color: #d4956a;
+  filter: drop-shadow(0 0 6px rgba(212, 149, 106, 0.5));
+}
+
+/* Ponsel: matikan yang mahal, jaga hierarki */
+@media (max-width: 767px) {
+  .lp .lp-cta-dust,
+  .lp .lp-cta-contour {
+    display: none;
+  }
+  .lp .lp-cta-img {
+    animation: none;
+  }
+  .lp .lp-cta-aurora.a {
+    width: 320px;
+    height: 320px;
+    margin-left: -160px;
+  }
+  .lp .lp-cta-typing {
+    left: 42px;
+    font-size: 0.88rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .lp-cta-img,
+  .lp .lp-cta-line,
+  .lp .lp-cta-aurora,
+  .lp .lp-cta-dust,
+  .lp .lp-cta-badge-dot,
+  .lp .lp-cta-badge-shine,
+  .lp .lp-cta-italic,
+  .lp .lp-cta-beam,
+  .lp .lp-cta-scan,
+  .lp .lp-cta-typing::after {
+    animation: none !important;
+  }
+  .lp .lp-cta-beam,
+  .lp .lp-cta-scan {
+    display: none;
+  }
+  .lp .lp-cta-input::placeholder {
+    color: #9a8573;
+  }
+  .lp .lp-cta-typing {
+    display: none;
+  }
+}
